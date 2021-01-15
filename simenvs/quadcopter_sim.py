@@ -162,8 +162,8 @@ class VelocityControlledQuadcopter2DEnv(py_environment.PyEnvironment):
         delta_state = self.transition_dynamics(self._state, action)
         self._state += delta_state
         reward = 0
-        self._episode_ended = True
-        if self._episode_ended or self._state >= 9:
+        self._episode_ended = True  # remove this when term conds added
+        if self._episode_ended:
             return ts.termination(
                 np.array([self._state], dtype=float_type), reward
             )
