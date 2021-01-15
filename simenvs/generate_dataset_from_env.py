@@ -89,19 +89,18 @@ def create_state_action_inputs(num_dims, states, actions):
 
 
 def transition_dynamics(state_action, env):
+    """Wrapper for calling env.transition_dynamics(state, action) with state_action
+
+    :param state_action: state-action tuple [state_dim+action_dim]
+    :param env: instance of VelocityControlledQuadcopter2DEnv
+    :returns: delta_state [state_dim]
+    """
     state_action = state_action.reshape(1, -1)
     num_dims = int(state_action.shape[1] / 2)
     state = state_action[:, :num_dims]
     action = state_action[:, num_dims:]
-
-    env.reset(state)  # set environment to state in state_action
-
-    # next_time_step = env.step(action)
     delta_state = env.transition_dynamics(state, action)
     return delta_state.reshape(-1)
-    # next_state = next_time_step.observation
-    # return next_state.reshape(-1)
-
 
 def state_to_pixel(state, env):
     if len(state.shape) == 1:
