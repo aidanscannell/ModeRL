@@ -15,15 +15,19 @@ MAX_ACCELERATION = 10
 MIN_ACTION = MIN_VELOCITY
 MAX_ACTION = MAX_VELOCITY
 
-# observation constraints
-MIN_OBSERVATION = -3
-MAX_OBSERVATION = 3
+# state constraints (domain)
+MIN_STATE = -3.0
+MAX_STATE = 3.0
 
+# environment parameters
+LOW_PROCESS_NOISE_VAR = np.array([0.000001, 0.000002])
+HIGH_PROCESS_NOISE_VAR = np.array([0.0001, 0.00004])
+BITMAP_RESOLUTION = 600  # if gating_bitmap=None then use np.ones(600)
+GATING_BITMAP = None
+
+# simulation parameters
+DELTA_TIME = 0.05
 VELOCITY_INIT = 0.0
-DELTA_TIME = 0.1
-
-NUM_PIXELS = np.array([600 - 1, 600 - 1])
-
 
 
 def generate_random_states(state_dim, num_states, min_state, max_state):
