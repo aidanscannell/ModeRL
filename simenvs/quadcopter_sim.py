@@ -34,15 +34,17 @@ VELOCITY_INIT = 0.0
 class VelocityControlledQuadcopter2DEnv(py_environment.PyEnvironment):
     def __init__(
         self,
-        low_process_noise_var=LOW_PROCESS_NOISE_VAR,
-        high_process_noise_var=HIGH_PROCESS_NOISE_VAR,
+        min_observation=MIN_STATE,
+        max_observation=MAX_STATE,
         min_action=MIN_VELOCITY,
         max_action=MAX_VELOCITY,
-        min_observation=MIN_OBSERVATION,
-        max_observation=MAX_OBSERVATION,
+        low_process_noise_var=LOW_PROCESS_NOISE_VAR,
+        high_process_noise_var=HIGH_PROCESS_NOISE_VAR,
+        gating_bitmap=None,
         velocity_init=0.0,
         delta_time=DELTA_TIME,
-        gating_bitmap=None,
+        min_acceleration=MIN_ACCELERATION,
+        max_acceleration=MAX_ACCELERATION,
     ):
         # velocity controlled so num_states=num_actions=num_dims
         num_dims = 2
