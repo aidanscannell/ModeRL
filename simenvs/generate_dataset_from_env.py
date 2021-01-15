@@ -131,17 +131,6 @@ def transition_dynamics(state_action, env):
     delta_state = env.transition_dynamics(state, action)
     return delta_state.reshape(-1)
 
-def state_to_pixel(state, env):
-    if len(state.shape) == 1:
-        state = state.reshape(1, -1)
-    pixel = (
-        (state[0, :] - env.observation_spec().minimum)
-        / (env.observation_spec().maximum - env.observation_spec().minimum)
-        * NUM_PIXELS
-    )
-    # pixel *= np.array([-1, 1])
-    return np.rint(pixel).astype(int)
-
 
 def generate_transitions_dataset(
     gating_bitmap,
