@@ -50,39 +50,62 @@ class VelocityControlledQuadcopter2DEnv(py_environment.PyEnvironment):
         num_dims = 2
         num_states = num_dims
         num_actions = num_dims
+
+        # simulation parameters
         self.state_init = np.zeros([num_dims], dtype=float_type)
         self._state = self.state_init
         self.delta_time = delta_time
         self.previous_velocity = velocity_init
-        self.low_process_noise_var = low_process_noise_var
-        self.high_process_noise_var = high_process_noise_var
 
-        observation_low = MIN_OBSERVATION * np.ones(num_states)
-        observation_high = MAX_OBSERVATION * np.ones(num_states)
-        action_low = MIN_ACTION * np.ones(num_actions)
-        action_high = MAX_ACTION * np.ones(num_actions)
+        # environment parameters
+        if isinstance(low_process_noise_var, np.ndarray):
+            self.low_process_noise_var = low_process_noise_var
+        else:
+            print("low_process_noise_var isn't array so broadcasting")
+            self.low_process_noise_var = low_process_noise_var * np.ones(
+                num_states
+            )
+        if isinstance(high_process_noise_var, np.ndarray):
+            self.high_process_noise_var = high_process_noise_var
+        else:
+            print("high_process_noise_var isn't array so broadcasting")
+            self.high_process_noise_var = high_process_noise_var * np.ones(
+                num_states
+            )
 
+        # configure action spec
+        if not isinstance(min_action, np.ndarray):
+            min_action = min_action * np.ones(num_actions)
+            print("min_action isn't array so broadcasting")
+        if not isinstance(max_action, np.ndarray):
+            max_action = max_action * np.ones(num_actions)
+            print("max_action isn't array so broadcasting")
         self._action_spec = array_spec.BoundedArraySpec(
-            shape=(num_actions,),
+            shape=(1, num_actions),
             dtype=float_type,
-            minimum=action_low,
-            maximum=action_high,
+            minimum=min_action,
+            maximum=max_action,
             name="action",
         )
+        # configure observation spec
+        if not isinstance(min_observation, np.ndarray):
+            min_observation = min_observation * np.ones(num_states)
+            print("min_observation isn't array so broadcasting")
+        if not isinstance(max_observation, np.ndarray):
+            max_observation = max_observation * np.ones(num_states)
+            print("max_observation isn't array so broadcasting")
         self._observation_spec = array_spec.BoundedArraySpec(
             shape=(1, num_states),
             dtype=float_type,
-            minimum=observation_low,
-            maximum=observation_high,
+            minimum=min_observation,
+            maximum=max_observation,
             name="observation",
         )
-        self._episode_ended = False
+        self.episode_ended = False
 
         if gating_bitmap is None:
             resolution = BITMAP_RESOLUTION
-            num_rows = (max_observation - min_observation) * resolution
-            num_cols = (max_observation - min_observation) * resolution
-            self.gating_bitmap = np.ones([num_rows, num_cols])
+            self.gating_bitmap = np.ones([resolution, resolution])
         elif isinstance(gating_bitmap, str):
             self.gating_bitmap = cv2.imread(
                 gating_bitmap, cv2.IMREAD_GRAYSCALE
@@ -96,7 +119,8 @@ class VelocityControlledQuadcopter2DEnv(py_environment.PyEnvironment):
             )
         # TODO check x and y are the right way around
         self.num_pixels = np.array(
-            [self.gating_bitmap.shape[0] - 1, self.gating_bitmap.shape[1] - 1]
+            # [self.gating_bitmap.shape[0] - 1, self.gating_bitmap.shape[1] - 1]
+            [self.gating_bitmap.shape[1] - 1, self.gating_bitmap.shape[0] - 1]
         )
 
     def state_to_pixel(self, state):
