@@ -58,13 +58,6 @@ def generate_random_actions(action_dim, num_actions, min_action, max_action):
     return actions
 
 
-# @jax.jit
-def create_state_action_inputs(num_dims, states, actions):
-    # states_x, states_y = np.meshgrid(states[:, 0], states[:, 1])
-    # states = np.concatenate(
-    #     [states_x.reshape(-1, 1), states_y.reshape(-1, 1)], -1
-    # )
-    # print("All combinations of states: ", states.shape)
 def apply_mask_to_states(states, env, omit_data_mask=None):
     """Remove values from states where the associated omit_data_mask pixel is <0.5
 
@@ -95,6 +88,14 @@ def apply_mask_to_states(states, env, omit_data_mask=None):
     states = np.delete(states, rows_to_delete, 0)
     return states
 
+
+def create_state_action_inputs(states, actions):
+    """Create state-action inputs with every combination of states/actions
+
+    :param states: [num_states, state_dim]
+    :param actions: [num_actions, action_dim]
+    :returns: state-action inputs [num_states*num_actions, state_dim+action_dim]
+    """
     def grid_action(action):
         action = action.reshape(1, -1)
         num_test = states.shape[0]
@@ -106,8 +107,9 @@ def apply_mask_to_states(states, env, omit_data_mask=None):
         state_action = jnp.concatenate([states, action_broadcast], -1)
         return state_action
 
+    state_action_dim = actions.shape[1] + states.shape[1]
     states_actions = jax.vmap(grid_action, in_axes=0)(actions)
-    state_action_inputs = states_actions.reshape(-1, 2 * num_dims)
+    state_action_inputs = states_actions.reshape(-1, state_action_dim)
     return state_action_inputs
 
 
