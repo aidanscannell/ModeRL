@@ -25,35 +25,17 @@ DELTA_TIME = 0.1
 NUM_PIXELS = np.array([600 - 1, 600 - 1])
 
 
-def gen_dummy_states(
-    num_dims,
-    min_observation=MIN_OBSERVATION,
-    max_observation=MAX_OBSERVATION,
-    num_data_per_dim=10,
-):
-    states = []
 
-    # # create a uniform grid of states
-    # for _ in range(num_dims):
-    #     states.append(
-    #         np.linspace(
-    #             min_observation, max_observation, num_data_per_dim
-    #         ).reshape(-1)
-    #     )
+def generate_random_states(state_dim, num_states, min_state, max_state):
+    """Generate num_states random states in domain [min_state, max_state]
 
-    # states_grid = np.stack(states, -1)
-    # states_x, states_y = np.meshgrid(states_grid[:, 0], states_grid[:, 1])
-    # states_grid = np.concatenate(
-    #     [states_x.reshape(-1, 1), states_y.reshape(-1, 1)], -1
-    # )
-
-    # get some randome (out of grid) states as well
+    :returns: states [num_states, state_dim]
+    """
     states = np.random.uniform(
-        min_observation * np.ones(num_dims),
-        max_observation * np.ones(num_dims),
-        (num_data_per_dim, num_dims),
+        min_state,
+        max_state,
+        (num_states, state_dim),
     )
-    # states = np.concatenate([states, states_grid], 0)
     return states
 
 
