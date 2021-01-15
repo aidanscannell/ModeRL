@@ -187,21 +187,15 @@ class VelocityControlledQuadcopter2DEnv(py_environment.PyEnvironment):
         return noise
 
     def transition_dynamics(self, state, action):
-        velocity = action
+        velocity = action  # as veloctiy controlled
 
-        # Internal dynamics
         delta_state_deterministic = (
             0.5 * (self.previous_velocity + velocity) * self.delta_time
-        )
-
-        # External dynamics
-        process_noise = self._process_noise(state)
-
-        # Transition dynamics
-        # next_state = state + delta_state + process_noise
-        self.previous_velocity = velocity
-
+        )  # internal dynamics (suvat)
+        process_noise = self._process_noise(state)  # external dynamics
         delta_state = delta_state_deterministic + process_noise
+
+        self.previous_velocity = velocity
         return delta_state
 
 
