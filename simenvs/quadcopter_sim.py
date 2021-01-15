@@ -31,6 +31,8 @@ DELTA_TIME = 0.05
 VELOCITY_INIT = 0.0
 
 
+# TODO before using for RL must have episode termination condition
+#      that sets self._episode_ended = True
 class VelocityControlledQuadcopter2DEnv(py_environment.PyEnvironment):
     def __init__(
         self,
