@@ -161,22 +161,39 @@ def generate_transitions_dataset(
     return state_action_inputs, delta_state_outputs
 
 
-
 def generate_transitions_dataset_const_action(
-    action, gating_bitmap, omit_data_mask=None, num_states=10
+    action, num_states, env, omit_data_mask=None
 ):
-    num_dims = 2
-    env = VelocityControlledQuadcopter2DEnv(gating_bitmap=gating_bitmap)
+    """Generate dataset of state transitions with a constant action
 
-    states = gen_dummy_states(num_dims, num_data_per_dim=num_data_per_dim)
+    :param action: the constant action used to generate transitions
+    :param num_states: number of states to randomly generate
+    :param env: an instance of VelocityControlledQuadcopter2DEnv
+    :param omit_data_mask: bitmaap used to omit data from dataset
+    :returns: state_action_inputs [num_states, state_dim+action_dim]
+              delta_state_outputs [num_states, state_dim]
+    """
+    # generate states
+    state_dim = env.observation_spec().shape[1]
+    min_state = env.observation_spec().minimum
+    max_state = env.observation_spec().maximum
+    states = generate_random_states(
+        state_dim,
+        num_states=num_states,
+        min_state=min_state,
+        max_state=max_state,
+    )
     print("Initial states shape: ", states.shape)
     states = apply_mask_to_states(states, env, omit_data_mask)
     print("Initial states shape after applying mask: ", states.shape)
 
+    # generate actions
     print("Initial action shape: ", action.shape)
     if len(action.shape) == 1:
         action = action.reshape(1, -1)
-    state_action_inputs = create_state_action_inputs(num_dims, states, action)
+
+    # create every combination of states and actions to get inputs
+    state_action_inputs = create_state_action_inputs(states, action)
     print("State action inputs shape: ", state_action_inputs.shape)
     # print(state_action_inputs)
 
@@ -191,18 +208,7 @@ def generate_transitions_dataset_const_action(
     return state_action_inputs, delta_state_outputs
 
 
-# def generate_transitions_dataset_const_action(action):
-#     num_data_per_dim = 10
-#     num_actions_per_dim = 4
-#     state_action_inputs, delta_state_outputs = generate_transitions_dataset(
-#         num_data_per_dim=num_data_per_dim,
-#         num_actions_per_dim=num_actions_per_dim,
-#     )
-#     np.savez(
-#         "./data/quad_sim_data_new.npz",
-#         x=state_action_inputs,
-#         y=delta_state_outputs,
-#     )
+def test_generate_transitions_dataset_const_action():
 
 
 if __name__ == "__main__":
