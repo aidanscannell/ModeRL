@@ -234,27 +234,22 @@ def generate_transitions_dataset_const_action(
 
 
 def test_generate_transitions_dataset_const_action():
+    num_states = 1000
+    action = np.array([0.1, 0.1])
+    # gating_bitmap = "../scenario-1/gating_mask.bmp"
+    # omit_data_mask = "../scenario-1/omit_data_mask.bmp"
+    gating_bitmap = "../scenario-2/gating_mask.bmp"
+    omit_data_mask = "../scenario-2/omit_data_mask.bmp"
+    env = VelocityControlledQuadcopter2DEnv(gating_bitmap=gating_bitmap)
 
-
-if __name__ == "__main__":
-    import matplotlib.pyplot as plt
-
-    num_data_per_dim = 40
-    num_actions_per_dim = 1
-    save_dataset_filename = "./data/quad_sim_data_constant_action.npz"
-    gating_bitmap = "./gating_network.bmp"
-
-    state_action_inputs, delta_state_outputs = generate_transitions_dataset(
-        gating_bitmap,
-        num_data_per_dim=num_data_per_dim,
-        num_actions_per_dim=num_actions_per_dim,
+    (
+        state_action_inputs,
+        delta_state_outputs,
+    ) = generate_transitions_dataset_const_action(
+        action, num_states=num_states, env=env, omit_data_mask=omit_data_mask
     )
-    np.savez(
-        save_dataset_filename,
-        x=state_action_inputs,
-        y=delta_state_outputs,
-    )
-
+    assert state_action_inputs.shape[0] == delta_state_outputs.shape[0]
+    assert state_action_inputs.shape[1] == 2 * delta_state_outputs.shape[1]
     plt.quiver(
         state_action_inputs[:, 0],
         state_action_inputs[:, 1],
@@ -262,3 +257,36 @@ if __name__ == "__main__":
         delta_state_outputs[:, 1],
     )
     plt.show()
+
+
+def test_generate_transitions_dataset():
+    num_states = 100
+    num_actions = 16
+    # gating_bitmap = "../scenario-1/gating_mask.bmp"
+    # omit_data_mask = "../scenario-1/omit_data_mask.bmp"
+    gating_bitmap = "../scenario-2/gating_mask.bmp"
+    omit_data_mask = "../scenario-2/omit_data_mask.bmp"
+    env = VelocityControlledQuadcopter2DEnv(gating_bitmap=gating_bitmap)
+
+    (state_action_inputs, delta_state_outputs) = generate_transitions_dataset(
+        num_states=num_states,
+        num_actions=num_actions,
+        env=env,
+        omit_data_mask=omit_data_mask,
+    )
+    assert state_action_inputs.shape[0] == delta_state_outputs.shape[0]
+    assert state_action_inputs.shape[1] == 2 * delta_state_outputs.shape[1]
+    plt.quiver(
+        state_action_inputs[:, 0],
+        state_action_inputs[:, 1],
+        delta_state_outputs[:, 0],
+        delta_state_outputs[:, 1],
+    )
+    plt.show()
+
+
+if __name__ == "__main__":
+    import matplotlib.pyplot as plt
+
+    # test_generate_transitions_dataset_const_action()
+    test_generate_transitions_dataset()
