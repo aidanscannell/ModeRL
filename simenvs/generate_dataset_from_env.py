@@ -133,20 +133,45 @@ def transition_dynamics(state_action, env):
 
 
 def generate_transitions_dataset(
-    gating_bitmap,
-    omit_data_mask=None,
-    num_data_per_dim=10,
-    num_actions_per_dim=4,
+    num_states, num_actions, env, omit_data_mask=None
 ):
-    num_dims = 2
-    env = VelocityControlledQuadcopter2DEnv(gating_bitmap=gating_bitmap)
+    """Generate dataset of state transitions
 
-    states = gen_dummy_states(num_dims, num_data_per_dim=num_data_per_dim)
+    :param num_states: number of states to randomly generate
+    :param num_actions: number of actions to randomly generate
+    :param env: an instance of VelocityControlledQuadcopter2DEnv
+    :param omit_data_mask: bitmaap used to omit data from dataset
+    :returns: state_action_inputs [num_states*num_actions, state_dim+action_dim]
+              delta_state_outputs [num_states*num_actions, state_dim]
+    """
+    # generate states
+    state_dim = env.observation_spec().shape[1]
+    min_state = env.observation_spec().minimum
+    max_state = env.observation_spec().maximum
+    states = generate_random_states(
+        state_dim,
+        num_states=num_states,
+        min_state=min_state,
+        max_state=max_state,
+    )
     print("Initial states shape: ", states.shape)
+    states = apply_mask_to_states(states, env, omit_data_mask)
+    print("Initial states shape after applying mask: ", states.shape)
 
-    actions = gen_dummy_actions(num_dims, num_data_per_dim=num_actions_per_dim)
+    # generate actions
+    action_dim = env.action_spec().shape[1]
+    min_action = env.action_spec().minimum
+    max_action = env.action_spec().maximum
+    actions = generate_random_actions(
+        action_dim,
+        num_actions=num_actions,
+        min_action=min_action,
+        max_action=max_action,
+    )
     print("Initial actions shape: ", actions.shape)
-    state_action_inputs = create_state_action_inputs(num_dims, states, actions)
+
+    # create every combination of states and actions to get inputs
+    state_action_inputs = create_state_action_inputs(states, actions)
     print("State action inputs shape: ", state_action_inputs.shape)
     # print(state_action_inputs)
 
