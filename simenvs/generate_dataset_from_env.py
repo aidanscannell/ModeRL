@@ -57,15 +57,22 @@ def gen_dummy_states(
     return states
 
 
-def gen_dummy_actions(
-    num_dims, min_action=MIN_ACTION, max_action=MAX_ACTION, num_data_per_dim=10
-):
-    actions = []
-    for _ in range(num_dims):
-        actions.append(
-            np.linspace(min_action, max_action, num_data_per_dim).reshape(-1)
-        )
-    actions = np.stack(actions, -1)
+def generate_random_actions(action_dim, num_actions, min_action, max_action):
+    """Generate num_actions random actions in domain [min_action, max_action]
+
+    :returns: actions [num_actions, action_dim]
+    """
+    # actions = []
+    # for _ in range(action_dim):
+    #     actions.append(
+    #         np.linspace(min_action, max_action, num_data_per_dim).reshape(-1)
+    #     )
+    # actions = np.stack(actions, -1)
+    actions = np.random.uniform(
+        min_action,
+        max_action,
+        (num_actions, action_dim),
+    )
     return actions
 
 
