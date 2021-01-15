@@ -65,12 +65,35 @@ def create_state_action_inputs(num_dims, states, actions):
     #     [states_x.reshape(-1, 1), states_y.reshape(-1, 1)], -1
     # )
     # print("All combinations of states: ", states.shape)
+def apply_mask_to_states(states, env, omit_data_mask=None):
+    """Remove values from states where the associated omit_data_mask pixel is <0.5
 
-    actions_x, actions_y = np.meshgrid(actions[:, 0], actions[:, 1])
-    actions = np.concatenate(
-        [actions_x.reshape(-1, 1), actions_y.reshape(-1, 1)], -1
-    )
-    print("All combindations of actions: ", actions.shape)
+    :param states: array of states [num_states, state_dim]
+    :param env: an instance of VelocityControlledQuadcopter2DEnv
+    :param omit_data_mask: filename for a bitmap or np.ndarray
+    :returns: array of states with elements removed [new_num_states, state_dim]
+    """
+    if omit_data_mask is None:
+        return states
+    elif isinstance(omit_data_mask, str):
+        omit_data_mask = cv2.imread(omit_data_mask, cv2.IMREAD_GRAYSCALE)
+        # cv2.imshow('GFG', omit_data_mask)
+        omit_data_mask = omit_data_mask / 255
+    elif isinstance(omit_data_mask, np.ndarray):
+        omit_data_mask = omit_data_mask
+    else:
+        raise (
+            "omit_data_mask must be np.ndarray or filepath string for bitmap"
+        )
+
+    rows_to_delete = []
+    for row in range(states.shape[0]):
+        pixel = env.state_to_pixel(states[row, :])
+        if omit_data_mask[pixel[0], pixel[1]] < 0.5:
+            rows_to_delete.append(row)
+
+    states = np.delete(states, rows_to_delete, 0)
+    return states
 
     def grid_action(action):
         action = action.reshape(1, -1)
@@ -142,27 +165,6 @@ def generate_transitions_dataset(
     print("Delta state outputs: ", delta_state_outputs.shape)
     return state_action_inputs, delta_state_outputs
 
-
-def apply_mask_to_states(states, env, omit_data_mask=None):
-    if isinstance(omit_data_mask, str):
-        omit_data_mask = cv2.imread(omit_data_mask, cv2.IMREAD_GRAYSCALE)
-        # cv2.imshow('GFG', omit_data_mask)
-        omit_data_mask = omit_data_mask / 255
-    elif isinstance(omit_data_mask, np.ndarray):
-        omit_data_mask = omit_data_mask
-    else:
-        raise (
-            "omit_data_mask must be np.ndarray or filepath string for bitmap"
-        )
-
-    rows_to_delete = []
-    for row in range(states.shape[0]):
-        pixel = env.state_to_pixel(states[row, :])
-        if omit_data_mask[pixel[0], pixel[1]] < 0.5:
-            rows_to_delete.append(row)
-
-    states = np.delete(states, rows_to_delete, 0)
-    return states
 
 
 def generate_transitions_dataset_const_action(
