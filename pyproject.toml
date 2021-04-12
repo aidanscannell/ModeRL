@@ -5,7 +5,8 @@ description = ""
 authors = ["Aidan Scannell <scannell.aidan@gmail.com>"]
 
 [tool.poetry.dependencies]
-python = "^3.8"
+# python = ">=3.6,<3.10"  
+python = "^3.6"  
 matplotlib = "^3.3.3"
 numpy = "^1.19.2"
 tf-agents = "^0.6.0"
@@ -14,7 +15,7 @@ jax = "^0.2.7"
 jaxlib = "^0.1.57"
 dm-env = "^1.3"
 gym = "^0.17.3"
-dm-haiku = "^0.0.3"
+# dm-haiku = "^0.0.3"
 opencv-python = "^4.5.1"
 bunch = "^1.0.1"
 
@@ -24,7 +25,6 @@ isort = "^5.6.4"
 pyflakes = "^2.2.0"
 # Sphinx = "^3.3.1"
 # sphinx-rtd-theme = "^0.5.0"
-ipython = "^7.19.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

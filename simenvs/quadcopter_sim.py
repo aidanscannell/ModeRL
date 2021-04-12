@@ -1,8 +1,12 @@
 import cv2
 import numpy as np
 import scipy as sp
-from tf_agents.environments import (py_environment, tf_environment,
-                                    tf_py_environment, utils)
+from tf_agents.environments import (
+    py_environment,
+    tf_environment,
+    tf_py_environment,
+    utils,
+)
 from tf_agents.specs import array_spec
 from tf_agents.trajectories import time_step as ts
 
@@ -64,16 +68,12 @@ class VelocityControlledQuadcopter2DEnv(py_environment.PyEnvironment):
             self.low_process_noise_var = low_process_noise_var
         else:
             print("low_process_noise_var isn't array so broadcasting")
-            self.low_process_noise_var = low_process_noise_var * np.ones(
-                num_states
-            )
+            self.low_process_noise_var = low_process_noise_var * np.ones(num_states)
         if isinstance(high_process_noise_var, np.ndarray):
             self.high_process_noise_var = high_process_noise_var
         else:
             print("high_process_noise_var isn't array so broadcasting")
-            self.high_process_noise_var = high_process_noise_var * np.ones(
-                num_states
-            )
+            self.high_process_noise_var = high_process_noise_var * np.ones(num_states)
 
         # configure action spec
         if not isinstance(min_action, np.ndarray):
@@ -109,16 +109,12 @@ class VelocityControlledQuadcopter2DEnv(py_environment.PyEnvironment):
             resolution = BITMAP_RESOLUTION
             self.gating_bitmap = np.ones([resolution, resolution])
         elif isinstance(gating_bitmap, str):
-            self.gating_bitmap = cv2.imread(
-                gating_bitmap, cv2.IMREAD_GRAYSCALE
-            )
+            self.gating_bitmap = cv2.imread(gating_bitmap, cv2.IMREAD_GRAYSCALE)
             self.gating_bitmap = self.gating_bitmap / 255
         elif isinstance(gating_bitmap, np.ndarray):
             self.gating_bitmap = gating_bitmap
         else:
-            raise (
-                "gating_bitmap must be np.ndarray or filepath string for bitmap"
-            )
+            raise ("gating_bitmap must be np.ndarray or filepath string for bitmap")
         # TODO check x and y are the right way around
         self.num_pixels = np.array(
             # [self.gating_bitmap.shape[0] - 1, self.gating_bitmap.shape[1] - 1]
@@ -131,10 +127,7 @@ class VelocityControlledQuadcopter2DEnv(py_environment.PyEnvironment):
             state = state.reshape(1, -1)
         pixel = (
             (state[0, :] - self.observation_spec().minimum)
-            / (
-                self.observation_spec().maximum
-                - self.observation_spec().minimum
-            )
+            / (self.observation_spec().maximum - self.observation_spec().minimum)
             * self.num_pixels
         )
         pixel = np.array([-pixel[1], pixel[0]])
@@ -162,13 +155,13 @@ class VelocityControlledQuadcopter2DEnv(py_environment.PyEnvironment):
 
     def _step(self, action):
         delta_state = self.transition_dynamics(self._state, action)
+        # print("delta state")
+        # print(delta_state)
         self._state += delta_state
         reward = 0
-        self._episode_ended = True  # remove this when term conds added
+        # self._episode_ended = True  # remove this when term conds added
         if self._episode_ended:
-            return ts.termination(
-                np.array([self._state], dtype=float_type), reward
-            )
+            return ts.termination(np.array([self._state], dtype=float_type), reward)
         else:
             return ts.transition(
                 np.array([self._state], dtype=float_type),
@@ -195,7 +188,10 @@ class VelocityControlledQuadcopter2DEnv(py_environment.PyEnvironment):
             0.5 * (self.previous_velocity + velocity) * self.delta_time
         )  # internal dynamics (suvat)
         process_noise = self._process_noise(state)  # external dynamics
+        # print("process_noise")
+        # print(process_noise)
         delta_state = delta_state_deterministic + process_noise
+        # delta_state = delta_state_deterministic
 
         self.previous_velocity = velocity
         return delta_state

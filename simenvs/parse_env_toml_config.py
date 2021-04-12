@@ -38,9 +38,7 @@ def parse_min_state(config):
             min_state = parse_list_to_array(min_state)
     except AttributeError:
         min_state = MIN_STATE
-        print(
-            "No min_state found in toml config so using default :", min_state
-        )
+        print("No min_state found in toml config so using default :", min_state)
     return min_state
 
 
@@ -51,9 +49,7 @@ def parse_max_state(config):
             max_state = parse_list_to_array(max_state)
     except AttributeError:
         max_state = MAX_STATE
-        print(
-            "No max_state found in toml config so using default :", max_state
-        )
+        print("No max_state found in toml config so using default :", max_state)
     return max_state
 
 
@@ -131,9 +127,7 @@ def parse_high_process_noise_var(config):
     try:
         high_process_noise_var = config.high_process_noise_var
         if isinstance(high_process_noise_var, list):
-            high_process_noise_var = parse_list_to_array(
-                high_process_noise_var
-            )
+            high_process_noise_var = parse_list_to_array(high_process_noise_var)
     except AttributeError:
         high_process_noise_var = HIGH_PROCESS_NOISE_VAR
         print(
@@ -148,9 +142,7 @@ def parse_delta_time(config):
         delta_time = config.delta_time
     except AttributeError:
         delta_time = DELTA_TIME
-        print(
-            "No delta_time found in toml config so using default :", delta_time
-        )
+        print("No delta_time found in toml config so using default :", delta_time)
     return delta_time
 
 
@@ -181,7 +173,7 @@ def parse_gating_bitmap(config):
 
 
 def parse_toml_config_to_VelocityControlledQuadcopter2DEnv(
-    toml_config_filename,
+    toml_config_filename, gating_bitmap_filename=None
 ):
     with open(toml_config_filename, "r") as config:
         config_dict = toml.load(config)
@@ -194,7 +186,8 @@ def parse_toml_config_to_VelocityControlledQuadcopter2DEnv(
     min_acceleration = parse_min_acceleration(config)
     max_acceleration = parse_max_acceleration(config)
 
-    gating_bitmap = parse_gating_bitmap(config)
+    if gating_bitmap_filename is None:
+        gating_bitmap_filename = parse_gating_bitmap(config)
     low_process_noise_var = parse_low_process_noise_var(config)
     high_process_noise_var = parse_high_process_noise_var(config)
 
@@ -208,7 +201,7 @@ def parse_toml_config_to_VelocityControlledQuadcopter2DEnv(
         max_action=max_velocity,
         low_process_noise_var=low_process_noise_var,
         high_process_noise_var=high_process_noise_var,
-        gating_bitmap=gating_bitmap,
+        gating_bitmap=gating_bitmap_filename,
         velocity_init=velocity_init,
         delta_time=delta_time,
         min_acceleration=min_acceleration,
@@ -219,6 +212,4 @@ def parse_toml_config_to_VelocityControlledQuadcopter2DEnv(
 
 if __name__ == "__main__":
     toml_config_filename = "../scenario-1/env_config.toml"
-    env = parse_toml_config_to_VelocityControlledQuadcopter2DEnv(
-        toml_config_filename
-    )
+    env = parse_toml_config_to_VelocityControlledQuadcopter2DEnv(toml_config_filename)
