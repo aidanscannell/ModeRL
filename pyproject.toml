@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "vimpc"
+version = "0.1.0"
+description = "Variational Inference MPC in TensorFlow"
+authors = ["Aidan Scannell <scannell.aidan@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+matplotlib = "^3.3.2"
+simenvs = {path = "../sim-envs", develop=true}
+mogpe = {path = "../mogpe", develop=true}
+gpflow = "^2.2.1"
+tensorflow = "^2.5.0"
+geoflow = {path = "../geoflow", develop=true}
+
+[tool.poetry.dev-dependencies]
+black = "^20.8b1"
+isort = "^5.6.4"
+pyflakes = "^2.2.0"
+pytest = "^6.2.2"
+pytest-cov = "^2.11.1"
+python-language-server = "^0.36.1"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
