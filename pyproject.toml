@@ -6,8 +6,8 @@ authors = ["Aidan Scannell <scannell.aidan@gmail.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.8"
-simenvs = {path = "../sim-envs", develop=true}
-mogpe = {path = "../mogpe", develop=true}
+simenvs = {path = "../sim-envs", develop=true}  # https://github.com/aidanscannell/simenvs
+mogpe = {path = "../mogpe", develop=true}  # https://github.com/aidanscannell/mogpe
 gpflow = "^2.2.1"
 tensorflow = "^2.4.0"
 matplotlib = "^3.2.1"
