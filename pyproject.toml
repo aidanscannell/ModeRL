@@ -1,17 +1,17 @@
 [tool.poetry]
-name = "vimpc"
+name = "ModeOpt"
 version = "0.1.0"
-description = "Variational Inference MPC in TensorFlow"
+description = "Mode Remaining Active Learning for Multimodal Dynamical Systems in TensorFlow/GPflow."
 authors = ["Aidan Scannell <scannell.aidan@gmail.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.8"
-matplotlib = "^3.3.2"
 simenvs = {path = "../sim-envs", develop=true}
 mogpe = {path = "../mogpe", develop=true}
 gpflow = "^2.2.1"
-tensorflow = "^2.5.0"
-geoflow = {path = "../geoflow", develop=true}
+tensorflow = "^2.4.0"
+matplotlib = "^3.2.1"
+SciencePlots = "^1.0.8"
 
 [tool.poetry.dev-dependencies]
 black = "^20.8b1"
