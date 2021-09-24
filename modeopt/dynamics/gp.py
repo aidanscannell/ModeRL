@@ -8,6 +8,7 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 from gpflow.conditionals import uncertain_conditional
 from gpflow.models import SVGP
+from modeopt.dynamics import Dynamics
 from tensor_annotations import axes
 from tensor_annotations.axes import Batch
 
@@ -15,19 +16,6 @@ tfd = tfp.distributions
 
 StateDim = typing.NewType("StateDim", axes.Axis)
 ControlDim = typing.NewType("ControlDim", axes.Axis)
-
-
-class Dynamics(abc.ABC):
-    """Dynamics model for discrete system."""
-
-    @abc.abstractmethod
-    def __call__(
-        self,
-        state: ttf.Tensor2[Batch, StateDim],
-        control: ttf.Tensor2[Batch, ControlDim],
-    ):
-        """Transition dynamics function f(x, u)"""
-        raise NotImplementedError
 
 
 def multioutput_uncertain_conditional(
@@ -43,40 +31,34 @@ def multioutput_uncertain_conditional(
     whiten=False,
 ):
     # TODO map instead of for loop
-    means, vars = [], []
+    f_means, f_vars = [], []
     for i, (kernel) in enumerate(kernel.kernels):
         if len(q_sqrt.shape) == 2:
-            q_sqrt = q_sqrt[:, i : i + 1]
+            q_sqrt_i = q_sqrt[:, i : i + 1]
         elif len(q_sqrt.shape) == 3:
-            q_sqrt = q_sqrt[i : i + 1, :, :]
-        mean, var = uncertain_conditional(
+            q_sqrt_i = q_sqrt[i : i + 1, :, :]
+        f_mean, f_var = uncertain_conditional(
             input_mean,
             input_var,
             inducing_variables,
             # gp.inducing_variable.inducing_variables[0],
             kernel=kernel,
             q_mu=q_mu[:, i : i + 1],
-            q_sqrt=q_sqrt,
+            q_sqrt=q_sqrt_i,
             mean_function=mean_function,
             full_output_cov=full_output_cov,
             full_cov=full_cov,
             white=whiten,
         )
-        print("after uncertai")
-        print(mean.shape)
-        print(var.shape)
-        means.append(mean)
-        vars.append(var)
-    if len(means) > 1:
-        means = tf.concat(means, -1)
-        vars = tf.concat(vars, -1)
+        f_means.append(f_mean)
+        f_vars.append(f_var)
+    if len(f_means) > 1:
+        f_means = tf.concat(f_means, -1)
+        f_vars = tf.concat(f_vars, -1)
     else:
-        means = tf.constant(means)
-        vars = tf.constant(vars)
-    print("means")
-    print(means.shape)
-    print(vars.shape)
-    return means, vars
+        f_means = tf.constant(f_means)
+        f_vars = tf.constant(f_vars)
+    return f_means, f_vars
 
 
 def svgp_dynamics(
@@ -161,7 +143,7 @@ class SVGPDynamics(Dynamics):
         gp_dims=None,
         # delta_time=0.05,
     ):
-        super().__init(self)
+        super().__init__()
         self.svgp = svgp
         self.gp = svgp
         self.gp_dims = gp_dims
