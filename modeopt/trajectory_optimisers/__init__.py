@@ -9,3 +9,5 @@ from modeopt.trajectory_optimisers.variational import (
     VariationalTrajectoryOptimiserTrainingSpec,
     ModeVariationalTrajectoryOptimiserTrainingSpec,
 )
+
+from modeopt.trajectory_optimisers.explorative import ExplorativeTrajectoryOptimiser
