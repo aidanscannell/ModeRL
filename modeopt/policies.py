@@ -5,8 +5,6 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
 from gpflow.base import Module, Parameter
-
-# from gpflow.models import BayesianModel
 from gpflow.config import default_float
 from gpflow.utilities import positive
 from scipy.optimize import LinearConstraint
@@ -28,9 +26,8 @@ class VariationalPolicy(abc.ABC, Module):
         self.constraints_upper_bound = constraints_upper_bound
 
     @property
-    @abc.abstractmethod
-    def variational_dist(self) -> tfd.Distribution:
-        raise NotImplementedError
+    def variational_dist(self):
+        return self._variational_dist
 
     def __call__(self, time_step: int = None):
         if time_step is None:
@@ -81,10 +78,6 @@ class VariationalGaussianPolicy(VariationalPolicy):
             loc=self.means, scale_diag=self.vars
         )
 
-    @property
-    def variational_dist(self):
-        return self._variational_dist
-
     def __call__(self, time_step: int = None):
         means = self.variational_dist.mean()
         vars = self.variational_dist.variance()
@@ -125,8 +118,19 @@ class DeterministicPolicy(VariationalPolicy):
             constraints_lower_bound=constraints_lower_bound,
             constraints_upper_bound=constraints_upper_bound,
         )
-        self.contols = Parameter(controls, dtype=default_float())
+        self.controls = Parameter(controls, dtype=default_float())
         self._variational_dist = tfd.Deterministic(loc=self.controls)
+
+    def __call__(self, time_step: int = None):
+        means = self.variational_dist.mean()
+        vars = tf.zeros(means.shape, dtype=default_float())
+        if time_step is None:
+            return means, vars
+        else:
+            return (
+                means[time_step : time_step + 1, :],
+                vars[time_step : time_step + 1, :],
+            )
 
     # def __call__(self, time_step=None):
     #     zeros = tf.zeros(self.knots.shape, dtype=default_float())
