@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
-import abc
 from functools import partial
-from typing import NewType, Tuple
+from typing import NewType, Tuple, Union
 
-import gpflow as gpf
 import numpy as np
 import tensor_annotations.tensorflow as ttf
 import tensorflow as tf
@@ -18,9 +16,11 @@ from modeopt.cost_functions import (
     terminal_state_cost_fn,
 )
 from modeopt.dynamics.multimodal import ModeOptDynamics
-from modeopt.policies import VariationalPolicy
+from modeopt.policies import VariationalPolicy, VariationalGaussianPolicy
 from modeopt.rollouts import rollout_policy_in_dynamics, rollout_policy_in_env
 from modeopt.trajectory_optimisers import (
+    ExplorativeTrajectoryOptimiser,
+    ExplorativeTrajectoryOptimiserTrainingSpec,
     ModeVariationalTrajectoryOptimiser,
     ModeVariationalTrajectoryOptimiserTrainingSpec,
 )
@@ -58,12 +58,12 @@ class ModeOpt(Module):
 
         if policy is None:
             control_means = (
-                np.ones((horizon, control_dim)) * 0.5
-                + np.random.random((horizon, control_dim)) * 0.1
+                np.ones((horizon, self.dynamics.control_dim)) * 0.5
+                + np.random.random((horizon, self.dynamics.control_dim)) * 0.1
             )
             control_vars = (
-                np.ones((horizon, control_dim)) * 0.2
-                + np.random.random((horizon, control_dim)) * 0.01
+                np.ones((horizon, self.dynamics.control_dim)) * 0.2
+                + np.random.random((horizon, self.dynamics.control_dim)) * 0.01
             )
             self.policy = VariationalGaussianPolicy(
                 means=control_means, vars=control_vars
@@ -101,22 +101,24 @@ class ModeOpt(Module):
             self.cost_fn,
             self.terminal_cost_fn,
         )
-        self.trajectory_optimiser = self.mode_trajectory_optimiser
 
-        # self.explorative_trajectory_optimiser = ExplorativeTrajectoryOptimiser(
-        #     self.policy,
-        #     self.dynamics,
-        #     self.cost_fn,
-        #     self.terminal_cost_fn,
-        # )
+        self.explorative_trajectory_optimiser = ExplorativeTrajectoryOptimiser(
+            self.policy,
+            self.dynamics,
+            self.cost_fn,
+            self.terminal_cost_fn,
+        )
+        # self.trajectory_optimiser = self.mode_trajectory_optimiser
+        self.trajectory_optimiser = self.explorative_trajectory_optimiser
 
     def optimise_policy(
         self,
         start_state,
-        training_spec: ModeVariationalTrajectoryOptimiserTrainingSpec,
+        training_spec: Union[
+            ModeVariationalTrajectoryOptimiserTrainingSpec,
+            ExplorativeTrajectoryOptimiserTrainingSpec,
+        ],
     ):
-        print("training_spec.mode_chance_constraint_lower")
-        print(training_spec.mode_chance_constraint_lower)
         if (
             training_spec.mode_chance_constraint_lower is None
             or training_spec.mode_chance_constraint_lower <= 0.0
@@ -134,7 +136,7 @@ class ModeOpt(Module):
                 upper_bound=1.0,
                 compile=training_spec.compile_mode_constraint_fn,
             )
-        return self.mode_trajectory_optimiser.optimise(
+        return self.trajectory_optimiser.optimise(
             start_state=self.start_state,
             training_spec=training_spec,
             constraints=mode_chance_constraints,
