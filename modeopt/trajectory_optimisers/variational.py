@@ -7,7 +7,7 @@ import gpflow as gpf
 import tensor_annotations.tensorflow as ttf
 import tensorflow as tf
 from modeopt.dynamics import GPDynamics
-from modeopt.cost_functions import expected_quadratic_costs
+from modeopt.cost_functions import expected_quadratic_costs, quadratic_cost_fn
 from modeopt.policies import (
     VariationalPolicy,
     VariationalGaussianPolicy,
@@ -17,6 +17,7 @@ from modeopt.rollouts import rollout_policy_in_dynamics
 from modeopt.trajectory_optimisers.base import TrajectoryOptimiser
 from tensor_annotations import axes
 from tensor_annotations.axes import Batch
+from geoflow.manifolds import GPManifold
 
 StateDim = typing.NewType("StateDim", axes.Axis)
 ControlDim = typing.NewType("ControlDim", axes.Axis)
@@ -73,6 +74,7 @@ class VariationalTrajectoryOptimiser(TrajectoryOptimiser):
             terminal_cost_fn=terminal_cost_fn,
         )
         self.optimiser = gpf.optimizers.Scipy()
+        self._training_loss = None
 
     def build_training_loss(
         self,
@@ -84,9 +86,13 @@ class VariationalTrajectoryOptimiser(TrajectoryOptimiser):
             return -self.elbo(start_state, start_state_var=start_state_var)
 
         if compile:
-            return tf.function(training_loss)
+            self._training_loss = tf.function(training_loss)
         else:
-            return training_loss
+            self._training_loss = training_loss
+        return self._training_loss
+
+    def training_loss(self):
+        return self._training_loss
 
     def optimise(
         self,
@@ -101,10 +107,6 @@ class VariationalTrajectoryOptimiser(TrajectoryOptimiser):
             def callback(step, variables, values):
                 training_spec.monitor(step)
                 training_spec.manager.save()
-                print("values")
-                print(values)
-                print("variables")
-                print(variables)
 
         elif training_spec.monitor is not None:
 
@@ -119,14 +121,13 @@ class VariationalTrajectoryOptimiser(TrajectoryOptimiser):
         else:
             callback = None
 
-        training_loss = self.build_training_loss(
-            start_state, start_state_var=None, compile=training_spec.compile_loss_fn
-        )
+        if self._training_loss is None:
+            self._training_loss = self.build_training_loss(
+                start_state, start_state_var=None, compile=training_spec.compile_loss_fn
+            )
 
-        print("self.policy.trainable_variables")
-        print(self.policy.trainable_variables)
         optimisation_result = self.optimiser.minimize(
-            training_loss,
+            self._training_loss,
             self.policy.trainable_variables,
             method=training_spec.method,
             constraints=constraints,
@@ -169,7 +170,7 @@ class VariationalTrajectoryOptimiser(TrajectoryOptimiser):
         )
 
         elbo = (
-            -expected_terminal_cost - tf.reduce_sum(expected_integral_costs) - entropy
+            -expected_terminal_cost - tf.reduce_sum(expected_integral_costs) + entropy
         )
         return elbo
 
@@ -225,12 +226,69 @@ class ModeVariationalTrajectoryOptimiser(VariationalTrajectoryOptimiser):
             state_means[:-1, :], control_means, state_vars[:-1, :], control_vars
         )
 
+        # manifold = GPManifold(self.dynamics.gating_gp, covariance_weight=0.05)
+        manifold = GPManifold(self.dynamics.gating_gp, covariance_weight=10.0)
+        input_mean = tf.concat([state_means[:-1, :], control_means], -1)
+        input_var = tf.concat([state_vars[:-1, :], control_vars], -1)
+        velocities = input_mean[1:, :] - input_mean[:-1, :]
+        velocities_var = input_var[1:, :]
+        # velocities = control_means
+        # riemannian_energy = manifold.energy(input_mean[1:, :], velocities) * 0.0001
+        riemannian_energy = manifold.energy(input_mean[1:, :], velocities)
+
+        # riemannian_metric = manifold.metric(input_mean[1:, :]) * 0.0001
+        riemannian_metric = manifold.metric(input_mean[1:, :]) * 0.0001
+        # riemannian_metric = manifold.metric(input_mean[1:, :]) * 0.01
+        riemannian_energy = tf.reduce_sum(
+            quadratic_cost_fn(
+                vector=velocities,
+                weight_matrix=riemannian_metric,
+                vector_var=None,
+            )
+        )
+        # riemannian_energy = tf.reduce_sum(
+        #     quadratic_cost_fn(
+        #         vector=velocities,
+        #         weight_matrix=riemannian_metric,
+        #         vector_var=velocities_var,
+        #     )
+        # )
+        tf.print("riemannian_energy 1")
+        tf.print(riemannian_energy)
+
+        riemannian_metric = manifold.metric(input_mean) * 0.0001
+        riemannian_metric_trace = tf.linalg.trace(riemannian_metric)
+        # tf.print("riemannian_metric")
+        # tf.print(riemannian_metric)
+        # riemannian_metric_trace = tf.reduce_sum(riemannian_metric_trace)
+        # euclidean_energy = tf.linalg.matmul(velocities, velocities, transpose_a=True)
+        # print("euclidean_energy")
+        # print(euclidean_energy.shape)
+        # euclidean_energy = tf.reduce_sum(euclidean_energy)
+        # print("riemannian_energy")
+        # print(riemannian_energy)
+        # tf.print("euclidean_energy")
+        # tf.print(euclidean_energy)
+        # energy_ratio = riemannian_energy / euclidean_energy
+        # tf.print("energy_ratio")
+        # tf.print(energy_ratio)
+
         elbo = (
-            -mode_var_exp
+            # energy_ratio
+            -riemannian_energy
+            # -riemannian_metric_trace
+            # -euclidean_energy
             - expected_terminal_cost
             - tf.reduce_sum(expected_integral_costs)
             + entropy
         )
+
+        # elbo = (
+        #     -mode_var_exp
+        #     - expected_terminal_cost
+        #     - tf.reduce_sum(expected_integral_costs)
+        #     + entropy
+        # )
         print("elbo")
         print(elbo)
         print("mode_var_exp")
