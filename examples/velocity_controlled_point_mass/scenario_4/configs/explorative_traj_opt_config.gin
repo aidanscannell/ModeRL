@@ -1,0 +1,46 @@
+# import modeopt.trajectory_optimisers
+
+# Dynamics config
+run_mode_opt.mogpe_config_file = "./configs/initial_mogpe_config.toml"
+run_mode_opt.mogpe_ckpt_dir = "./logs/initial-dataset/2_experts/09-02-222418"
+run_mode_opt.data_path = "./data/npz/initial_dataset_443_samples_42_seed.npz"
+#run_mode_opt.nominal_dynamics = @velocity_controlled_point_mass_dynamics
+run_mode_opt.desired_mode = 0
+
+# Trajectory Optimisation config
+# run_mode_opt.trajectory_optimiser = @ExplorativeTrajectoryOptimiser
+run_mode_opt.start_state = [-2.5, -1.8]
+run_mode_opt.target_state = [2.5, 2.0]
+run_mode_opt.horizon = 10
+run_mode_opt.mode_chance_constraint_lower = 0.7  # set as None to turn off mode constraints
+# run_mode_opt.mode_chance_constraint_lower = None  # set as None to turn off mode constraints
+run_mode_opt.compile_mode_constraint_fn = True  # whether to wrap constraints_fn in tf.function
+run_mode_opt.compile_loss_fn = True  # whether to wrap loss function in tf.function
+# run_mode_opt.velocity_constraints_lower = [-8, -8]
+# run_mode_opt.velocity_constraints_upper = [8, 8]
+# run_mode_opt.velocity_constraints_lower = [-2, -2]
+# run_mode_opt.velocity_constraints_upper = [2, 2]
+run_mode_opt.velocity_constraints_lower = [-0.2, -0.2]
+run_mode_opt.velocity_constraints_upper = [0.2, 0.2]
+run_mode_opt.max_iterations = 1000
+run_mode_opt.method = "SLSQP" # or "SLSQP" or "L-BFGS-B"
+run_mode_opt.disp = True
+run_mode_opt.log_dir = "./logs/explorative_traj_opt/initial_dataset"
+run_mode_opt.num_ckpts = 5
+
+# Environment config
+run_mode_opt.env_name = "velocity-controlled-point-mass/scenario-4"
+run_mode_opt.delta_time = 0.05
+
+
+# run_mode_opt.state_cost_weight = 0.01  # Q = tf.eye(state_dim) * state_cost_weight
+run_mode_opt.state_cost_weight = 0.1  # Q = tf.eye(state_dim) * state_cost_weight
+# run_mode_opt.state_cost_weight = 0.000001  # Q = tf.eye(state_dim) * state_cost_weight
+run_mode_opt.terminal_state_cost_weight = [1.0, 1.0]  # Q_terminal = tf.eye(state_dim) * terminal_state_cost_weight
+# run_mode_opt.control_cost_weight = 0.001 # R = tf.eye(control_dim) * control_cost_weight
+# run_mode_opt.control_cost_weight = 0.01 # R = tf.eye(control_dim) * control_cost_weight
+run_mode_opt.control_cost_weight = 0.1 # R = tf.eye(control_dim) * control_cost_weight
+# run_mode_opt.control_cost_weight = 0.000001 # R = tf.eye(control_dim) * control_cost_weight
+
+run_mode_opt.slow_tasks_period = 5
+run_mode_opt.fast_tasks_period = 2
