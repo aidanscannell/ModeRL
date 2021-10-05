@@ -1,0 +1,12 @@
+#+TITLE: Running ModeOpt for Velocity Controlled Point Mass
+
+The config file for the mode remaining trajectory optimisation is [[./configs/mode_remaining_traj_opt_config.gin]]
+and for the explorative trajectory optimisation is [[./configs/explorative_traj_opt_config.gin]].
+To run the mode remaining trajectory optimiser run the following command from this directory:
+#+begin_src shell
+python run_mode_opt_remain.py
+#+end_src
+For the explorative trajectory optimisation run:
+#+begin_src shell
+python run_mode_opt_explore.py
+#+end_src
