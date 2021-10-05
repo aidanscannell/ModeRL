@@ -67,6 +67,7 @@ def svgp_dynamics(
     control_mean: ttf.Tensor2[Batch, ControlDim],
     state_var: ttf.Tensor2[Batch, StateDim] = None,
     control_var: ttf.Tensor2[Batch, ControlDim] = None,
+    add_noise: bool = False,
 ) -> ttf.Tensor2[Batch, StateDim]:
     assert len(state_mean.shape) == 2
     assert len(control_mean.shape) == 2
@@ -90,7 +91,10 @@ def svgp_dynamics(
             whiten=svgp.whiten,
         )
         delta_state_mean += svgp.mean_function(input_mean)
-    return delta_state_mean, delta_state_var
+    if add_noise:
+        return svgp.likelihood.predict_mean_and_var(delta_state_mean, delta_state_var)
+    else:
+        return delta_state_mean, delta_state_var
 
 
 def hybrid_svgp_dynamics(
@@ -101,6 +105,8 @@ def hybrid_svgp_dynamics(
     control_mean: ttf.Tensor2[Batch, ControlDim],
     state_var: ttf.Tensor2[Batch, StateDim] = None,
     control_var: ttf.Tensor2[Batch, ControlDim] = None,
+    predict_state_difference: bool = False,
+    add_noise: bool = False,
 ) -> Tuple[ttf.Tensor2[Batch, StateDim], ttf.Tensor2[Batch, StateDim]]:
     gp_delta_state_mean, gp_delta_state_var = svgp_dynamics(
         svgp,
@@ -108,6 +114,7 @@ def hybrid_svgp_dynamics(
         control_mean=control_mean,
         state_var=state_var,
         control_var=control_var,
+        add_noise=add_noise,
     )
     # TODO propogate state-control uncertianty through nominal dynamics
     nominal_delta_state_mean, nominal_delta_state_var = nominal_dynamics(
@@ -116,7 +123,10 @@ def hybrid_svgp_dynamics(
         state_var=state_var,
         control_var=control_var,
     )
-
+    if predict_state_difference:
+        delta_state_mean = state_mean + gp_delta_state_mean + nominal_delta_state_mean
+        delta_state_var = state_var + gp_delta_state_var + nominal_delta_state_var
+        return delta_state_mean, delta_state_var
     if gp_dims is None:
         next_state_mean = state_mean + gp_delta_state_mean + nominal_delta_state_mean
         next_state_var = state_var + gp_delta_state_var + nominal_delta_state_var
@@ -175,6 +185,8 @@ class SVGPDynamics(Dynamics):
         control_mean: ttf.Tensor2[Batch, ControlDim],
         state_var: ttf.Tensor2[Batch, StateDim] = None,
         control_var: ttf.Tensor2[Batch, ControlDim] = None,
+        predict_state_difference: bool = False,
+        add_noise: bool = False,
     ) -> ttf.Tensor2[Batch, StateDim]:
         return hybrid_svgp_dynamics(
             self.svgp,
@@ -184,4 +196,6 @@ class SVGPDynamics(Dynamics):
             control_mean=control_mean,
             state_var=state_var,
             control_var=control_var,
+            predict_state_difference=predict_state_difference,
+            add_noise=add_noise,
         )
