@@ -49,10 +49,13 @@ def build_mode_chance_constraints_fn(
             # state_means[1:, :], control_means, state_vars[1:, :], control_vars
         )
         mode_prob_flat = tf.reshape(mode_prob, [-1])
+        tf.print("mode_prob_flat")
+        tf.print(mode_prob_flat)
         if controls_flat.shape[0] == horizon * control_dim * 2:
             var_probs = tf.ones(mode_prob_flat.shape, dtype=default_float())
             return tf.concat([mode_prob_flat, var_probs], axis=0)
-        return tf.reshape(mode_prob_flat, [-1])
+        # return tf.reshape(mode_prob_flat, [-1])
+        return mode_prob_flat
 
     if compile:
         return tf.function(mode_chance_constraints)
