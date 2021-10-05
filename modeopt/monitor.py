@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
 from mogpe.helpers import Plotter2D
+from mogpe.helpers.quadcopter_plotter import QuadcopterPlotter
 from gpflow.monitor import (
     ModelToTensorBoard,
     Monitor,
@@ -19,7 +20,8 @@ class ModeOptPlotter:
     def __init__(
         self,
         mode_opt: ModeOpt,
-        mogpe_plotter: Plotter2D,
+        # mogpe_plotter: Plotter2D,
+        mogpe_plotter: QuadcopterPlotter,
     ):
         self.mogpe_plotter = mogpe_plotter
         self.mode_opt = mode_opt
@@ -59,19 +61,21 @@ class ModeOptPlotter:
         return self.plot_trajectory_over_gating_gps(fig, axs, trajectory=state_means)
 
     def plot_trajectory_over_gating_gps(self, fig, axs, trajectory):
-        cbars = self.mogpe_plotter.plot_gating_gps(fig, axs)
+        # cbars = self.mogpe_plotter.plot_gating_gps(fig, axs)
+        cbars = self.mogpe_plotter.plot_gating_gps_given_fig_axs(fig, axs)
         self.plot_trajectory_over_axs(fig, axs, trajectory)
         return cbars
 
     def plot_trajectory_over_mode_prob(self, fig, axs, trajectory):
-        cbars = self.mogpe_plotter.plot_gating_network(fig, axs)
+        # cbars = self.mogpe_plotter.plot_gating_network(fig, axs)
+        cbars = self.mogpe_plotter.plot_mixing_probs_given_fig_axs(fig, axs)
         self.plot_trajectory_over_axs(fig, axs, trajectory)
         return cbars
 
-    def plot_trajectory_over_axs(self, fig, axs, trajectory):
-        for ax in axs:
-            ax.scatter(trajectory[:, 0], trajectory[:, 1], marker="x", color="k")
-            # ax.scatter(trajectory[:, 0], trajectory[:, 1])
+    def plot_trajectory_over_axs(self, fig, axs, trajectory, color="k"):
+        for ax in axs.flat:
+            # ax.scatter(trajectory[:, 0], trajectory[:, 1], marker=".", color=color)
+            ax.plot(trajectory[:, 0], trajectory[:, 1], marker=".", color=color)
             ax.scatter(
                 self.start_state[0, 0], self.start_state[0, 1], marker="x", color="k"
             )
@@ -92,40 +96,48 @@ class ModeOptPlotter:
             )
 
     def tf_monitor_task_group(self, log_dir, slow_tasks_period=500):
+        # figsize = self.mogpe_plotter.figsize
+        figsize = (6, 4)
         num_experts = self.mogpe_plotter.num_experts
         image_task_dynamics_traj = ImageWithCbarToTensorBoard(
             log_dir,
             self.plot_dynamics_rollout_over_gating_gps,
             name="dynamics_rollout_over_dynamics_gp",
-            fig_kw={"figsize": (8, 2)},
-            subplots_kw={"nrows": 1, "ncols": 2},
+            fig_kw={"figsize": (figsize[0], figsize[1] / 4)},
+            # subplots_kw={"nrows": 1, "ncols": 2},
             # subplots_kw={"nrows": 4, "ncols": 2},
+            subplots_kw={"nrows": num_experts, "ncols": 2},
         )
         image_task_env_traj = ImageWithCbarToTensorBoard(
             log_dir,
             self.plot_env_rollout_over_gating_gps,
             name="env_rollout_over_dynamics_gp",
-            fig_kw={"figsize": (8, 2)},
+            fig_kw={"figsize": (figsize[0], figsize[1] / 2)},
             # subplots_kw={"nrows": 2, "ncols": 2},
-            subplots_kw={"nrows": 1, "ncols": 2},
+            # subplots_kw={"nrows": 1, "ncols": 2},
+            subplots_kw={"nrows": num_experts, "ncols": 2},
         )
         image_task_dynamics_traj_prob = ImageWithCbarToTensorBoard(
             log_dir,
             self.plot_dynamics_rollout_over_mode_prob,
             name="dynamics_rollout_over_mode_prob",
+            fig_kw={"figsize": (figsize[0], figsize[1] / 4)},
             # fig_kw={"figsize": (10, 4)},
             # subplots_kw={"nrows": 1, "ncols": 2},
             # subplots_kw={"nrows": 2, "ncols": 1},
-            subplots_kw={"nrows": num_experts, "ncols": 1},
+            # subplots_kw={"nrows": num_experts, "ncols": 1},
+            subplots_kw={"nrows": 1, "ncols": num_experts},
         )
         image_task_env_traj_prob = ImageWithCbarToTensorBoard(
             log_dir,
             self.plot_env_rollout_over_mode_prob,
             name="env_rollout_over_mode_prob",
+            fig_kw={"figsize": (figsize[0], figsize[1] / 4)},
             # fig_kw={"figsize": (10, 4)},
             # subplots_kw={"nrows": 1, "ncols": 2},
             # subplots_kw={"nrows": 2, "ncols": 1},
-            subplots_kw={"nrows": num_experts, "ncols": 1},
+            # subplots_kw={"nrows": num_experts, "ncols": 1},
+            subplots_kw={"nrows": 1, "ncols": num_experts},
         )
         image_tasks = [
             image_task_dynamics_traj,
@@ -165,7 +177,13 @@ def init_ModeOpt_monitor(
     slow_tasks_period: int = 500,
 ):
     test_inputs = create_test_inputs(*mode_opt.dataset)
-    mogpe_plotter = Plotter2D(
+    # mogpe_plotter = Plotter2D(
+    #     model=mode_opt.dynamics.mosvgpe,
+    #     X=mode_opt.dataset[0],
+    #     Y=mode_opt.dataset[1],
+    #     test_inputs=test_inputs,
+    # )
+    mogpe_plotter = QuadcopterPlotter(
         model=mode_opt.dynamics.mosvgpe,
         X=mode_opt.dataset[0],
         Y=mode_opt.dataset[1],
@@ -184,4 +202,6 @@ def init_ModeOpt_monitor(
     elbo_task = ScalarToTensorBoard(log_dir, training_loss_closure, "negative_elbo")
     policy_task = ModelToTensorBoard(log_dir, mode_opt.policy)
     fast_tasks = MonitorTaskGroup([policy_task, elbo_task], period=fast_tasks_period)
+    # fast_tasks = MonitorTaskGroup([policy_task], period=fast_tasks_period)
     return Monitor(fast_tasks, slow_tasks)
+    # return Monitor(fast_tasks)
