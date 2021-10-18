@@ -14,6 +14,7 @@ matplotlib = "^3.2.1"
 SciencePlots = "^1.0.8"
 gin = "^0.1.6"
 geoflow = {path = "../geoflow", develop=true}  # https://github.com/aidanscannell/geoflow
+sklearn = "^0.0"
 
 [tool.poetry.dev-dependencies]
 black = "^20.8b1"
