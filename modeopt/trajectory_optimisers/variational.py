@@ -110,7 +110,6 @@ class VariationalTrajectoryOptimiser(TrajectoryOptimiser):
         constraints=[],
     ):
         """Optimise trajectories starting from an initial state"""
-        gpf.set_trainable(self.dynamics, False)
         if training_spec.monitor and training_spec.manager:
 
             def callback(step, variables, values):
@@ -138,6 +137,9 @@ class VariationalTrajectoryOptimiser(TrajectoryOptimiser):
         optimisation_result = self.optimiser.minimize(
             self._training_loss,
             self.policy.trainable_variables,
+            # (tf.Variable(self.policy.controls, dtype=default_float())),
+            # (self.policy.means.variable,self.policy.vars.variable),
+            # self.policy.trainable_parameters,
             method=training_spec.method,
             constraints=constraints,
             step_callback=callback,
@@ -235,59 +237,61 @@ class ModeVariationalTrajectoryOptimiser(VariationalTrajectoryOptimiser):
             state_means[:-1, :], control_means, state_vars[:-1, :], control_vars
         )
 
-        # manifold = GPManifold(self.dynamics.gating_gp, covariance_weight=0.05)
-        manifold = GPManifold(self.dynamics.gating_gp, covariance_weight=10.0)
-        input_mean = tf.concat([state_means[:-1, :], control_means], -1)
-        input_var = tf.concat([state_vars[:-1, :], control_vars], -1)
-        velocities = input_mean[1:, :] - input_mean[:-1, :]
-        velocities_var = input_var[1:, :]
-        # velocities = control_means
-        # riemannian_energy = manifold.energy(input_mean[1:, :], velocities) * 0.0001
-        riemannian_energy = manifold.energy(input_mean[1:, :], velocities)
+        # # manifold = GPManifold(self.dynamics.gating_gp, covariance_weight=0.05)
+        # manifold = GPManifold(self.dynamics.gating_gp, covariance_weight=10.0)
+        # input_mean = tf.concat([state_means[:-1, :], control_means], -1)
+        # input_var = tf.concat([state_vars[:-1, :], control_vars], -1)
+        # velocities = input_mean[1:, :] - input_mean[:-1, :]
+        # velocities_var = input_var[1:, :]
+        # # velocities = control_means
+        # # riemannian_energy = manifold.energy(input_mean[1:, :], velocities) * 0.0001
+        # riemannian_energy = manifold.energy(input_mean[1:, :], velocities)
+        # tf.print("riemannian_energy form manifold")
+        # tf.print(riemannian_energy)
 
+        # # riemannian_metric = manifold.metric(input_mean[1:, :]) * 0.0001
         # riemannian_metric = manifold.metric(input_mean[1:, :]) * 0.0001
-        riemannian_metric = manifold.metric(input_mean[1:, :]) * 0.0001
-        # riemannian_metric = manifold.metric(input_mean[1:, :]) * 0.01
-        riemannian_energy = tf.reduce_sum(
-            quadratic_cost_fn(
-                vector=velocities,
-                weight_matrix=riemannian_metric,
-                vector_var=None,
-            )
-        )
+        # # riemannian_metric = manifold.metric(input_mean[1:, :]) * 0.01
         # riemannian_energy = tf.reduce_sum(
         #     quadratic_cost_fn(
         #         vector=velocities,
         #         weight_matrix=riemannian_metric,
-        #         vector_var=velocities_var,
+        #         vector_var=None,
         #     )
         # )
-        tf.print("riemannian_energy 1")
-        tf.print(riemannian_energy)
+        # # riemannian_energy = tf.reduce_sum(
+        # #     quadratic_cost_fn(
+        # #         vector=velocities,
+        # #         weight_matrix=riemannian_metric,
+        # #         vector_var=velocities_var,
+        # #     )
+        # # )
+        # tf.print("riemannian_energy quadratic")
+        # tf.print(riemannian_energy)
 
-        riemannian_metric = manifold.metric(input_mean) * 0.0001
-        riemannian_metric_trace = tf.linalg.trace(riemannian_metric)
-        # tf.print("riemannian_metric")
-        # tf.print(riemannian_metric)
-        # riemannian_metric_trace = tf.reduce_sum(riemannian_metric_trace)
-        # euclidean_energy = tf.linalg.matmul(velocities, velocities, transpose_a=True)
-        # print("euclidean_energy")
-        # print(euclidean_energy.shape)
-        # euclidean_energy = tf.reduce_sum(euclidean_energy)
-        # print("riemannian_energy")
-        # print(riemannian_energy)
-        # tf.print("euclidean_energy")
-        # tf.print(euclidean_energy)
-        # energy_ratio = riemannian_energy / euclidean_energy
-        # tf.print("energy_ratio")
-        # tf.print(energy_ratio)
+        # riemannian_metric = manifold.metric(input_mean) * 0.0001
+        # riemannian_metric_trace = tf.linalg.trace(riemannian_metric)
+        # # tf.print("riemannian_metric")
+        # # tf.print(riemannian_metric)
+        # # riemannian_metric_trace = tf.reduce_sum(riemannian_metric_trace)
+        # # euclidean_energy = tf.linalg.matmul(velocities, velocities, transpose_a=True)
+        # # print("euclidean_energy")
+        # # print(euclidean_energy.shape)
+        # # euclidean_energy = tf.reduce_sum(euclidean_energy)
+        # # print("riemannian_energy")
+        # # print(riemannian_energy)
+        # # tf.print("euclidean_energy")
+        # # tf.print(euclidean_energy)
+        # # energy_ratio = riemannian_energy / euclidean_energy
+        # # tf.print("energy_ratio")
+        # # tf.print(energy_ratio)
 
         elbo = (
             # energy_ratio
-            -riemannian_energy
+            # -riemannian_energy
             # -riemannian_metric_trace
             # -euclidean_energy
-            - expected_terminal_cost
+            -expected_terminal_cost
             - tf.reduce_sum(expected_integral_costs)
             + entropy
         )
