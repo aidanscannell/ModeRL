@@ -1,31 +1,33 @@
 #!/usr/bin/env python3
 from typing import Optional
 
+import gin
 import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
 from gpflow import default_float
-from sklearn.model_selection import KFold, train_test_split
+from sklearn.model_selection import train_test_split
 
 
+@gin.configurable
 def load_vcpm_dataset(
     filename: str,
     trim_coords: Optional[list] = None,  # [x1_low, x1_high, x2]
-    num_inputs: Optional[int] = None,
-    num_outputs: Optional[int] = None,
+    standardise: bool = True,
     plot: Optional[bool] = False,
-    standardise: Optional[bool] = True,
-    test_split_size=0.0,
+    test_split_size: float = 0.0,
 ):
     data = np.load(filename)
-    if num_inputs is not None:
-        X = data["x"][:, 0:num_inputs]
-    else:
-        X = data["x"]
-    if num_outputs is not None:
-        Y = data["y"][:, 0:num_outputs]
-    else:
-        Y = data["y"]
+    # if num_inputs is not None:
+    #     X = data["x"][:, 0:num_inputs]
+    # else:
+    #     X = data["x"]
+    # if num_outputs is not None:
+    #     Y = data["y"][:, 0:num_outputs]
+    # else:
+    #     Y = data["y"]
+    X = data["x"]
+    Y = data["y"]
     print("Input data shape: ", X.shape)
     print("Output data shape: ", Y.shape)
 
@@ -90,4 +92,4 @@ def load_vcpm_dataset(
         print("Test output data shape: ", Y_test.shape)
         return train_data, test_data
     else:
-        return train_data
+        return train_data, None
