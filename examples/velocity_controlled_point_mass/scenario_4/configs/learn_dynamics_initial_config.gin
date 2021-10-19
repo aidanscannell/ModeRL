@@ -1,0 +1,36 @@
+import gin.tf
+
+# Environment config
+init_mode_opt.env_name = "velocity-controlled-point-mass/scenario-4"
+init_mode_opt.delta_time = 0.05
+
+# Data config
+load_vcpm_dataset.filename = "./scenario_4/data/npz/initial_dataset_443_samples_42_seed.npz"
+load_vcpm_dataset.test_split_size = 0.2
+load_vcpm_dataset.trim_coords = None
+# load_vcpm_dataset.plot = True
+
+# ModeOpt config
+init_mode_opt.mogpe_config_file = "./scenario_4/configs/initial_mogpe_config.toml"
+init_mode_opt.desired_mode = 0
+init_mode_opt.start_state = [-2.5, -1.8]
+init_mode_opt.target_state = [2.5, 2.0]
+init_mode_opt.policy = "DeterministicPolicy"
+init_mode_opt.mogpe_ckpt_dir = None
+init_mode_opt.horizon = 10
+init_mode_opt.mode_chance_constraint_lower = None  # set as None to turn off mode constraints
+# init_mode_opt.nominal_dynamics = @velocity_controlled_point_mass_dynamics
+
+# Run ModeOpt.optimise_dynamics
+run_mode_opt_learn_dynamics.log_dir = "./scenario_4/logs/learn_dynamics/initial_dataset"
+run_mode_opt_learn_dynamics.num_epochs = 15000
+run_mode_opt_learn_dynamics.batch_size = 32
+# run_mode_opt_learn_dynamics.learning_rate = 0.005
+run_mode_opt_learn_dynamics.learning_rate = 0.01
+# run_mode_opt_learn_dynamics.learning_rate = 0.1
+run_mode_opt_learn_dynamics.logging_epoch_freq = 50
+run_mode_opt_learn_dynamics.fast_tasks_period = 50
+run_mode_opt_learn_dynamics.slow_tasks_period = 200
+run_mode_opt_learn_dynamics.num_ckpts = 5
+run_mode_opt_learn_dynamics.compile_loss_fn = True  # whether to wrap loss function in tf.function
+

@@ -1,27 +1,6 @@
-# Data set config
-# data_file = "./quadcopter/data/quadcopter_data_step_40_direction_down.npz"
-data_file = "./data/npz/initial_dataset_443_samples_42_seed.npz"
-# trim_coords = [[-1.0, -3.0], [1.0, -1.0]]
-# trim_coords = [[-1.5, -3.0], [1.5, 0.0]]
-trim_coords = [[-2.0, -3.0], [1.5, 0.0]]
-standardise = true  # true/false whether to standardise data
-# plot_dataset = false # true/false whether to plot data set with quiver
-plot_dataset = true # true/false whether to plot data set with quiver
-test_split_size = 0.3
-random_seed = 42
-
-epochs = 20000
-# batch_size = 256
-batch_size = 32
-learning_rate = 0.01
 num_samples = 1 # number of samples to approximate variational expectation with
 num_experts = 2
-fast_tasks_period = 10 # write loss and model params to tensorboard if epoch_num % fast_tasks_period == 0
-slow_tasks_period = 500 # plot model (images) to tensorboard if epoch_num % slow_tasks_period == 0
-logging_epoch_freq = 100 # print loss (ELBO) if epoch_num % logging_epoch_freq == 0
-log_dir = "./logs/initial-dataset/"  # for tensorboard log
-num_ckpts = 5 # max number of checkpoints to store (model is saved in log_dir @ logging_epoch_freq). Remove this line to disable checkpointing
-bound = "tight"
+bound = "tight" # which ELBO to use, either "tight" or "further", default is "further"
 
 [[experts]]
     name = "expert_1" # specify a name
