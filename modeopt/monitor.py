@@ -191,17 +191,16 @@ def init_ModeOpt_monitor(
     )
     mode_opt_plotter = ModeOptPlotter(mode_opt, mogpe_plotter)
 
-    training_loss_closure = mode_opt.trajectory_optimiser.build_training_loss(
-        mode_opt.start_state
-    )
+    # training_loss_closure = mode_opt.trajectory_optimiser.build_training_loss(
+    #     mode_opt.start_state
+    # )
 
     image_tasks = mode_opt_plotter.tf_monitor_task_group(
         log_dir, slow_tasks_period=slow_tasks_period
     )
     slow_tasks = MonitorTaskGroup(image_tasks, period=slow_tasks_period)
-    elbo_task = ScalarToTensorBoard(log_dir, training_loss_closure, "negative_elbo")
+    # elbo_task = ScalarToTensorBoard(log_dir, training_loss_closure, "negative_elbo")
     policy_task = ModelToTensorBoard(log_dir, mode_opt.policy)
-    fast_tasks = MonitorTaskGroup([policy_task, elbo_task], period=fast_tasks_period)
-    # fast_tasks = MonitorTaskGroup([policy_task], period=fast_tasks_period)
+    # fast_tasks = MonitorTaskGroup([policy_task, elbo_task], period=fast_tasks_period)
+    fast_tasks = MonitorTaskGroup([policy_task], period=fast_tasks_period)
     return Monitor(fast_tasks, slow_tasks)
-    # return Monitor(fast_tasks)
