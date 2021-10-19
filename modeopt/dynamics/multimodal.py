@@ -17,7 +17,11 @@ from modeopt.dynamics.conditionals import (
     svgp_covariance_conditional,
     uncertain_conditional,
 )
+from modeopt.dynamics.gp import SVGPDynamics
+from modeopt.dynamics.utils import create_tf_dataset
 from mogpe.mixture_of_experts import MixtureOfSVGPExperts
+from mogpe.training import MixtureOfSVGPExperts_from_toml
+from mogpe.training.utils import update_model_from_checkpoint
 from tensor_annotations import axes
 from tensor_annotations.axes import Batch
 
@@ -27,6 +31,33 @@ StateDim = NewType("StateDim", axes.Axis)
 ControlDim = NewType("ControlDim", axes.Axis)
 StateControlDim = NewType("StateControlDim", axes.Axis)
 One = NewType("One", axes.Axis)
+
+
+@gin.configurable
+def init_ModeOptDynamics_from_mogpe_ckpt(
+    mogpe_config_file: str,
+    dataset: Tuple,
+    mogpe_ckpt_dir: str = None,
+    nominal_dynamics: Callable = None,
+    desired_mode: int = 0,
+    optimiser: tf.optimizers.Optimizer = tf.optimizers.Adam(),
+):
+    X, Y = dataset
+    state_dim = Y.shape[1]
+    control_dim = X.shape[1] - state_dim
+    model = MixtureOfSVGPExperts_from_toml(mogpe_config_file, dataset=(X, Y))
+
+    if mogpe_ckpt_dir is not None:
+        model = update_model_from_checkpoint(model, mogpe_ckpt_dir)
+    dynamics = ModeOptDynamics(
+        mosvgpe=model,
+        desired_mode=desired_mode,
+        state_dim=state_dim,
+        control_dim=control_dim,
+        nominal_dynamics=nominal_dynamics,
+        optimiser=optimiser,
+    )
+    return dynamics
 
 
 @dataclass
