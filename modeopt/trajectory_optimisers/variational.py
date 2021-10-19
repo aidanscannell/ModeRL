@@ -6,6 +6,7 @@ from typing import Callable
 import gpflow as gpf
 import tensor_annotations.tensorflow as ttf
 import tensorflow as tf
+from gpflow import default_float
 from modeopt.dynamics import GPDynamics
 from modeopt.cost_functions import expected_quadratic_costs, quadratic_cost_fn
 from modeopt.policies import (
@@ -35,6 +36,9 @@ class VariationalTrajectoryOptimiserTrainingSpec:
     disp: bool = True
     monitor: gpf.monitor.Monitor = None
     manager: tf.train.CheckpointManager = None
+    Q: ttf.Tensor2[StateDim, StateDim] = None
+    R: ttf.Tensor2[ControlDim, ControlDim] = None
+    Q_terminal: ttf.Tensor2[StateDim, StateDim] = None
 
 
 @dataclass
@@ -52,6 +56,11 @@ class ModeVariationalTrajectoryOptimiserTrainingSpec:
     compile_loss_fn: bool = True  # loss function in tf.function?
     monitor: gpf.monitor.Monitor = None
     manager: tf.train.CheckpointManager = None
+    Q: ttf.Tensor2[StateDim, StateDim] = None
+    R: ttf.Tensor2[ControlDim, ControlDim] = None
+    Q_terminal: ttf.Tensor2[StateDim, StateDim] = None
+    riemannian_metric_cost_weight: default_float() = 1.0
+    riemannian_metric_covariance_weight: default_float() = 1.0
 
 
 class VariationalTrajectoryOptimiser(TrajectoryOptimiser):
