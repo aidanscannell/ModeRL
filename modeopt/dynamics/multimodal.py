@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
-import copy
 from dataclasses import dataclass
-from typing import Callable, NewType, Optional
+from typing import Callable, NewType, Tuple
 
 import gin
 import gpflow as gpf
@@ -9,9 +8,7 @@ import tensor_annotations.tensorflow as ttf
 import tensorflow as tf
 from gpflow import Module, default_float
 from gpflow.conditionals import base_conditional
-
-# from gpflow.conditionals import uncertain_conditional
-from modeopt.dynamics import SVGPDynamics
+from gpflow.mean_functions import MeanFunction
 from modeopt.dynamics.conditionals import (
     FakeInducingPoints,
     svgp_covariance_conditional,
@@ -24,8 +21,6 @@ from mogpe.training import MixtureOfSVGPExperts_from_toml
 from mogpe.training.utils import update_model_from_checkpoint
 from tensor_annotations import axes
 from tensor_annotations.axes import Batch
-
-# from modeopt.dynamics.utils import create_tf_dataset
 
 StateDim = NewType("StateDim", axes.Axis)
 ControlDim = NewType("ControlDim", axes.Axis)
@@ -69,7 +64,9 @@ class ModeOptDynamicsTrainingSpec:
 
     num_epochs: int
     batch_size: int
-    logging_epoch_freq: int
+    learning_rate: float = 0.01
+    logging_epoch_freq: int = 100
+    compile_loss_fn: bool = True  # loss function in tf.function?
     monitor: gpf.monitor.Monitor = None
     manager: tf.train.CheckpointManager = None
 
@@ -82,7 +79,7 @@ class ModeOptDynamics(Module):
         state_dim: int,
         control_dim: int,
         nominal_dynamics: Callable = None,
-        # optimizer: tf.optimizers.Optimizer = tf.optimizers.Adam(),
+        optimiser: tf.optimizers.Optimizer = tf.optimizers.Adam(),
     ):
         self.mosvgpe = mosvgpe
         self._nominal_dynamics = nominal_dynamics
@@ -92,7 +89,19 @@ class ModeOptDynamics(Module):
 
         self._gating_gp = self.mosvgpe.gating_network
 
-        # self.optimizer = optimizer
+        self.optimiser = optimiser
+        self._training_loss = None
+
+        # TODO minus nominal dynamics from output
+        class NominalDynamicsMeanFunction(MeanFunction):
+            def __call__(self, Xnew):
+                return nominal_dynamics(
+                    state_mean=Xnew[:, 0:state_dim],
+                    control_mean=Xnew[:, state_dim:],
+                )
+
+        for expert in self.mosvgpe.experts.experts_list:
+            expert.mean_function += NominalDynamicsMeanFunction()
 
     @property
     def desired_mode(self):
@@ -112,8 +121,11 @@ class ModeOptDynamics(Module):
         self._desied_mode = desired_mode
         self._dynamics_gp = self.mosvgpe.experts.experts_list[desired_mode]
         # self._desired_mode_dynamics = SVGPDynamics(dynamics_gp)
+        # TODO nominal_dynamics is no longer needed in SVGPDynamics as now in MeanFunction
         self._desired_mode_dynamics = SVGPDynamics(
-            self._dynamics_gp, nominal_dynamics=self._nominal_dynamics
+            self._dynamics_gp,
+            nominal_dynamics=None
+            # self._dynamics_gp, nominal_dynamics=self._nominal_dynamics
         )
 
     def desired_mode_dynamics(
@@ -152,6 +164,62 @@ class ModeOptDynamics(Module):
             predict_state_difference=predict_state_difference,
             add_noise=add_noise,
         )
+
+    def build_training_loss(
+        self,
+        train_dataset,
+        compile: bool = True,
+    ):
+        self._training_loss = self.mosvgpe.training_loss_closure(
+            iter(train_dataset), compile=compile
+        )
+        return self._training_loss
+
+    def training_loss(self):
+        return self._training_loss
+
+    def _train(
+        self,
+        dataset: Tuple,
+        # dataset: Tuple(
+        #     ttf.Tensor2[Batch, StateControlDim], ttf.Tensor2[Batch, StateDim]
+        # ),
+        training_spec: ModeOptDynamicsTrainingSpec,
+    ):
+        """Train the transition_model given the trajectories and a training_spec
+
+        :param training_spec: training specifications with `batch_size`, `epochs`, `callbacks` etc.
+        """
+        self.optimiser = tf.optimizers.Adam(learning_rate=training_spec.learning_rate)
+        # self.optimiser.learning_rate = training_spec.learning_rate
+        train_dataset, num_batches_per_epoch = create_tf_dataset(
+            dataset=dataset, batch_size=training_spec.batch_size
+        )
+
+        if self._training_loss is None:
+            self._training_loss = self.build_training_loss(
+                train_dataset, compile=training_spec.compile_loss_fn
+            )
+        # training_loss = self.mosvgpe.training_loss_closure(iter(train_dataset))
+
+        @tf.function
+        def optimisation_step():
+            self.optimiser.minimize(
+                self._training_loss,
+                self.mosvgpe.trainable_variables
+                # self.policy.trainable_parameters
+            )
+
+        for epoch in range(training_spec.num_epochs):
+            for _ in range(num_batches_per_epoch):
+                optimisation_step()
+            if training_spec.monitor is not None:
+                training_spec.monitor(epoch)
+            epoch_id = epoch + 1
+            if epoch_id % training_spec.logging_epoch_freq == 0:
+                tf.print(f"Epoch {epoch_id}: ELBO (train) {self._training_loss()}")
+                if training_spec.manager is not None:
+                    training_spec.manager.save()
 
     def predict_mode_probability(
         self,
@@ -448,165 +516,3 @@ class ModeOptDynamics(Module):
         # self._gating_gp.q_mu = q_mu[:num_inducing, :]
         # self._gating_gp.q_sqrt = q_sqrt[:, :num_inducing, :num_inducing]
         return h_means, h_vars
-
-    # def _train(
-    #     self,
-    #     state_control_inputs: ttf.Tensor2[Batch, StateControlDim],
-    #     delta_state_outputs: ttf.Tensor2[Batch, StateDim],
-    #     training_spec: ModeOptDynamicsTrainingSpec,
-    # ):
-    #     """Train the transition_model given the trajectories and a training_spec
-
-    #     :param training_spec: training specifications with `batch_size`, `epochs`, `callbacks` etc.
-    #     """
-
-    #     training_loss, num_batches_per_epoch = self._build_training_loss(
-    #         state_control_inputs, delta_state_outputs, training_spec=training_spec
-    #     )
-    #     # TODO make mosvgpe trainable?
-
-    #     @tf.function
-    #     def tf_optimization_step():
-    #         return self.optimizer.minimize(
-    #             training_loss, self.mosvgpe.trainable_variables
-    #         )
-
-    #     for epoch in range(training_spec.num_epochs):
-    #         for _ in range(num_batches_per_epoch):
-    #             tf_optimization_step()
-    #         if self.monitor is not None:
-    #             training_spec.monitor(epoch)
-    #         epoch_id = epoch + 1
-    #         if epoch_id % training_spec.logging_epoch_freq == 0:
-    #             tf.print(f"Epoch {epoch_id}: ELBO (train) {training_loss()}")
-    #             if training_spec.manager is not None:
-    #                 training_spec.manager.save()
-
-    # def _build_training_loss(
-    #     self,
-    #     state_control_inputs: ttf.Tensor2[Batch, StateControlDim],
-    #     delta_state_outputs: ttf.Tensor2[Batch, StateDim],
-    #     training_spec: ModeOptDynamicsTrainingSpec,
-    # ) -> Callable:
-    #     """Creates a tf dataset that can be iterated and build training loss closure"""
-    #     train_dataset, num_batches_per_epoch = create_tf_dataset(
-    #         dataset=(state_control_inputs, delta_state_outputs),
-    #         batch_size=training_spec.batch_size,
-    #     )
-    #     training_loss = model.training_loss_closure(iter(train_dataset))
-
-    #     num_train_data = state_control_inputs.shape[0]
-    #     prefetch_size = tf.data.experimental.AUTOTUNE
-    #     shuffle_buffer_size = num_train_data // 2
-    #     num_batches_per_epoch = num_train_data // training_spec.batch_size
-
-    #     train_dataset = (
-    #         train_dataset.repeat()
-    #         .prefetch(prefetch_size)
-    #         .shuffle(buffer_size=shuffle_buffer_size)
-    #         .batch(training_spec.training_batch_size)
-    #     )
-
-    #     print(f"prefetch_size={prefetch_size}")
-    #     print(f"shuffle_buffer_size={shuffle_buffer_size}")
-    #     print(f"num_batches_per_epoch={num_batches_per_epoch}")
-
-    #     training_loss = self._model.training_loss_closure(iter(train_dataset))
-    #     return training_loss, num_batches_per_epoch
-
-    # def _build_training_loss(
-    #     self,
-    #     latent_trajectories: Trajectory,
-    #     training_spec: TransitionModelTrainingSpec,
-    # ) -> Callable:
-    #     transition = extract_transitions_from_trajectories(
-    #         latent_trajectories,
-    #         self.latent_observation_space_spec,
-    #         self.action_space_spec,
-    #         self.predict_state_difference,
-    #     )
-
-    #     train_dataset = transitions_to_tf_dataset(
-    #         transition, predict_state_difference=self.predict_state_difference
-    #     )
-    #     num_train_data = train_dataset[0].shape[0]
-
-    #     prefetch_size = tf.data.experimental.AUTOTUNE
-    #     shuffle_buffer_size = num_train_data // 2
-    #     num_batches_per_epoch = num_train_data // training_spec.training_batch_size
-
-    #     train_dataset = (
-    #         train_dataset.repeat()
-    #         .prefetch(prefetch_size)
-    #         .shuffle(buffer_size=shuffle_buffer_size)
-    #         .batch(training_spec.training_batch_size)
-    #     )
-
-    #     print(f"prefetch_size={prefetch_size}")
-    #     print(f"shuffle_buffer_size={shuffle_buffer_size}")
-    #     print(f"num_batches_per_epoch={num_batches_per_epoch}")
-
-    #     training_loss = self._model.training_loss_closure(iter(train_dataset))
-    #     return training_loss, num_batches_per_epoch
-
-    # def _train(
-    #     self,
-    #     latent_trajectories: Trajectory,
-    #     training_spec: TransitionModelTrainingSpec,
-    # ):
-    #     """Train the transition_model given the trajectories and a training_spec
-
-    #     :param latent_trajectories: Trajectories of latent states, actions, rewards and next latent
-    #         states.
-    #     :param training_spec: training specifications with `batch_size`, `epochs`, `callbacks` etc.
-    #     """
-
-    #     training_loss, num_batches_per_epoch = self._build_training_loss(
-    #         latent_trajectories, training_spec
-    #     )
-
-    #     @tf.function
-    #     def tf_optimization_step():
-    #         return self.optimizer.minimize(
-    #             training_loss, self._model.trainable_variables
-    #         )
-
-    #     for epoch in range(training_spec.num_epochs):
-    #         for _ in range(num_batches_per_epoch):
-    #             tf_optimization_step()
-    #         if self.monitor is not None:
-    #             self.monitor(epoch)
-    #         epoch_id = epoch + 1
-    #         if epoch_id % training_spec.logging_epoch_freq == 0:
-    #             tf.print(f"Epoch {epoch_id}: ELBO (train) {training_loss()}")
-    #             if self.manager is not None:
-    #                 self.manager.save()
-
-    # def unwhiten(q_mu, q_sqrt, Z):
-    #     Kzz = self.gating_gp.kernel(Z, Z)
-    #     Lz = tf.linalg.cholesky(Kzz)
-    #     u_tilde = tf.linalg.triangular_solve(Lz, q_mu, lower=True)
-    #     u = u_tilde + self.gating_gp.mean_function(Z)
-    #     S_tilde = tf.linalg.triangular_solve(Lz, q_sqrt, lower=True)
-    #     tf.print("S_tilde")
-    #     tf.print(S_tilde.shape)
-    #     S_tilde = S_tilde @ tf.transpose(S_tilde)
-    #     Lu = tf.linalg.cholesky(S_tilde)
-    #     # S_tilde = tf.linalg.triangular_solve(Lz, tf.transpose(S_tilde), lower=True)
-    #     # tf.print(S_tilde.shape)
-    #     # tf.print(S_tilde)
-    #     # S_tilde = tf.transpose(S_tilde)
-    #     # tf.print(S_tilde.shape)
-    #     # tf.print(S_tilde)
-    #     return u, Lu
-
-    # def whiten(u, Lu, Z):
-    #     Kzz = self.gating_gp.kernel(Z, Z)
-    #     Lz = tf.linalg.cholesky(Kzz)
-    #     print("Lz")
-    #     print(Lz.shape)
-    #     u_tilde = u - self.gating_gp.mean_function(Z)
-    #     print("u_tilde.shape")
-    #     print(u_tilde.shape)
-    #     u_hat = Lz @ u_tilde
-    #     return u_hat
