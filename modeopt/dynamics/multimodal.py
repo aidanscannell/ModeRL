@@ -103,6 +103,19 @@ class ModeOptDynamics(Module):
         for expert in self.mosvgpe.experts.experts_list:
             expert.mean_function += NominalDynamicsMeanFunction()
 
+        # Remember what parameters are trainable
+        self.initial_trainable_parameters = self.mosvgpe.trainable_parameters
+
+    def set_trainable(self, trainable_flag: bool = True, trainable_variables=None):
+        if trainable_variables is None:
+            trainable_variables = self.initial_trainable_parameters
+        if trainable_flag:
+            for variable in trainable_variables:
+                gpf.set_trainable(variable, True)
+        else:
+            for variable in trainable_variables:
+                gpf.set_trainable(variable, False)
+
     @property
     def desired_mode(self):
         return self._desied_mode

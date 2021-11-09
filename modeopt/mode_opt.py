@@ -245,7 +245,7 @@ class ModeOpt(Module):
 
     def optimise_dynamics(self, dataset, training_spec: ModeOptDynamicsTrainingSpec):
         # TODO make mosvgpe trainable?
-        gpf.set_trainable(self.dynamics, True)
+        self.dynamics.set_trainable(True)
         for param in self.policy.trainable_parameters:
             gpf.set_trainable(param, False)
         # gpf.set_trainable(self.policy, False)
