@@ -31,6 +31,8 @@ from modeopt.trajectory_optimisers import (
     ExplorativeTrajectoryOptimiserTrainingSpec,
     ModeVariationalTrajectoryOptimiser,
     ModeVariationalTrajectoryOptimiserTrainingSpec,
+    VariationalTrajectoryOptimiser,
+    VariationalTrajectoryOptimiserTrainingSpec,
 )
 
 StateDim = NewType("StateDim", axes.Axis)
@@ -122,6 +124,7 @@ class ModeOpt(Module):
         self,
         start_state,
         training_spec: Union[
+            VariationalTrajectoryOptimiserTrainingSpec,
             ModeVariationalTrajectoryOptimiserTrainingSpec,
             ExplorativeTrajectoryOptimiserTrainingSpec,
         ],
@@ -132,7 +135,10 @@ class ModeOpt(Module):
             Q=training_spec.Q_terminal,
             target_state=self.target_state,
         )
-        if isinstance(training_spec, ModeVariationalTrajectoryOptimiserTrainingSpec):
+        # if isinstance(training_spec, ModeVariationalTrajectoryOptimiserTrainingSpec):
+        if isinstance(
+            training_spec, ModeVariationalTrajectoryOptimiserTrainingSpec
+        ) or isinstance(training_spec, VariationalTrajectoryOptimiserTrainingSpec):
             # Init quadratic cost functions for state, control and Riemannian energy
             if training_spec.riemannian_metric_cost_weight is None:
                 cost_fn = partial(
@@ -149,12 +155,22 @@ class ModeOpt(Module):
                     riemannian_metric_cost_weight=training_spec.riemannian_metric_cost_weight,
                     riemannian_metric_covariance_weight=training_spec.riemannian_metric_covariance_weight,
                 )
-            trajectory_optimiser = ModeVariationalTrajectoryOptimiser(
-                self.policy,
-                self.dynamics,
-                cost_fn=cost_fn,
-                terminal_cost_fn=self.terminal_cost_fn,
-            )
+            if isinstance(training_spec, VariationalTrajectoryOptimiserTrainingSpec):
+                trajectory_optimiser = VariationalTrajectoryOptimiser(
+                    self.policy,
+                    self.dynamics,
+                    cost_fn=cost_fn,
+                    terminal_cost_fn=self.terminal_cost_fn,
+                )
+            elif isinstance(
+                training_spec, ModeVariationalTrajectoryOptimiserTrainingSpec
+            ):
+                trajectory_optimiser = ModeVariationalTrajectoryOptimiser(
+                    self.policy,
+                    self.dynamics,
+                    cost_fn=cost_fn,
+                    terminal_cost_fn=self.terminal_cost_fn,
+                )
         elif isinstance(training_spec, ExplorativeTrajectoryOptimiserTrainingSpec):
             cost_fn = partial(
                 state_control_quadratic_cost_fn,
