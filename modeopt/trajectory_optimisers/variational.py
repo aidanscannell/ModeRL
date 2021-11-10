@@ -172,13 +172,14 @@ class VariationalTrajectoryOptimiser(TrajectoryOptimiser):
             self.policy, self.dynamics, start_state, start_state_var=start_state_var
         )
 
-        expected_integral_costs, expected_terminal_cost = expected_costs(
+        # Calculate costs
+        expected_integral_costs, expected_terminal_cost = expected_quadratic_costs(
             cost_fn=self.cost_fn,
             terminal_cost_fn=self.terminal_cost_fn,
             state_means=state_means,
             state_vars=state_vars,
             policy=self.policy,
-        )
+        )  # [Batch,], []
 
         elbo = (
             -expected_terminal_cost - tf.reduce_sum(expected_integral_costs) + entropy
@@ -233,6 +234,7 @@ class ModeVariationalTrajectoryOptimiser(VariationalTrajectoryOptimiser):
         )  # [Batch,], []
 
         control_means, control_vars = self.policy()
+
         mode_var_exp = self.dynamics.mode_variational_expectation(
             state_means[:-1, :], control_means, state_vars[:-1, :], control_vars
         )
