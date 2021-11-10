@@ -1,0 +1,38 @@
+# Environment config
+init_mode_opt.env_name = "velocity-controlled-point-mass/scenario-4"
+init_mode_opt.delta_time = 0.05
+
+# ModeOpt config
+init_mode_opt.desired_mode = 0
+init_mode_opt.start_state = [3.0, -1.0]
+init_mode_opt.target_state = [-3.2, 1.0]
+# init_mode_opt.target_state = [-3.0, 1.0]
+# init_mode_opt.policy = "DeterministicPolicy"
+init_mode_opt.policy = "VariationalGaussianPolicy"
+init_mode_opt.horizon = 10
+init_mode_opt.mode_chance_constraint_lower = None  # set as None to turn off mode constraints
+
+# Trajectory Optimisation config
+run_mode_opt_remain.mode_opt_ckpt_dir = "./scenario_4/logs/learn_dynamics/subset_2_dataset/2_experts/batch_size_32/learning_rate_0.01/further_gating_bound/num_inducing_90/11-10-110119"
+# run_mode_opt_remain.trajectory_optimiser = "VariationalTrajectoryOptimiser"
+run_mode_opt_remain.trajectory_optimiser = "ModeVariationalTrajectoryOptimiser"
+run_mode_opt_remain.mode_chance_constraint_lower = None # set as None to turn off mode constraints
+run_mode_opt_remain.compile_mode_constraint_fn = True  # whether to wrap constraints_fn in tf.function
+run_mode_opt_remain.compile_loss_fn = True  # whether to wrap loss function in tf.function
+run_mode_opt_remain.velocity_constraints_lower = [-8, -8]
+run_mode_opt_remain.velocity_constraints_upper = [8, 8]
+run_mode_opt_remain.max_iterations = 1000
+run_mode_opt_remain.method = "SLSQP" # or "SLSQP" or "L-BFGS-B"
+run_mode_opt_remain.disp = True
+run_mode_opt_remain.log_dir = "mode_remaining_mode_conditioning_traj_opt"
+run_mode_opt_remain.num_ckpts = 5
+run_mode_opt_remain.slow_tasks_period = 5
+run_mode_opt_remain.fast_tasks_period = 2
+
+# Cost Weights
+run_mode_opt_remain.state_cost_weight = 0.0001  # Q = tf.eye(state_dim) * state_cost_weight
+run_mode_opt_remain.control_cost_weight = 0.001 # R = tf.eye(control_dim) * control_cost_weight
+run_mode_opt_remain.terminal_state_cost_weight = [1.0, 1.0]  # Q_terminal = tf.eye(state_dim) * terminal_state_cost_weight
+
+run_mode_opt_remain.riemannian_metric_cost_weight = 0.0001 # G = \E[G(state)] * riemannian_metric_cost_weight
+run_mode_opt_remain.riemannian_metric_covariance_weight = 10.0
