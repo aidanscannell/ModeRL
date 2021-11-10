@@ -34,11 +34,16 @@ class VariationalTrajectoryOptimiserTrainingSpec:
     max_iterations: int = 100
     method: str = "SLSQP"
     disp: bool = True
+    mode_chance_constraint_lower: float = None  # lower bound on mode probability over traj, set as None to turn off mode constraints
+    compile_mode_constraint_fn: bool = True  # constraints fn in tf.function?
+    compile_loss_fn: bool = True  # loss function in tf.function?
     monitor: gpf.monitor.Monitor = None
     manager: tf.train.CheckpointManager = None
     Q: ttf.Tensor2[StateDim, StateDim] = None
     R: ttf.Tensor2[ControlDim, ControlDim] = None
     Q_terminal: ttf.Tensor2[StateDim, StateDim] = None
+    riemannian_metric_cost_weight: default_float() = 1.0
+    riemannian_metric_covariance_weight: default_float() = 1.0
 
 
 @dataclass
@@ -168,6 +173,7 @@ class VariationalTrajectoryOptimiser(TrajectoryOptimiser):
         """Evidence LOwer Bound"""
         entropy = self.policy.entropy()  # calculate entropy of policy dist
 
+        # Rollout controls in dynamics
         state_means, state_vars = rollout_policy_in_dynamics(
             self.policy, self.dynamics, start_state, start_state_var=start_state_var
         )
@@ -239,71 +245,22 @@ class ModeVariationalTrajectoryOptimiser(VariationalTrajectoryOptimiser):
             state_means[:-1, :], control_means, state_vars[:-1, :], control_vars
         )
 
-        # # manifold = GPManifold(self.dynamics.gating_gp, covariance_weight=0.05)
-        # manifold = GPManifold(self.dynamics.gating_gp, covariance_weight=10.0)
-        # input_mean = tf.concat([state_means[:-1, :], control_means], -1)
-        # input_var = tf.concat([state_vars[:-1, :], control_vars], -1)
-        # velocities = input_mean[1:, :] - input_mean[:-1, :]
-        # velocities_var = input_var[1:, :]
-        # # velocities = control_means
-        # # riemannian_energy = manifold.energy(input_mean[1:, :], velocities) * 0.0001
-        # riemannian_energy = manifold.energy(input_mean[1:, :], velocities)
-        # tf.print("riemannian_energy form manifold")
-        # tf.print(riemannian_energy)
-
-        # # riemannian_metric = manifold.metric(input_mean[1:, :]) * 0.0001
-        # riemannian_metric = manifold.metric(input_mean[1:, :]) * 0.0001
-        # # riemannian_metric = manifold.metric(input_mean[1:, :]) * 0.01
-        # riemannian_energy = tf.reduce_sum(
-        #     quadratic_cost_fn(
-        #         vector=velocities,
-        #         weight_matrix=riemannian_metric,
-        #         vector_var=None,
-        #     )
-        # )
-        # # riemannian_energy = tf.reduce_sum(
-        # #     quadratic_cost_fn(
-        # #         vector=velocities,
-        # #         weight_matrix=riemannian_metric,
-        # #         vector_var=velocities_var,
-        # #     )
-        # # )
-        # tf.print("riemannian_energy quadratic")
-        # tf.print(riemannian_energy)
-
-        # riemannian_metric = manifold.metric(input_mean) * 0.0001
-        # riemannian_metric_trace = tf.linalg.trace(riemannian_metric)
-        # # tf.print("riemannian_metric")
-        # # tf.print(riemannian_metric)
-        # # riemannian_metric_trace = tf.reduce_sum(riemannian_metric_trace)
-        # # euclidean_energy = tf.linalg.matmul(velocities, velocities, transpose_a=True)
-        # # print("euclidean_energy")
-        # # print(euclidean_energy.shape)
-        # # euclidean_energy = tf.reduce_sum(euclidean_energy)
-        # # print("riemannian_energy")
-        # # print(riemannian_energy)
-        # # tf.print("euclidean_energy")
-        # # tf.print(euclidean_energy)
-        # # energy_ratio = riemannian_energy / euclidean_energy
-        # # tf.print("energy_ratio")
-        # # tf.print(energy_ratio)
-
-        elbo = (
-            # energy_ratio
-            # -riemannian_energy
-            # -riemannian_metric_trace
-            # -euclidean_energy
-            -expected_terminal_cost
-            - tf.reduce_sum(expected_integral_costs)
-            + entropy
-        )
-
         # elbo = (
-        #     -mode_var_exp
-        #     - expected_terminal_cost
+        #     # energy_ratio
+        #     # -riemannian_energy
+        #     # -riemannian_metric_trace
+        #     # -euclidean_energy
+        #     -expected_terminal_cost
         #     - tf.reduce_sum(expected_integral_costs)
         #     + entropy
         # )
+
+        elbo = (
+            -mode_var_exp
+            - expected_terminal_cost
+            - tf.reduce_sum(expected_integral_costs)
+            + entropy
+        )
         print("elbo")
         print(elbo)
         print("mode_var_exp")
