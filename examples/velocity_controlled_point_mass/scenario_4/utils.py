@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import os
+import shutil
 from functools import partial
 from typing import Callable
 
@@ -32,7 +34,6 @@ def velocity_controlled_point_mass_dynamics(
 def init_mode_opt(
     env_name,
     delta_time,
-    mogpe_config_file,
     dataset,
     desired_mode,
     start_state,
@@ -40,6 +41,7 @@ def init_mode_opt(
     test_split_size=0.0,
     policy=None,
     mogpe_ckpt_dir=None,
+    mogpe_config_file=None,
     mode_opt_ckpt_dir=None,
     horizon=None,
     mode_chance_constraint_lower=None,
@@ -93,6 +95,8 @@ def init_mode_opt(
     nominal_dynamics = partial(
         velocity_controlled_point_mass_dynamics, delta_time=delta_time
     )
+    if mogpe_config_file is None and mode_opt_ckpt_dir is not None:
+        mogpe_config_file = mode_opt_ckpt_dir + "/mogpe_config.toml"
     dynamics = init_ModeOptDynamics_from_mogpe_ckpt(
         mogpe_config_file=mogpe_config_file,
         mogpe_ckpt_dir=mogpe_ckpt_dir,
@@ -131,3 +135,34 @@ def init_mode_opt(
         print("Restored ModeOpt")
         gpf.utilities.print_summary(mode_optimiser)
     return mode_optimiser
+
+
+def init_checkpoint_manager(
+    model,
+    log_dir,
+    num_ckpts,
+    mode_opt_gin_config=None,
+    mogpe_toml_config=None,
+    train_dataset=None,
+    test_dataset=None,
+):
+    if mogpe_toml_config is not None:
+        try:
+            # shutil.copy(mogpe_toml_config, log_dir + "/mogpe_config.toml")
+            shutil.copy(mogpe_toml_config, os.path.join(log_dir, "mogpe_config.toml"))
+        except:
+            print("Failed to copy mogpe_config to log_dir")
+    if mode_opt_gin_config is not None:
+        try:
+            shutil.copy(
+                mode_opt_gin_config, os.path.join(log_dir, "mode_opt_config.gin")
+            )
+        except:
+            print("Failed to copy mode_opt_config to log_dir")
+    if train_dataset is not None:
+        np.savez(log_dir + "/train_dataset", x=train_dataset[0], y=train_dataset[1])
+    if test_dataset is not None:
+        np.savez(log_dir + "/test_dataset", x=test_dataset[0], y=test_dataset[1])
+    ckpt = tf.train.Checkpoint(model=model)
+    manager = tf.train.CheckpointManager(ckpt, log_dir, max_to_keep=num_ckpts)
+    return manager

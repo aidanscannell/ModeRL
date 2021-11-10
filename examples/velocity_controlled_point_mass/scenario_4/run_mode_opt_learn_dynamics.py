@@ -14,11 +14,12 @@ from mogpe.training.utils import (
 )
 
 from scenario_4.data.load_data import load_vcpm_dataset
-from scenario_4.utils import init_mode_opt
+from scenario_4.utils import init_mode_opt, init_checkpoint_manager
 
 
 @gin.configurable
 def run_mode_opt_learn_dynamics(
+    mode_opt_config,
     train_dataset,
     test_dataset,
     log_dir,
@@ -30,12 +31,17 @@ def run_mode_opt_learn_dynamics(
     fast_tasks_period,
     slow_tasks_period,
     num_ckpts,
+    mogpe_config_file,
     compile_loss_fn: bool = True,
 ):
-    mode_optimiser = init_mode_opt(dataset=train_dataset)
+    mode_optimiser = init_mode_opt(
+        dataset=train_dataset, mogpe_config_file=mogpe_config_file
+    )
     print_summary(mode_optimiser)
 
     # Create monitor tasks (plots/elbo/model params etc)
+    print("bound")
+    print(mode_optimiser.dynamics.mosvgpe.bound)
     log_dir = create_log_dir(
         log_dir,
         mode_optimiser.dynamics.mosvgpe.num_experts,
@@ -85,8 +91,17 @@ def run_mode_opt_learn_dynamics(
     monitor = Monitor(fast_tasks, slow_tasks)
 
     # Init checkpoint manager for saving model during training
-    ckpt = tf.train.Checkpoint(model=mode_optimiser)
-    manager = tf.train.CheckpointManager(ckpt, log_dir, max_to_keep=num_ckpts)
+    # ckpt = tf.train.Checkpoint(model=mode_optimiser)
+    # manager = tf.train.CheckpointManager(ckpt, log_dir, max_to_keep=num_ckpts)
+    manager = init_checkpoint_manager(
+        model=mode_optimiser,
+        log_dir=log_dir,
+        num_ckpts=num_ckpts,
+        mode_opt_gin_config=mode_opt_config,
+        mogpe_toml_config=mogpe_config_file,
+        train_dataset=train_dataset,
+        test_dataset=test_dataset,
+    )
 
     training_spec = ModeOptDynamicsTrainingSpec(
         num_epochs=num_epochs,
@@ -103,12 +118,14 @@ def run_mode_opt_learn_dynamics(
 
 
 if __name__ == "__main__":
-    gin.parse_config_files_and_bindings(
-        [
-            "./scenario_4/configs/learn_dynamics_subset_config.gin",
-            # "./scenario_4/configs/learn_dynamics_initial_config.gin",
-        ],
-        None,
-    )
+    mode_opt_config = "./scenario_4/configs/learn_dynamics_subset_2_config.gin"
+    # mode_opt_config = "./scenario_4/configs/learn_dynamics_subset_config.gin"
+    # mode_opt_config = "./scenario_4/configs/learn_dynamics_initial_config.gin"
+    gin.parse_config_files_and_bindings([mode_opt_config], None)
+
     train_dataset, test_dataset = load_vcpm_dataset()
-    run_mode_opt_learn_dynamics(train_dataset=train_dataset, test_dataset=test_dataset)
+    run_mode_opt_learn_dynamics(
+        mode_opt_config=mode_opt_config,
+        train_dataset=train_dataset,
+        test_dataset=test_dataset,
+    )
