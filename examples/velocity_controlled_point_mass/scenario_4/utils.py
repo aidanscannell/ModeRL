@@ -11,21 +11,34 @@ import gpflow as gpf
 import numpy as np
 import tensorflow as tf
 from gpflow import default_float
-from modeopt.dynamics import ModeOptDynamics
-from modeopt.dynamics.multimodal import init_ModeOptDynamics_from_mogpe_ckpt
+from gpflow.monitor import Monitor
+from gpflow.utilities import print_summary
+from modeopt.dynamics import ModeOptDynamics, ModeOptDynamicsTrainingSpec
 from modeopt.mode_opt import ModeOpt
-from modeopt.monitor import init_ModeOpt_monitor
+from modeopt.monitor import create_test_inputs, init_ModeOpt_monitor
 from modeopt.policies import DeterministicPolicy, VariationalGaussianPolicy
 from modeopt.trajectory_optimisers import (
     ModeVariationalTrajectoryOptimiserTrainingSpec,
     VariationalTrajectoryOptimiserTrainingSpec,
+    ExplorativeTrajectoryOptimiserTrainingSpec,
 )
+from mogpe.helpers.plotter import Plotter2D
 from mogpe.training import MixtureOfSVGPExperts_from_toml
+from mogpe.training.utils import (
+    create_log_dir,
+    create_tf_dataset,
+    init_fast_tasks_bounds,
+)
 from simenvs.core import make
+from scenario_4.data.load_data import load_vcpm_dataset
 
 
 def velocity_controlled_point_mass_dynamics(
-    state_mean, control_mean, state_var=None, control_var=None, delta_time=0.05
+    state_mean,
+    control_mean,
+    state_var=None,
+    control_var=None,
+    delta_time=0.05,
 ):
     velocity = control_mean
     delta_state_mean = velocity * delta_time
@@ -43,6 +56,8 @@ def weight_to_matrix(value: Union[list, float], dim: int):
             return tf.linalg.diag(value)
         else:
             raise NotImplementedError
+    elif value is None or value == 0.0:
+        return None
     else:
         return tf.eye(dim, dtype=default_float()) * value
 
@@ -86,6 +101,7 @@ def init_mode_opt(
         + np.random.random((horizon, control_dim)) * 0.1
     )
     control_means = control_means * 0.0
+    # control_means = control_means * 10.0
     if policy is None:
         policy = DeterministicPolicy
     # if isinstance(policy, DeterministicPolicy):
@@ -107,6 +123,10 @@ def init_mode_opt(
             constraints_lower_bound=velocity_constraints_lower,
             constraints_upper_bound=velocity_constraints_upper,
         )
+    else:
+        raise NotImplementedError(
+            "policy should be DeterministicPolicy or VariationalGaussianPolicy"
+        )
 
     # Init dynamics
     nominal_dynamics = partial(
@@ -114,14 +134,6 @@ def init_mode_opt(
     )
     if mogpe_config_file is None and mode_opt_ckpt_dir is not None:
         mogpe_config_file = mode_opt_ckpt_dir + "/mogpe_config.toml"
-    dynamics = init_ModeOptDynamics_from_mogpe_ckpt(
-        mogpe_config_file=mogpe_config_file,
-        mogpe_ckpt_dir=mogpe_ckpt_dir,
-        dataset=dataset,
-        nominal_dynamics=nominal_dynamics,
-        desired_mode=desired_mode,
-    )
-
     mosvgpe = MixtureOfSVGPExperts_from_toml(mogpe_config_file, dataset=dataset)
     dynamics = ModeOptDynamics(
         mosvgpe=mosvgpe,
@@ -155,14 +167,107 @@ def init_mode_opt(
 
 
 @gin.configurable
+def config_learn_dynamics(
+    mode_opt_config_file,
+    mogpe_config_file,
+    log_dir,
+    num_epochs,
+    batch_size,
+    learning_rate,
+    # optimiser,
+    logging_epoch_freq,
+    fast_tasks_period,
+    slow_tasks_period,
+    num_ckpts,
+    compile_loss_fn: bool = True,
+):
+    train_dataset, test_dataset = load_vcpm_dataset()
+
+    mode_optimiser = init_mode_opt(
+        dataset=train_dataset, mogpe_config_file=mogpe_config_file
+    )
+    print_summary(mode_optimiser)
+
+    # Create monitor tasks (plots/elbo/model params etc)
+    log_dir = create_log_dir(
+        log_dir,
+        mode_optimiser.dynamics.mosvgpe.num_experts,
+        batch_size,
+        # learning_rate=optimiser.learning_rate,
+        learning_rate=learning_rate,
+        bound=mode_optimiser.dynamics.mosvgpe.bound,
+        num_inducing=mode_optimiser.dynamics.mosvgpe.experts.experts_list[0]
+        .inducing_variable.inducing_variables[0]
+        .Z.shape[0],
+    )
+
+    test_inputs = create_test_inputs(*mode_optimiser.dataset)
+    # mogpe_plotter = QuadcopterPlotter(
+    mogpe_plotter = Plotter2D(
+        model=mode_optimiser.dynamics.mosvgpe,
+        X=mode_optimiser.dataset[0],
+        Y=mode_optimiser.dataset[1],
+        test_inputs=test_inputs,
+        # static=False,
+    )
+
+    train_dataset_tf, num_batches_per_epoch = create_tf_dataset(
+        train_dataset, num_data=train_dataset[0].shape[0], batch_size=batch_size
+    )
+    test_dataset_tf, _ = create_tf_dataset(
+        test_dataset, num_data=test_dataset[0].shape[0], batch_size=batch_size
+    )
+
+    # training_loss = mode_optimiser.dynamics.build_training_loss(
+    #     train_dataset_tf, compile=compile_loss_fn
+    # )
+
+    fast_tasks = init_fast_tasks_bounds(
+        log_dir,
+        train_dataset_tf,
+        mode_optimiser.dynamics.mosvgpe,
+        test_dataset=test_dataset_tf,
+        # training_loss=training_loss,
+        fast_tasks_period=fast_tasks_period,
+    )
+    slow_tasks = mogpe_plotter.tf_monitor_task_group(
+        log_dir,
+        slow_period=slow_tasks_period
+        # slow_tasks_period=slow_tasks_period,
+    )
+    monitor = Monitor(fast_tasks, slow_tasks)
+
+    # Init checkpoint manager for saving model during training
+    manager = init_checkpoint_manager(
+        model=mode_optimiser,
+        log_dir=log_dir,
+        num_ckpts=num_ckpts,
+        mode_opt_gin_config=mode_opt_config_file,
+        mogpe_toml_config=mogpe_config_file,
+        train_dataset=train_dataset,
+        test_dataset=test_dataset,
+    )
+
+    training_spec = ModeOptDynamicsTrainingSpec(
+        num_epochs=num_epochs,
+        batch_size=batch_size,
+        # optimiser=optimiser,
+        learning_rate=learning_rate,
+        logging_epoch_freq=logging_epoch_freq,
+        compile_loss_fn=compile_loss_fn,
+        monitor=monitor,
+        manager=manager,
+    )
+    return mode_optimiser, training_spec, train_dataset
+
+
+@gin.configurable
 def config_traj_opt(
     mode_opt_ckpt_dir,
-    mode_opt_config,
-    # dataset,
+    mode_opt_config_file,
     max_iterations,
     method,
     disp,
-    # horizon,
     mode_chance_constraint_lower,
     velocity_constraints_lower,
     velocity_constraints_upper,
@@ -180,8 +285,6 @@ def config_traj_opt(
     riemannian_metric_covariance_weight: default_float() = 1.0,
 ):
     # Load data set from ckpt dir
-    print("mode_opt_ckpt_dir")
-    print(mode_opt_ckpt_dir)
     train_dataset = np.load(os.path.join(mode_opt_ckpt_dir, "train_dataset.npz"))
     dataset = (train_dataset["x"], train_dataset["y"])
 
@@ -189,8 +292,6 @@ def config_traj_opt(
     mode_optimiser = init_mode_opt(dataset=dataset, mode_opt_ckpt_dir=mode_opt_ckpt_dir)
 
     # Create nested log_dir inside learn_dynamics dir
-    print("log_dir")
-    print(log_dir)
     if log_dir is not None:
         log_dir = os.path.join(mode_opt_ckpt_dir, log_dir)
         log_dir = os.path.join(log_dir, datetime.now().strftime("%m-%d-%H%M%S"))
@@ -208,7 +309,7 @@ def config_traj_opt(
             model=mode_optimiser,
             log_dir=log_dir,
             num_ckpts=num_ckpts,
-            mode_opt_gin_config=mode_opt_config,
+            mode_opt_gin_config=mode_opt_config_file,
         )
     else:
         monitor = None
@@ -241,6 +342,23 @@ def config_traj_opt(
     elif trajectory_optimiser == "VariationalTrajectoryOptimiser":
         print("VariationalTrajectoryOptimiser")
         training_spec = VariationalTrajectoryOptimiserTrainingSpec(
+            max_iterations=max_iterations,
+            method=method,
+            disp=disp,
+            mode_chance_constraint_lower=mode_chance_constraint_lower,
+            compile_mode_constraint_fn=compile_mode_constraint_fn,
+            compile_loss_fn=compile_loss_fn,
+            monitor=monitor,
+            manager=manager,
+            Q=Q,
+            R=R,
+            Q_terminal=Q_terminal,
+            riemannian_metric_cost_weight=riemannian_metric_cost_weight,
+            riemannian_metric_covariance_weight=riemannian_metric_covariance_weight,
+        )
+    elif trajectory_optimiser == "ExplorativeTrajectoryOptimiser":
+        print("ExplorativeTrajectoryOptimiser")
+        training_spec = ExplorativeTrajectoryOptimiserTrainingSpec(
             max_iterations=max_iterations,
             method=method,
             disp=disp,
