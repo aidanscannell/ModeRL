@@ -10,7 +10,12 @@ if __name__ == "__main__":
     save_dir = "./data/npz/subset_full_dataset_"
     omit_data_mask = "./data/omit_data_mask.bmp"
     omit_data_mask = "./data/overlap_omit_data_mask.bmp"
-    omit_data_mask = "./data/overlap_omit_data_mask_2.bmp"
+
+    # save_dir = "./data/npz/subset_full_dataset_"
+    # omit_data_mask = "./data/overlap_omit_data_mask_2.bmp"
+
+    save_dir = "./data/npz/subset_2_full_dataset_"
+    omit_data_mask = "./data/omit_data_mask.bmp"
 
     generate_random_transitions_dataset_from_env(
         env_name=env_name,
