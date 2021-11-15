@@ -5,9 +5,7 @@ from typing import NewType, Optional, Tuple, Union
 import gpflow as gpf
 import numpy as np
 import tensor_annotations.tensorflow as ttf
-import tensorflow as tf
 from gpflow import Module, default_float
-from gpflow.models import GPModel
 from tensor_annotations import axes
 from tensor_annotations.axes import Batch
 from tf_agents.environments import tf_py_environment
@@ -15,16 +13,12 @@ from tf_agents.environments import tf_py_environment
 from modeopt.constraints import build_mode_chance_constraints_scipy
 from modeopt.cost_functions import (
     build_riemmanian_energy_cost_fn,
+    build_state_control_riemannian_energy_quadratic_cost_fn,
     state_control_quadratic_cost_fn,
     terminal_state_cost_fn,
-    build_state_control_riemannian_energy_quadratic_cost_fn,
 )
 from modeopt.dynamics.multimodal import ModeOptDynamics, ModeOptDynamicsTrainingSpec
-from modeopt.policies import (
-    DeterministicPolicy,
-    VariationalGaussianPolicy,
-    VariationalPolicy,
-)
+from modeopt.policies import VariationalGaussianPolicy, VariationalPolicy
 from modeopt.rollouts import rollout_policy_in_dynamics, rollout_policy_in_env
 from modeopt.trajectory_optimisers import (
     ExplorativeTrajectoryOptimiser,
@@ -90,13 +84,6 @@ class ModeOpt(Module):
             )
         else:
             self.policy = policy
-
-        control_means = (
-            np.ones((self.horizon, self.dynamics.control_dim)) * 0.5
-            + np.random.random((self.horizon, self.dynamics.control_dim)) * 0.1
-        )
-        # self.policy = VariationalGaussianPolicy(means=control_means, vars=control_vars)
-        self.policy = DeterministicPolicy(controls=control_means)
 
         # # Init terminal quadratic costs on states (Euclidean distance)
         # self.terminal_cost_fn = partial(
@@ -190,6 +177,7 @@ class ModeOpt(Module):
         #     print(param)
         # print(self.policy.trainable_variables)
         # gpf.set_trainable(self.policy, True)
+        gpf.utilities.print_summary(self)
         if (
             training_spec.mode_chance_constraint_lower is None
             or training_spec.mode_chance_constraint_lower <= 0.0
@@ -213,44 +201,6 @@ class ModeOpt(Module):
             constraints=mode_chance_constraints,
         )
 
-    # def optimise_policy(
-    #     self,
-    #     start_state,
-    #     training_spec: Union[
-    #         ModeVariationalTrajectoryOptimiserTrainingSpec,
-    #         ExplorativeTrajectoryOptimiserTrainingSpec,
-    #     ],
-    # ):
-
-    #     gpf.set_trainable(self.dynamics, False)
-    #     # print("param")
-    #     # for param in self.policy.trainable_parameters:
-    #     #     print(param)
-    #     # print(self.policy.trainable_variables)
-    #     # gpf.set_trainable(self.policy, True)
-    #     if (
-    #         training_spec.mode_chance_constraint_lower is None
-    #         or training_spec.mode_chance_constraint_lower <= 0.0
-    #     ):
-    #         mode_chance_constraints = []
-    #         print(
-    #             "Turning mode chance constraints off because training_spec.mode_chance_constraint_lower is None or <=0.0"
-    #         )
-    #     else:
-    #         mode_chance_constraints = build_mode_chance_constraints_scipy(
-    #             mode_opt_dynamics=self.dynamics,
-    #             start_state=start_state,
-    #             horizon=self.horizon,
-    #             lower_bound=training_spec.mode_chance_constraint_lower,
-    #             upper_bound=1.0,
-    #             compile=training_spec.compile_mode_constraint_fn,
-    #         )
-    #     return self.trajectory_optimiser.optimise(
-    #         start_state=start_state,
-    #         training_spec=training_spec,
-    #         constraints=mode_chance_constraints,
-    #     )
-
     def dynamics_rollout(self, start_state, start_state_var=None):
         return rollout_policy_in_dynamics(
             self.policy, self.dynamics, start_state, start_state_var=start_state_var
@@ -259,31 +209,16 @@ class ModeOpt(Module):
     def env_rollout(self, start_state):
         return rollout_policy_in_env(self.env, self.policy, start_state=start_state)
 
-    def optimise_dynamics(self, dataset, training_spec: ModeOptDynamicsTrainingSpec):
+    def optimise_dynamics(
+        self,
+        dataset,
+        training_spec: ModeOptDynamicsTrainingSpec,
+        trainable_variables=None,
+    ):
         # TODO make mosvgpe trainable?
-        self.dynamics.set_trainable(True)
+        self.dynamics.set_trainable(True, trainable_variables=trainable_variables)
         for param in self.policy.trainable_parameters:
             gpf.set_trainable(param, False)
         # gpf.set_trainable(self.policy, False)
+        gpf.utilities.print_summary(self)
         self.dynamics._train(dataset, training_spec)
-
-        # # Create tf dataset that can be iterated and build training loss closure
-        # train_dataset, num_batches_per_epoch = create_tf_dataset(
-        #     dataset, num_data=dataset[0].shape[0], batch_size=training_spec.batch_size
-        # )
-        # training_loss = self.mogpe_model.training_loss_closure(iter(train_dataset))
-
-        # @tf.function
-        # def tf_optimization_step():
-        #     self.optimizer.minimize(training_loss, self.mogpe_model.trainable_variables)
-
-        # for epoch in range(training_spec.num_epochs):
-        #     for _ in range(num_batches_per_epoch):
-        #         tf_optimization_step()
-        #     if training_spec.monitor is not None:
-        #         training_spec.monitor(epoch)
-        #     epoch_id = epoch + 1
-        #     if epoch_id % training_spec.logging_epoch_freq == 0:
-        #         tf.print(f"Epoch {epoch_id}: Dynamics ELBO (train) {training_loss()}")
-        #         if training_spec.manager is not None:
-        #             training_spec.manager.save()
