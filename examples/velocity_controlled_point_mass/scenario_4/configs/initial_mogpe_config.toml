@@ -1,6 +1,6 @@
 num_samples = 1 # number of samples to approximate variational expectation with
 num_experts = 2
-bound = "tight" # which ELBO to use, either "tight" or "further", default is "further"
+bound = "further_gating" # which ELBO to use, either "tight" or "further", default is "further"
 
 [[experts]]
     name = "expert_1" # specify a name
@@ -35,8 +35,10 @@ bound = "tight" # which ELBO to use, either "tight" or "further", default is "fu
     [experts.kernel]
         name = "rbf" # kernel type e.g. "rbf", "cosine", "sum", "product"
         [experts.kernel.params] # set required parameters for the kernel type
-            lengthscale = 0.5 # RBF lengthscale
-            variance = 20.0 # RBF signal variance
+            # lengthscale = 0.5 # RBF lengthscale
+            # variance = 20.0 # RBF signal variance
+            lengthscale = 10.0  # RBF lengthscale
+            variance = 0.1 # RBF signal variance
     [experts.likelihood]
         name = "gaussian" # likelihood type, "gaussian" is only valid option
         [experts.likelihood.params] # set required parameters for the likelihood type
@@ -62,5 +64,5 @@ bound = "tight" # which ELBO to use, either "tight" or "further", default is "fu
         num_inducing = 90
         q_mu.mean = 0.0 # mean of variational Gaussian posterior, will be broadcast to correct shape
         q_mu.var = 2.0 # add Gaussian noise to mean of variational Gaussian posterior to aid training N(0,q_mu.var)
-        q_sqrt = 10.0 # cholesky of covariance of variational Gaussian posterior, will be multiplied by identity of correct shape
+        q_sqrt = 2.0 # cholesky of covariance of variational Gaussian posterior, will be multiplied by identity of correct shape
         q_diag = false # boolean, if true, approximate covariance by diagonal matrix
