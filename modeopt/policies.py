@@ -69,9 +69,9 @@ class VariationalGaussianPolicy(VariationalPolicy):
             constraints_upper_bound=constraints_upper_bound,
         )
 
-        self.means = Parameter(means, dtype=default_float(), name="contol_means")
+        self.means = Parameter(means, dtype=default_float(), name="control_means")
         self.vars = Parameter(
-            vars, dtype=default_float(), transform=positive(), name="contol_vars"
+            vars, dtype=default_float(), transform=positive(), name="control_vars"
         )
 
         self._variational_dist = tfd.MultivariateNormalDiag(
