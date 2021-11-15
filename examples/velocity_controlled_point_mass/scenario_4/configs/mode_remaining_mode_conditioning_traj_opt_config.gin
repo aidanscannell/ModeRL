@@ -3,7 +3,7 @@ init_mode_opt.env_name = "velocity-controlled-point-mass/scenario-4"
 init_mode_opt.delta_time = 0.05
 
 # ModeOpt config
-init_mode_opt.desired_mode = 0
+init_mode_opt.desired_mode = 1
 init_mode_opt.start_state = [3.0, -1.0]
 init_mode_opt.target_state = [-3.2, 1.0]
 # init_mode_opt.target_state = [-3.0, 1.0]
@@ -13,12 +13,11 @@ init_mode_opt.horizon = 10
 init_mode_opt.mode_chance_constraint_lower = None  # set as None to turn off mode constraints
 
 # Trajectory Optimisation config
-config_traj_opt.mode_opt_ckpt_dir = "./scenario_4/logs/learn_dynamics/subset_2_dataset/2_experts/batch_size_32/learning_rate_0.01/further_gating_bound/num_inducing_90/11-10-110119"
-# config_traj_opt.trajectory_optimiser = "VariationalTrajectoryOptimiser"
+config_traj_opt.mode_opt_ckpt_dir = "./scenario_4/logs/learn_dynamics/subset_2_dataset/2_experts/batch_size_32/learning_rate_0.01/further_gating_bound/num_inducing_90/11-12-164827"
 config_traj_opt.trajectory_optimiser = "ModeVariationalTrajectoryOptimiser"
 config_traj_opt.mode_chance_constraint_lower = None # set as None to turn off mode constraints
 config_traj_opt.compile_mode_constraint_fn = True  # whether to wrap constraints_fn in tf.function
-config_traj_opt.compile_loss_fn = False # whether to wrap loss function in tf.function
+config_traj_opt.compile_loss_fn = True # whether to wrap loss function in tf.function
 config_traj_opt.velocity_constraints_lower = [-8, -8]
 config_traj_opt.velocity_constraints_upper = [8, 8]
 config_traj_opt.max_iterations = 1000
@@ -34,5 +33,5 @@ config_traj_opt.state_cost_weight = 0.0001  # Q = tf.eye(state_dim) * state_cost
 config_traj_opt.control_cost_weight = 0.001 # R = tf.eye(control_dim) * control_cost_weight
 config_traj_opt.terminal_state_cost_weight = [1.0, 1.0]  # Q_terminal = tf.eye(state_dim) * terminal_state_cost_weight
 
-config_traj_opt.riemannian_metric_cost_weight = 0.0001 # G = \E[G(state)] * riemannian_metric_cost_weight
-config_traj_opt.riemannian_metric_covariance_weight = 10.0
+config_traj_opt.riemannian_metric_cost_weight = None # G = \E[G(state)] * riemannian_metric_cost_weight
+config_traj_opt.riemannian_metric_covariance_weight = None
