@@ -14,22 +14,6 @@ StateDim = typing.NewType("StateDim", axes.Axis)
 ControlDim = typing.NewType("ControlDim", axes.Axis)
 
 
-def rollout_policy_in_dynamics(
-    policy: VariationalPolicy,
-    dynamics: Callable,
-    start_state: ttf.Tensor2[Batch, StateDim],
-    start_state_var: ttf.Tensor2[Batch, StateDim] = None,
-):
-    control_means, control_vars = policy()
-    return rollout_controls_in_dynamics(
-        dynamics=dynamics,
-        start_state=start_state,
-        control_means=control_means,
-        start_state_var=start_state_var,
-        control_vars=control_vars,
-    )
-
-
 def rollout_controls_in_dynamics(
     dynamics: Callable,
     start_state: ttf.Tensor2[Batch, StateDim],
@@ -47,11 +31,37 @@ def rollout_controls_in_dynamics(
 
     state_means = start_state
     state_vars = start_state_var
-    control_var = None
     for t in range(horizon):
         control_mean = control_means[t : t + 1, :]
         if control_vars is not None:
             control_var = control_vars[t : t + 1, :]
+        else:
+            control_var = None
+        next_state_mean, next_state_var = dynamics(
+            state_means[-1:, :], control_mean, state_vars[-1:, :], control_var
+        )
+        state_means = tf.concat([state_means, next_state_mean], 0)
+        state_vars = tf.concat([state_vars, next_state_var], 0)
+    return state_means, state_vars
+
+
+def rollout_policy_in_dynamics(
+    policy: VariationalPolicy,
+    dynamics: Callable,
+    start_state: ttf.Tensor2[Batch, StateDim],
+    start_state_var: ttf.Tensor2[Batch, StateDim] = None,
+):
+    """Rollout a polciy in gp dynamics model
+
+    :returns: (states_means, state_vars)
+    """
+    if start_state_var is None:
+        start_state_var = tf.zeros((1, start_state.shape[1]), dtype=default_float())
+
+    state_means = start_state
+    state_vars = start_state_var
+    for t in range(policy.num_time_steps):
+        control_mean, control_var = policy(t)
         next_state_mean, next_state_var = dynamics(
             state_means[-1:, :], control_mean, state_vars[-1:, :], control_var
         )
