@@ -77,9 +77,9 @@ def rollout_policy_in_env(
     :returns: (states, delta_states)
     """
     env.state_init = start_state.numpy()
-    time_step = env.reset()
+    env.reset()
+    states = start_state.numpy()
 
-    states = time_step.observation
     for t in range(policy.num_time_steps):
         control, _ = policy(t)
         next_time_step = env.step(control.numpy())
