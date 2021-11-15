@@ -14,19 +14,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import tensorflow as tf
 from typing import Optional
 
+import tensorflow as tf
 from gpflow import covariances, mean_functions
 from gpflow.config import default_float, default_jitter
 from gpflow.expectations import expectation
-from gpflow.inducing_variables import InducingPoints, InducingVariables
+from gpflow.inducing_variables import InducingVariables
 from gpflow.kernels import Kernel
 from gpflow.probability_distributions import Gaussian
 
-# from modeopt.dynamics.
-
-from gpflow.inducing_variables import InducingPoints, InducingVariables
 
 # class FakeInducingPoints(InducingPoints):
 class FakeInducingPoints(InducingVariables):
