@@ -38,12 +38,12 @@ bound = "further_gating" # which ELBO to use, either "tight" or "further", defau
     [experts.kernel]
         name = "rbf" # kernel type e.g. "rbf", "cosine", "sum", "product"
         [experts.kernel.params] # set required parameters for the kernel type
-            lengthscale = 0.5 # RBF lengthscale
-            variance = 20.0 # RBF signal variance
+            lengthscale = 10.0 # RBF lengthscale
+            variance = 0.1 # RBF signal variance
     [experts.likelihood]
         name = "gaussian" # likelihood type, "gaussian" is only valid option
         [experts.likelihood.params] # set required parameters for the likelihood type
-            variance = [1.9, 1.9] # Guassian noise variance
+            variance = [1.19, 1.19] # Guassian noise variance
     [experts.inducing_points]
         inputs_trainable = true
         num_inducing = 90
@@ -59,12 +59,8 @@ bound = "further_gating" # which ELBO to use, either "tight" or "further", defau
     [gating_network.kernel]
         name = "rbf" # kernel type e.g. "rbf", "cosine", "sum", "product"
         [gating_network.kernel.params] # set required parameters for the kernel type
-            # lengthscale = 0.5 # RBF lengthscale
-            # lengthscale = 5.0 # RBF lengthscale
             lengthscale = 10.0 # RBF lengthscale
             variance = 5.0 # RBF signal variance
-            # variance = 100.0 # RBF signal variance
-            # variance = 600.0 # RBF signal variance
     [gating_network.inducing_points]
         # inputs_trainable = false
         inputs_trainable = true
