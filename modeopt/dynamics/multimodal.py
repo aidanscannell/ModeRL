@@ -4,9 +4,10 @@ from typing import Callable, NewType, Tuple
 
 import gin
 import gpflow as gpf
+import numpy as np
 import tensor_annotations.tensorflow as ttf
 import tensorflow as tf
-from gpflow import Module, default_float
+from gpflow import Module, default_float, Parameter
 from gpflow.conditionals import base_conditional
 from gpflow.mean_functions import MeanFunction
 from modeopt.dynamics.conditionals import (
@@ -82,7 +83,7 @@ class ModeOptDynamics(Module):
         optimiser: tf.optimizers.Optimizer = tf.optimizers.Adam(),
     ):
         self.mosvgpe = mosvgpe
-        self._nominal_dynamics = nominal_dynamics
+        # self._nominal_dynamics = nominal_dynamics
         self.set_desired_mode(desired_mode)
         self.state_dim = state_dim
         self.control_dim = control_dim
@@ -133,13 +134,7 @@ class ModeOptDynamics(Module):
         assert desired_mode < self.mosvgpe.num_experts
         self._desied_mode = desired_mode
         self._dynamics_gp = self.mosvgpe.experts.experts_list[desired_mode]
-        # self._desired_mode_dynamics = SVGPDynamics(dynamics_gp)
-        # TODO nominal_dynamics is no longer needed in SVGPDynamics as now in MeanFunction
-        self._desired_mode_dynamics = SVGPDynamics(
-            self._dynamics_gp,
-            nominal_dynamics=None
-            # self._dynamics_gp, nominal_dynamics=self._nominal_dynamics
-        )
+        self._desired_mode_dynamics = SVGPDynamics(self._dynamics_gp)
 
     def desired_mode_dynamics(
         self,
