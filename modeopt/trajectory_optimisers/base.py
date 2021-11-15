@@ -1,13 +1,20 @@
 #!/usr/bin/env python3
 import abc
+import typing
 from dataclasses import dataclass
 from typing import Callable
 
 import gpflow as gpf
+import tensor_annotations.tensorflow as ttf
 import tensorflow as tf
-from modeopt.policies import VariationalPolicy
-from modeopt.rollouts import rollout_policy_in_dynamics
+from gpflow import default_float
 from modeopt.dynamics import Dynamics
+from modeopt.policies import VariationalPolicy
+from tensor_annotations import axes
+from tensor_annotations.axes import Batch
+
+StateDim = typing.NewType("StateDim", axes.Axis)
+ControlDim = typing.NewType("ControlDim", axes.Axis)
 
 
 @dataclass
@@ -20,6 +27,9 @@ class TrajectoryOptimiserTrainingSpec:
     max_iterations: int = 100
     method: str = "SLSQP"
     disp: bool = True
+    compile_loss_fn: bool = True  # loss function in tf.function?
+    monitor: gpf.monitor.Monitor = None
+    manager: tf.train.CheckpointManager = None
 
 
 class TrajectoryOptimiser(abc.ABC):
@@ -52,11 +62,84 @@ class TrajectoryOptimiser(abc.ABC):
         self.state_dim = self.dynamics.state_dim
         self.control_dim = self.policy.control_dim
 
-    @abc.abstractmethod
-    def optimise(self, start_state, training_spec: TrajectoryOptimiserTrainingSpec):
-        """Optimise trajectories starting from an initial state"""
-        raise NotImplementedError
+        self._objective_closure = None
 
-    # @abc.abstractmethod
-    # def loss(self, start_state):
-    #     raise NotImplementedError
+    def optimise(
+        self,
+        start_state: ttf.Tensor2[Batch, StateDim],
+        training_spec: TrajectoryOptimiserTrainingSpec,
+        constraints=[],
+    ):
+        """Optimise trajectories starting from an initial state"""
+        if training_spec.monitor and training_spec.manager:
+
+            def callback(step, variables, values):
+                training_spec.monitor(step)
+                training_spec.manager.save()
+
+        elif training_spec.monitor is not None:
+
+            def callback(step, variables, values):
+                training_spec.monitor(step)
+
+        elif training_spec.manager is not None:
+
+            def callback(step, variables, values):
+                training_spec.manager.save()
+
+        else:
+            callback = None
+
+        if self.objective_closure is None:
+            self.build_objective(start_state, compile=training_spec.compile_loss_fn)
+
+        policy_variables = [
+            param.unconstrained_variable for param in self.policy.trainable_parameters
+        ]
+
+        optimisation_result = self.optimiser.minimize(
+            self.objective_closure,
+            policy_variables,
+            method=training_spec.method,
+            constraints=constraints,
+            step_callback=callback,
+            options={
+                "disp": training_spec.disp,
+                "maxiter": training_spec.max_iterations,
+            },
+        )
+        print("Optimisation result:")
+        print(optimisation_result)
+        print("self.policy.trainable_variables")
+        print(self.policy.trainable_variables)
+        print("self.policy()")
+        print(self.policy())
+        print("self.policy.variational_dist.mean()")
+        print(self.policy.variational_dist.mean())
+        print(self.policy.variational_dist.variance())
+        return optimisation_result
+
+    def build_objective(
+        self, start_state: ttf.Tensor2[Batch, StateDim], compile: bool = False
+    ) -> Callable:
+        def objective():
+            return -self.objective(start_state)
+
+        if compile:
+            objective = tf.function(objective)
+        self._objective_closure = objective
+        return self._objective_closure
+
+    @property
+    def objective_closure(self) -> Callable:
+        """Objective to optimise"""
+        if self._objective_closure is not None:
+            return self._objective_closure
+        else:
+            print("objective not built yet")
+            return None
+
+    @abc.abstractmethod
+    def objective(self, start_state: ttf.Tensor2[Batch, StateDim]):
+        """Objective to optimise"""
+        raise NotImplementedError

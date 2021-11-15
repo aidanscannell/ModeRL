@@ -8,24 +8,26 @@ import tensor_annotations.tensorflow as ttf
 import tensorflow as tf
 from gpflow import default_float
 from modeopt.dynamics import GPDynamics
-from modeopt.cost_functions import expected_quadratic_costs, quadratic_cost_fn
+from modeopt.cost_functions import expected_quadratic_costs
 from modeopt.policies import (
     VariationalPolicy,
     VariationalGaussianPolicy,
     DeterministicPolicy,
 )
 from modeopt.rollouts import rollout_policy_in_dynamics
-from modeopt.trajectory_optimisers.base import TrajectoryOptimiser
+from modeopt.trajectory_optimisers.base import (
+    TrajectoryOptimiser,
+    TrajectoryOptimiserTrainingSpec,
+)
 from tensor_annotations import axes
 from tensor_annotations.axes import Batch
-from geoflow.manifolds import GPManifold
 
 StateDim = typing.NewType("StateDim", axes.Axis)
 ControlDim = typing.NewType("ControlDim", axes.Axis)
 
 
 @dataclass
-class VariationalTrajectoryOptimiserTrainingSpec:
+class VariationalTrajectoryOptimiserTrainingSpec(TrajectoryOptimiserTrainingSpec):
     """
     Specification data class for model training. Models that require additional parameters for
     training should create a subclass of this class and add additional properties.
@@ -90,92 +92,23 @@ class VariationalTrajectoryOptimiser(TrajectoryOptimiser):
         self.optimiser = gpf.optimizers.Scipy()
         self._training_loss = None
 
-    def build_training_loss(
-        self,
-        start_state: ttf.Tensor2[Batch, StateDim],
-        start_state_var: ttf.Tensor2[Batch, StateDim] = None,
-        compile: bool = True,
-    ):
-        def training_loss():
-            return -self.elbo(start_state, start_state_var=start_state_var)
-
-        if compile:
-            self._training_loss = tf.function(training_loss)
-        else:
-            self._training_loss = training_loss
-        return self._training_loss
-
-    def training_loss(self):
-        return self._training_loss
-
-    def optimise(
-        self,
-        start_state: ttf.Tensor2[Batch, StateDim],
-        training_spec: VariationalTrajectoryOptimiserTrainingSpec,
-        constraints=[],
-    ):
-        """Optimise trajectories starting from an initial state"""
-        if training_spec.monitor and training_spec.manager:
-
-            def callback(step, variables, values):
-                training_spec.monitor(step)
-                training_spec.manager.save()
-
-        elif training_spec.monitor is not None:
-
-            def callback(step, variables, values):
-                training_spec.monitor(step)
-
-        elif training_spec.manager is not None:
-
-            def callback(step, variables, values):
-                training_spec.manager.save()
-
-        else:
-            callback = None
-
-        if self._training_loss is None:
-            self._training_loss = self.build_training_loss(
-                start_state, start_state_var=None, compile=training_spec.compile_loss_fn
-            )
-
-        optimisation_result = self.optimiser.minimize(
-            self._training_loss,
-            self.policy.trainable_variables,
-            # (tf.Variable(self.policy.controls, dtype=default_float())),
-            # (self.policy.means.variable,self.policy.vars.variable),
-            # self.policy.trainable_parameters,
-            method=training_spec.method,
-            constraints=constraints,
-            step_callback=callback,
-            options={
-                "disp": training_spec.disp,
-                "maxiter": training_spec.max_iterations,
-            },
-        )
-        print("Optimisation result:")
-        print(optimisation_result)
-        print("self.policy.trainable_variables")
-        print(self.policy.trainable_variables)
-        print("self.policy()")
-        print(self.policy())
-        print("self.policy.variational_dist.mean()")
-        print(self.policy.variational_dist.mean())
-        print(self.policy.variational_dist.variance())
-        # TODO remember what's trainable in dynamics and make it trainable here
-        return optimisation_result
+    def objective(self, start_state: ttf.Tensor2[Batch, StateDim]):
+        return self.elbo(start_state=start_state)
 
     def elbo(
         self,
         start_state: ttf.Tensor2[Batch, StateDim],
-        start_state_var: ttf.Tensor2[Batch, StateDim] = None,
+        # start_state_var: ttf.Tensor2[Batch, StateDim] = None,
     ):
         """Evidence LOwer Bound"""
         entropy = self.policy.entropy()  # calculate entropy of policy dist
 
         # Rollout controls in dynamics
         state_means, state_vars = rollout_policy_in_dynamics(
-            self.policy, self.dynamics, start_state, start_state_var=start_state_var
+            self.policy,
+            self.dynamics,
+            start_state,
+            # start_state_var=start_state_var
         )
 
         # Calculate costs
@@ -217,7 +150,7 @@ class ModeVariationalTrajectoryOptimiser(VariationalTrajectoryOptimiser):
     def elbo(
         self,
         start_state: ttf.Tensor2[Batch, StateDim],
-        start_state_var: ttf.Tensor2[Batch, StateDim] = None,
+        # start_state_var: ttf.Tensor2[Batch, StateDim] = None,
     ):
         """Optimise trajectories starting from an initial state"""
         entropy = self.policy.entropy()  # calculate entropy of policy dist
@@ -227,7 +160,7 @@ class ModeVariationalTrajectoryOptimiser(VariationalTrajectoryOptimiser):
             self.policy,
             self.dynamics,
             start_state,
-            start_state_var=start_state_var,
+            # start_state_var=start_state_var,
         )
 
         # Calculate costs
@@ -245,30 +178,10 @@ class ModeVariationalTrajectoryOptimiser(VariationalTrajectoryOptimiser):
             state_means[:-1, :], control_means, state_vars[:-1, :], control_vars
         )
 
-        # elbo = (
-        #     # energy_ratio
-        #     # -riemannian_energy
-        #     # -riemannian_metric_trace
-        #     # -euclidean_energy
-        #     -expected_terminal_cost
-        #     - tf.reduce_sum(expected_integral_costs)
-        #     + entropy
-        # )
-
         elbo = (
             -mode_var_exp
             - expected_terminal_cost
             - tf.reduce_sum(expected_integral_costs)
             + entropy
         )
-        print("elbo")
-        print(elbo)
-        print("mode_var_exp")
-        print(mode_var_exp)
-        print("expected_terminal_cost")
-        print(expected_terminal_cost)
-        print("expected_integral_cost")
-        print(expected_integral_costs)
-        # print("entropy")
-        # print(entropy)
         return elbo

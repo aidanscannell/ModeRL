@@ -56,6 +56,11 @@ class ExplorativeTrajectoryOptimiserTrainingSpec:
     compile_loss_fn: bool = True  # loss function in tf.function?
     monitor: gpf.monitor.Monitor = None
     manager: tf.train.CheckpointManager = None
+    Q: ttf.Tensor2[StateDim, StateDim] = None
+    R: ttf.Tensor2[ControlDim, ControlDim] = None
+    Q_terminal: ttf.Tensor2[StateDim, StateDim] = None
+    riemannian_metric_cost_weight: default_float() = 1.0
+    riemannian_metric_covariance_weight: default_float() = 1.0
 
 
 class ExplorativeTrajectoryOptimiser(TrajectoryOptimiser):
@@ -72,86 +77,6 @@ class ExplorativeTrajectoryOptimiser(TrajectoryOptimiser):
             cost_fn=cost_fn,
             terminal_cost_fn=terminal_cost_fn,
         )
-
-    def build_training_loss(
-        self,
-        start_state: ttf.Tensor2[Batch, StateDim],
-        start_state_var: ttf.Tensor2[Batch, StateDim] = None,
-        compile: bool = True,
-    ):
-        def training_loss():
-            return -self.objective(start_state, start_state_var=start_state_var)
-
-        if compile:
-            self._training_loss = tf.function(training_loss)
-        else:
-            self._training_loss = training_loss
-        return self._training_loss
-
-    # def build_training_loss(
-    #     self,
-    #     start_state: ttf.Tensor2[Batch, StateDim],
-    #     start_state_var: ttf.Tensor2[Batch, StateDim] = None,
-    #     compile: bool = True,
-    # ):
-    #     def training_loss():
-    #         return -self.objective(start_state, start_state_var=start_state_var)
-
-    #     if compile:
-    #         return tf.function(training_loss)
-    #     else:
-    #         return training_loss
-
-    def training_loss(self):
-        return self._training_loss
-
-    def optimise(
-        self,
-        start_state,
-        training_spec: ExplorativeTrajectoryOptimiserTrainingSpec,
-        constraints=[],
-    ):
-        """Optimise trajectories starting from an initial state"""
-        gpf.set_trainable(self.dynamics, False)
-        if training_spec.monitor and training_spec.manager:
-
-            def callback(step, variables, values):
-                training_spec.monitor(step)
-                training_spec.manager.save()
-
-        elif training_spec.monitor is not None:
-
-            def callback(step, variables, values):
-                training_spec.monitor(step)
-
-        elif training_spec.manager is not None:
-
-            def callback(step, variables, values):
-                training_spec.manager.save()
-
-        else:
-            callback = None
-
-        if self._training_loss is None:
-            self._training_loss = self.build_training_loss(
-                start_state, start_state_var=None, compile=training_spec.compile_loss_fn
-            )
-
-        optimisation_result = self.optimiser.minimize(
-            self._training_loss,
-            self.policy.trainable_variables,
-            method=training_spec.method,
-            constraints=constraints,
-            step_callback=callback,
-            options={
-                "disp": training_spec.disp,
-                "maxiter": training_spec.max_iterations,
-            },
-        )
-        print("Optimisation result:")
-        print(optimisation_result)
-        # TODO remember what's trainable in dynamics and make it trainable here
-        return optimisation_result
 
     def objective(
         self,
