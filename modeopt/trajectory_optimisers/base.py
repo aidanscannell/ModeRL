@@ -7,7 +7,7 @@ from typing import Callable
 import gpflow as gpf
 import tensor_annotations.tensorflow as ttf
 import tensorflow as tf
-from gpflow import default_float
+from modeopt.cost_functions import CostFunction
 from modeopt.dynamics import Dynamics
 from modeopt.policies import VariationalPolicy
 from tensor_annotations import axes
@@ -30,6 +30,7 @@ class TrajectoryOptimiserTrainingSpec:
     compile_loss_fn: bool = True  # loss function in tf.function?
     monitor: gpf.monitor.Monitor = None
     manager: tf.train.CheckpointManager = None
+    cost_fn: CostFunction = None
 
 
 class TrajectoryOptimiser(abc.ABC):
@@ -42,15 +43,13 @@ class TrajectoryOptimiser(abc.ABC):
         self,
         policy: VariationalPolicy,
         dynamics: Dynamics,
-        cost_fn: Callable,
-        terminal_cost_fn: Callable,
+        cost_fn: CostFunction,
         optimiser=None,  # has to be scipy?
         horizon: int = 10,
     ):
         self.policy = policy
         self.dynamics = dynamics
         self.cost_fn = cost_fn
-        self.terminal_cost_fn = terminal_cost_fn
         assert horizon > 0, "horizon has to be > 0"
         self.horizon = horizon
 

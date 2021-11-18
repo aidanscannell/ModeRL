@@ -1,24 +1,22 @@
 #!/usr/bin/env python3
 import typing
 from dataclasses import dataclass
-from typing import Callable
 
 import gpflow as gpf
 import tensor_annotations.tensorflow as ttf
 import tensorflow as tf
 import tensorflow_probability as tfp
-from modeopt.dynamics import GPDynamics
-from modeopt.cost_functions import expected_quadratic_costs, quadratic_cost_fn
-from modeopt.policies import (
-    VariationalPolicy,
-    VariationalGaussianPolicy,
-    DeterministicPolicy,
+from gpflow import default_float
+from modeopt.cost_functions import (
+    CostFunction,
+    quadratic_cost_fn,
 )
+from modeopt.dynamics import GPDynamics
+from modeopt.policies import VariationalPolicy
 from modeopt.rollouts import rollout_policy_in_dynamics
 from modeopt.trajectory_optimisers.base import TrajectoryOptimiser
 from tensor_annotations import axes
 from tensor_annotations.axes import Batch
-from gpflow import default_float
 
 tfd = tfp.distributions
 
@@ -56,11 +54,7 @@ class ExplorativeTrajectoryOptimiserTrainingSpec:
     compile_loss_fn: bool = True  # loss function in tf.function?
     monitor: gpf.monitor.Monitor = None
     manager: tf.train.CheckpointManager = None
-    Q: ttf.Tensor2[StateDim, StateDim] = None
-    R: ttf.Tensor2[ControlDim, ControlDim] = None
-    Q_terminal: ttf.Tensor2[StateDim, StateDim] = None
-    riemannian_metric_cost_weight: default_float() = 1.0
-    riemannian_metric_covariance_weight: default_float() = 1.0
+    cost_fn: CostFunction = None
 
 
 class ExplorativeTrajectoryOptimiser(TrajectoryOptimiser):
@@ -68,14 +62,12 @@ class ExplorativeTrajectoryOptimiser(TrajectoryOptimiser):
         self,
         policy: VariationalPolicy,
         dynamics: GPDynamics,
-        cost_fn: Callable,
-        terminal_cost_fn: Callable,
+        cost_fn: CostFunction,
     ):
         super().__init__(
             policy=policy,
             dynamics=dynamics,
             cost_fn=cost_fn,
-            terminal_cost_fn=terminal_cost_fn,
         )
 
     def objective(
@@ -95,19 +87,28 @@ class ExplorativeTrajectoryOptimiser(TrajectoryOptimiser):
         )
 
         # Calculate costs
-        expected_integral_costs, expected_terminal_cost = expected_quadratic_costs(
-            cost_fn=self.cost_fn,
-            terminal_cost_fn=self.terminal_cost_fn,
-            state_means=state_means,
-            state_vars=state_vars,
-            policy=self.policy,
-        )  # [Batch,], []
+        control_means, control_vars = self.policy()
+        expected_costs = self.cost_fn(
+            state=state_means,
+            control=control_means,
+            state_var=state_vars,
+            control_var=control_vars,
+        )
+        print("expected_cost")
+        print(expected_costs)
+        # expected_integral_costs, expected_terminal_cost = expected_quadratic_costs(
+        #     cost_fn=self.cost_fn,
+        #     terminal_cost_fn=self.terminal_cost_fn,
+        #     state_means=state_means,
+        #     state_vars=state_vars,
+        #     policy=self.policy,
+        # )  # [Batch,], []
 
         # self.dynamics.predict_mode_probability_given_latent(
         #     h_mean=gating_means, h_var=gating_vars
         # )
         # predict_mode_probability(state_mean, control_mean, state_var, control_var)
-        control_means, control_vars = self.policy()
+        # control_means, control_vars = self.policy()
         mode_var_exp = self.dynamics.mode_variational_expectation(
             state_means[:-1, :], control_means, state_vars[:-1, :], control_vars
         )
