@@ -14,8 +14,7 @@ tfd = tfp.distributions
 
 class VariationalPolicy(abc.ABC, Module):
     """
-    A trainable policy that can be optimised by a
-    TrajectoryOptimiser and used for control
+    A trainable policy that can be optimised by a TrajectoryOptimiser and used for control
     """
 
     def __init__(self, controls, constraints_lower_bound, constraints_upper_bound):
