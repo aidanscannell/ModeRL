@@ -13,14 +13,23 @@ import tensorflow as tf
 from gpflow import default_float
 from gpflow.monitor import Monitor
 from gpflow.utilities import print_summary
+from modeopt.cost_functions import (
+    ControlQuadraticCostFunction,
+    ModeProbCostFunction,
+    RiemannianEnergyCostFunction,
+    StateQuadraticCostFunction,
+    TargetStateCostFunction,
+    ZeroCostFunction,
+)
 from modeopt.dynamics import ModeOptDynamics, ModeOptDynamicsTrainingSpec
 from modeopt.mode_opt import ModeOpt
 from modeopt.monitor import create_test_inputs, init_ModeOpt_monitor
 from modeopt.policies import DeterministicPolicy, VariationalGaussianPolicy
+from modeopt.rollouts import rollout_policy_in_dynamics
 from modeopt.trajectory_optimisers import (
+    ExplorativeTrajectoryOptimiserTrainingSpec,
     ModeVariationalTrajectoryOptimiserTrainingSpec,
     VariationalTrajectoryOptimiserTrainingSpec,
-    ExplorativeTrajectoryOptimiserTrainingSpec,
 )
 from mogpe.helpers.plotter import Plotter2D
 from mogpe.training import MixtureOfSVGPExperts_from_toml
@@ -30,6 +39,7 @@ from mogpe.training.utils import (
     init_fast_tasks_bounds,
 )
 from simenvs.core import make
+
 from scenario_4.data.load_data import load_vcpm_dataset
 
 
@@ -76,7 +86,6 @@ def init_mode_opt(
     mogpe_config_file=None,
     mode_opt_ckpt_dir=None,
     horizon=None,
-    mode_chance_constraint_lower=None,
     velocity_constraints_lower=None,
     velocity_constraints_upper=None,
     nominal_dynamics: Callable = velocity_controlled_point_mass_dynamics,
@@ -97,11 +106,12 @@ def init_mode_opt(
 
     # Init policy
     control_means = (
-        np.ones((horizon, control_dim)) * 0.5
+        np.ones((horizon, control_dim))
+        # np.ones((horizon, control_dim)) * [-5.0, 0.5]
         + np.random.random((horizon, control_dim)) * 0.1
     )
-    control_means = control_means * 0.0
-    # control_means = control_means * 10.0
+    # control_means = control_means * 0.0
+    # control_means = control_means * 100000000.0
     if policy is None:
         policy = DeterministicPolicy
     # if isinstance(policy, DeterministicPolicy):
@@ -153,7 +163,6 @@ def init_mode_opt(
         dynamics=dynamics,
         dataset=dataset,
         desired_mode=desired_mode,
-        mode_chance_constraint_lower=mode_chance_constraint_lower,
         horizon=horizon,
     )
 
@@ -278,11 +287,13 @@ def config_traj_opt(
     fast_tasks_period,
     slow_tasks_period,
     trajectory_optimiser,
-    state_cost_weight: default_float() = 1.0,
-    control_cost_weight: default_float() = 1.0,
-    terminal_state_cost_weight: default_float() = 1.0,
-    riemannian_metric_cost_weight: default_float() = 1.0,
+    horizon: int = None,
+    state_cost_weight: default_float() = None,
+    control_cost_weight: default_float() = None,
+    terminal_state_cost_weight: default_float() = None,
+    riemannian_metric_cost_weight: default_float() = None,
     riemannian_metric_covariance_weight: default_float() = 1.0,
+    prob_cost_weight=None,
 ):
     # Load data set from ckpt dir
     train_dataset = np.load(os.path.join(mode_opt_ckpt_dir, "train_dataset.npz"))
@@ -321,6 +332,40 @@ def config_traj_opt(
     Q = weight_to_matrix(state_cost_weight, state_dim)
     R = weight_to_matrix(control_cost_weight, control_dim)
     Q_terminal = weight_to_matrix(terminal_state_cost_weight, state_dim)
+    prob_cost_weight = weight_to_matrix(prob_cost_weight, 1)
+    riemannian_metric_weight_matrix = weight_to_matrix(
+        riemannian_metric_cost_weight, state_dim + control_dim
+    )
+
+    state_means, state_vars = rollout_policy_in_dynamics(
+        mode_optimiser.policy, mode_optimiser.dynamics, mode_optimiser.start_state
+    )
+
+    cost_fn = ZeroCostFunction()
+    if Q_terminal is not None:
+        cost_fn += TargetStateCostFunction(
+            weight_matrix=Q_terminal, target_state=mode_optimiser.target_state
+        )
+        print("Using quadratic TERMINAL STATE cost")
+    if R is not None:
+        cost_fn += ControlQuadraticCostFunction(weight_matrix=R)
+        print("Using quadratic CONTROL cost")
+    if Q is not None:
+        cost_fn += StateQuadraticCostFunction(weight_matrix=Q)
+        print("Using quadratic STATE cost")
+    if riemannian_metric_cost_weight is not None:
+        cost_fn += RiemannianEnergyCostFunction(
+            gp=mode_optimiser.dynamics.gating_gp,
+            covariance_weight=riemannian_metric_covariance_weight,
+            riemmanian_metric_weight_matrix=riemannian_metric_weight_matrix,
+        )
+        print("Using RIEMANNIAN ENERGY cost")
+    if prob_cost_weight is not None:
+        cost_fn += ModeProbCostFunction(
+            prob_fn=mode_optimiser.dynamics.predict_mode_probability,
+            weight=prob_cost_weight,
+        )
+        print("Using MODE PROB cost")
 
     if trajectory_optimiser == "ModeVariationalTrajectoryOptimiser":
         print("ModeVariationalTrajectoryOptimiser")
@@ -333,11 +378,7 @@ def config_traj_opt(
             compile_loss_fn=compile_loss_fn,
             monitor=monitor,
             manager=manager,
-            Q=Q,
-            R=R,
-            Q_terminal=Q_terminal,
-            riemannian_metric_cost_weight=riemannian_metric_cost_weight,
-            riemannian_metric_covariance_weight=riemannian_metric_covariance_weight,
+            cost_fn=cost_fn,
         )
     elif trajectory_optimiser == "VariationalTrajectoryOptimiser":
         print("VariationalTrajectoryOptimiser")
@@ -350,11 +391,7 @@ def config_traj_opt(
             compile_loss_fn=compile_loss_fn,
             monitor=monitor,
             manager=manager,
-            Q=Q,
-            R=R,
-            Q_terminal=Q_terminal,
-            riemannian_metric_cost_weight=riemannian_metric_cost_weight,
-            riemannian_metric_covariance_weight=riemannian_metric_covariance_weight,
+            cost_fn=cost_fn,
         )
     elif trajectory_optimiser == "ExplorativeTrajectoryOptimiser":
         print("ExplorativeTrajectoryOptimiser")
@@ -367,17 +404,12 @@ def config_traj_opt(
             compile_loss_fn=compile_loss_fn,
             monitor=monitor,
             manager=manager,
-            Q=Q,
-            R=R,
-            Q_terminal=Q_terminal,
-            riemannian_metric_cost_weight=riemannian_metric_cost_weight,
-            riemannian_metric_covariance_weight=riemannian_metric_covariance_weight,
+            cost_fn=cost_fn,
         )
     else:
         raise NotImplementedError(
             "Specify a correct trajectory optimiser, VariationalTrajectoryOptimiser, ModeVariationalTrajectoryOptimiser "
         )
-
     return mode_optimiser, training_spec
 
 
@@ -392,7 +424,6 @@ def init_checkpoint_manager(
 ):
     if mogpe_toml_config is not None:
         try:
-            # shutil.copy(mogpe_toml_config, log_dir + "/mogpe_config.toml")
             shutil.copy(mogpe_toml_config, os.path.join(log_dir, "mogpe_config.toml"))
         except:
             print("Failed to copy mogpe_config to log_dir")
