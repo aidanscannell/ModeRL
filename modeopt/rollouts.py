@@ -77,6 +77,29 @@ def rollout_controller_in_env(
     return rollout_policy_in_env(env, controller.policy, start_state)
 
 
+def rollout_controls_in_env(
+    env,
+    start_state: ttf.Tensor2[Batch, StateDim],
+    controls: ttf.Tensor2[Batch, ControlDim],
+):
+    """Rollout a given policy on an environment
+
+    :param policy: Callable representing policy to rollout
+    :param timesteps: number of timesteps to rollout
+    :returns: (states, delta_states)
+    """
+    env.state_init = start_state.numpy()
+    env.reset()
+    states = start_state.numpy()
+    horizon = controls.shape[0]
+
+    for t in range(horizon):
+        # control, _ = policy(t)
+        next_time_step = env.step(controls[t].numpy())
+        states = np.concatenate([states, next_time_step.observation])
+    return np.stack(states)
+
+
 def rollout_policy_in_env(
     env, policy, start_state: ttf.Tensor2[Batch, StateDim] = None
 ):
