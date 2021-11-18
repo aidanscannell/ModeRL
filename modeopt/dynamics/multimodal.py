@@ -4,14 +4,12 @@ from typing import Callable, NewType, Tuple
 
 import gin
 import gpflow as gpf
-import numpy as np
 import tensor_annotations.tensorflow as ttf
 import tensorflow as tf
-from gpflow import Module, default_float, Parameter
+from gpflow import Module, default_float
 from gpflow.conditionals import base_conditional
 from gpflow.mean_functions import MeanFunction
 from modeopt.dynamics.conditionals import (
-    FakeInducingPoints,
     svgp_covariance_conditional,
     uncertain_conditional,
 )
@@ -93,7 +91,6 @@ class ModeOptDynamics(Module):
         self.optimiser = optimiser
         self._training_loss = None
 
-        # TODO minus nominal dynamics from output
         class NominalDynamicsMeanFunction(MeanFunction):
             def __call__(self, Xnew):
                 return nominal_dynamics(
@@ -188,10 +185,9 @@ class ModeOptDynamics(Module):
 
     def _train(
         self,
-        dataset: Tuple,
-        # dataset: Tuple(
-        #     ttf.Tensor2[Batch, StateControlDim], ttf.Tensor2[Batch, StateDim]
-        # ),
+        dataset: Tuple[
+            ttf.Tensor2[Batch, StateControlDim], ttf.Tensor2[Batch, StateDim]
+        ],
         training_spec: ModeOptDynamicsTrainingSpec,
     ):
         """Train the transition_model given the trajectories and a training_spec
@@ -263,8 +259,8 @@ class ModeOptDynamics(Module):
     ):
         # probs = self.gating_gp.predict_y(h_mean, h_var)
         probs = self.gating_gp.predict_mixing_probs_given_h(h_mean, h_var)
-        print("probs")
-        print(probs)
+        # print("probs")
+        # print(probs)
         if probs.shape[-1] == 1:
             return probs
         else:
