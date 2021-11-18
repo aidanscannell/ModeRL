@@ -1,7 +1,3 @@
-# import scenario_4.run_mode_opt_learn_dynamics.velocity_controlled_point_mass_dynamics
-# import scenario_4.run_mode_opt_learn_dynamics
-# import modeopt.policies
-
 # Environment config
 init_mode_opt.env_name = "velocity-controlled-point-mass/scenario-4"
 init_mode_opt.delta_time = 0.05
@@ -14,7 +10,6 @@ load_vcpm_dataset.trim_coords = None
 # load_vcpm_dataset.plot = True
 
 # ModeOpt config
-# init_mode_opt.mogpe_config_file = "./scenario_4/configs/subset_mogpe_config_old.toml"
 init_mode_opt.mogpe_config_file = "./scenario_4/configs/subset_mogpe_config.toml"
 init_mode_opt.desired_mode = 0
 init_mode_opt.start_state = [3.0, 2.0]
