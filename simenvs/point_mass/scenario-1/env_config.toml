@@ -1,0 +1,37 @@
+# lists are converted to 1D np.arrays and floats/ints are broadcast
+# e.g min_state = [-3.0, -2.0] is converted with np.array(min_state)
+
+# system params
+mass = 1.2
+moment_of_inertia = 2.0
+
+# state constraints
+# min_state = [-3.0, -3.0, -10.0, -10.0, -360.0]
+# max_state = [3.0, 3.0, 10.0, 10.0, 360.0]
+min_state = [-3.0, -3.0, -360.0]
+max_state = [3.0, 3.0, 360.0]
+
+
+# control constraints
+min_thrust = -20.0
+max_thrust = 20.0
+min_torque = -10.0
+max_torque = 10.0
+
+# environment parameters
+# low_process_noise_var = [0.000001, 0.000002]
+# high_process_noise_var = [0.1, 0.04]
+# low_process_noise_mean = [0.01, 0.05]
+# high_process_noise_mean = [0.1, -1.0]
+# low_process_noise_var = [0.00001, 0.000002] # [sigma_x, sigma_y]
+# high_process_noise_var = [4.0, 4.0]
+# low_process_noise_mean = [0.1, 0.5]
+# high_process_noise_mean = [1.0, -20.0]
+low_process_noise_var = [0.00001, 0.000002, 0.000002] # [sigma_x, sigma_y, phi]
+high_process_noise_var = [4.0, 4.0, 2.0]
+low_process_noise_mean = [0.1, 0.5, 0.0]
+high_process_noise_mean = [1.0, -20.0, 0.1]
+
+# simulator parameters
+# delta_time = 0.05
+delta_time = 0.1
