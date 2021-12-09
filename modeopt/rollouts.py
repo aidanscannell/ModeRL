@@ -1,26 +1,32 @@
 #!/usr/bin/env python3
 import typing
-import numpy as np
-from typing import Callable
+from typing import Tuple
 
+import numpy as np
 import tensor_annotations.tensorflow as ttf
 import tensorflow as tf
 from gpflow import default_float
 from tensor_annotations import axes
 from tensor_annotations.axes import Batch
+from modeopt.dynamics import SVGPDynamics
 from modeopt.policies import VariationalPolicy
 
 StateDim = typing.NewType("StateDim", axes.Axis)
 ControlDim = typing.NewType("ControlDim", axes.Axis)
+Horizon = typing.NewType("Horizon", axes.Axis)
+HorizonPlusOne = typing.NewType("HorizonPlusOne", axes.Axis)
+One = typing.NewType("One", axes.Axis)
 
 
 def rollout_controls_in_dynamics(
-    dynamics: Callable,
-    start_state: ttf.Tensor2[Batch, StateDim],
-    control_means: ttf.Tensor2[Batch, ControlDim],
-    start_state_var: ttf.Tensor2[Batch, StateDim] = None,
-    control_vars: ttf.Tensor2[Batch, ControlDim] = None,
-):
+    dynamics: SVGPDynamics,
+    start_state: ttf.Tensor2[One, StateDim],
+    control_means: ttf.Tensor2[Horizon, ControlDim],
+    start_state_var: ttf.Tensor2[One, StateDim] = None,
+    control_vars: ttf.Tensor2[Horizon, ControlDim] = None,
+) -> Tuple[
+    ttf.Tensor2[HorizonPlusOne, StateDim], ttf.Tensor2[HorizonPlusOne, StateDim]
+]:
     """Rollout a given set of control means and vars
 
     :returns: (states_means, state_vars)
@@ -47,11 +53,12 @@ def rollout_controls_in_dynamics(
 
 def rollout_policy_in_dynamics(
     policy: VariationalPolicy,
-    dynamics: Callable,
-    start_state: ttf.Tensor2[Batch, StateDim],
-    start_state_var: ttf.Tensor2[Batch, StateDim] = None,
-):
-    """Rollout a polciy in gp dynamics model
+    dynamics: SVGPDynamics,
+    start_state: ttf.Tensor2[One, StateDim],
+    start_state_var: ttf.Tensor2[One, StateDim] = None,
+) -> Tuple[
+    ttf.Tensor2[HorizonPlusOne, StateDim], ttf.Tensor2[HorizonPlusOne, StateDim]
+]:
 
     :returns: (states_means, state_vars)
     """
@@ -70,23 +77,14 @@ def rollout_policy_in_dynamics(
     return state_means, state_vars
 
 
-def rollout_controller_in_env(
-    env, controller, start_state: ttf.Tensor2[Batch, StateDim] = None
-):
-    """Rollout a controller in an environment"""
-    return rollout_policy_in_env(env, controller.policy, start_state)
-
-
 def rollout_controls_in_env(
-    env,
+    env: py_environment.PyEnvironment,
     start_state: ttf.Tensor2[Batch, StateDim],
-    controls: ttf.Tensor2[Batch, ControlDim],
-):
-    """Rollout a given policy on an environment
+    controls: ttf.Tensor2[Horizon, ControlDim],
+) -> ttf.Tensor2[HorizonPlusOne, StateDim]:
+    """Rollout a controls in environment
 
-    :param policy: Callable representing policy to rollout
-    :param timesteps: number of timesteps to rollout
-    :returns: (states, delta_states)
+    :returns: states
     """
     env.state_init = start_state.numpy()
     env.reset()
@@ -101,9 +99,11 @@ def rollout_controls_in_env(
 
 
 def rollout_policy_in_env(
-    env, policy, start_state: ttf.Tensor2[Batch, StateDim] = None
-):
-    """Rollout a given policy on an environment
+    env: py_environment.PyEnvironment,
+    policy: VariationalPolicy,
+    start_state: ttf.Tensor2[Batch, StateDim] = None,
+) -> ttf.Tensor2[HorizonPlusOne, StateDim]:
+    """Rollout a policy in environment
 
     :param policy: Callable representing policy to rollout
     :param timesteps: number of timesteps to rollout
