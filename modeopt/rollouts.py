@@ -8,6 +8,8 @@ import tensorflow as tf
 from gpflow import default_float
 from tensor_annotations import axes
 from tensor_annotations.axes import Batch
+from tf_agents.environments import py_environment
+
 from modeopt.dynamics import SVGPDynamics
 from modeopt.policies import VariationalPolicy
 
