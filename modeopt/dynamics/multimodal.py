@@ -98,8 +98,9 @@ class ModeOptDynamics(Module):
                     control_mean=Xnew[:, state_dim:],
                 )
 
-        for expert in self.mosvgpe.experts.experts_list:
-            expert.mean_function += NominalDynamicsMeanFunction()
+        if nominal_dynamics is not None:
+            for expert in self.mosvgpe.experts.experts_list:
+                expert.mean_function += NominalDynamicsMeanFunction()
 
         # Remember what parameters are trainable
         self.initial_trainable_parameters = self.mosvgpe.trainable_parameters
