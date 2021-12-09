@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 import typing
+from functools import partial
 
 import tensor_annotations.tensorflow as ttf
 import tensorflow as tf
 import tensorflow_probability as tfp
+from gpflow import posteriors
 from gpflow.conditionals import uncertain_conditional
 from gpflow.models import SVGP
 from modeopt.dynamics import Dynamics
+from modeopt.utils import combine_state_contols_to_input
 from tensor_annotations import axes
 from tensor_annotations.axes import Batch
 
@@ -14,6 +17,7 @@ tfd = tfp.distributions
 
 StateDim = typing.NewType("StateDim", axes.Axis)
 ControlDim = typing.NewType("ControlDim", axes.Axis)
+StateControlDim = typing.NewType("StateControlDim", axes.Axis)
 
 
 def multioutput_uncertain_conditional(
@@ -59,44 +63,14 @@ def multioutput_uncertain_conditional(
     return f_means, f_vars
 
 
-def svgp_dynamics(
-    svgp,
-    state_mean: ttf.Tensor2[Batch, StateDim],
-    control_mean: ttf.Tensor2[Batch, ControlDim],
+def gp_predict_dynamics_wrapper(
+    delta_state_mean: ttf.Tensor2[Batch, StateDim],
+    delta_state_var: ttf.Tensor2[Batch, StateDim],
+    state_mean: ttf.Tensor2[Batch, StateDim] = None,
     state_var: ttf.Tensor2[Batch, StateDim] = None,
-    control_var: ttf.Tensor2[Batch, ControlDim] = None,
     predict_state_difference: bool = False,
     gp_dims: ttf.Tensor1[StateDim] = None,
-    add_noise: bool = False,
 ) -> ttf.Tensor2[Batch, StateDim]:
-    assert len(state_mean.shape) == 2
-    assert len(control_mean.shape) == 2
-    input_mean = tf.concat([state_mean, control_mean], -1)
-    if state_var is None and control_var is None:
-        delta_state_mean, delta_state_var = svgp.predict_f(input_mean, full_cov=False)
-    else:
-        input_var = tf.concat([state_var, control_var], -1)
-        delta_state_mean, delta_state_var = multioutput_uncertain_conditional(
-            input_mean,
-            input_var,
-            # svgp.inducing_variable.inducing_variables,
-            svgp.inducing_variable.inducing_variables[0],
-            kernel=svgp.kernel,
-            q_mu=svgp.q_mu,
-            q_sqrt=svgp.q_sqrt,
-            # mean_function=svgp.mean_function,
-            mean_function=None,
-            full_output_cov=False,
-            full_cov=False,
-            whiten=svgp.whiten,
-        )
-        # TODO propogate state-control uncertianty through mean function?
-        delta_state_mean += svgp.mean_function(input_mean)
-    if add_noise:
-        delta_state_mean, delta_state_var = svgp.likelihood.predict_mean_and_var(
-            delta_state_mean, delta_state_var
-        )
-
     if gp_dims is not None:
         # gp_delta_state_mean = tf.expand_dims(gp_delta_state_mean, gp_dims)
         raise ("implement functionality of gp only modelling certain state dimensions")
@@ -105,7 +79,10 @@ def svgp_dynamics(
         return delta_state_mean, delta_state_var
     else:
         next_state_mean = state_mean + delta_state_mean
-        next_state_var = state_var + delta_state_var
+        if state_var is None:
+            next_state_var = delta_state_var
+        else:
+            next_state_var = state_var + delta_state_var
         return next_state_mean, next_state_var
 
 
@@ -116,6 +93,32 @@ class SVGPDynamics(Dynamics):
         self.gp = svgp
         self.gp_dims = gp_dims
         self.state_dim = self.svgp.num_latent_gps
+        self.svgp_posterior = svgp.posterior(
+            precompute_cache=posteriors.PrecomputeCacheType.TENSOR
+        )
+
+        def uncertain_predict_f(input_mean, input_var):
+            # TODO use multidispatch to handle multi-output uncertain conditionals
+            f_mean, f_var = multioutput_uncertain_conditional(
+                input_mean,
+                input_var,
+                # inducing_variables=svgp.inducing_variable,
+                inducing_variables=svgp.inducing_variable.inducing_variables[0],
+                kernel=svgp.kernel,
+                q_mu=svgp.q_mu,
+                q_sqrt=svgp.q_sqrt,
+                # mean_function=svgp.mean_function,
+                mean_function=None,
+                full_output_cov=False,
+                full_cov=False,
+                whiten=svgp.whiten,
+            )
+            # TODO propogate state-control uncertianty through mean function?
+            f_mean = f_mean + svgp.mean_function(input_mean)
+            return f_mean, f_var
+
+        self.predict_f = partial(svgp.predict_f, full_cov=False, full_output_cov=False)
+        self.uncertain_predict_f = uncertain_predict_f
 
     def __call__(
         self,
@@ -126,13 +129,26 @@ class SVGPDynamics(Dynamics):
         predict_state_difference: bool = False,
         add_noise: bool = False,
     ) -> ttf.Tensor2[Batch, StateDim]:
-        return svgp_dynamics(
-            self.svgp,
+        input_mean, input_var = combine_state_contols_to_input(
+            state_mean, control_mean, state_var=state_var, control_var=state_var
+        )
+        if input_var is None:
+            delta_state_mean, delta_state_var = self.predict_f(input_mean)
+        else:
+            delta_state_mean, delta_state_var = self.uncertain_predict_f(
+                input_mean, input_var
+            )
+        # delta_state_mean, delta_state_var = self.predict_f(input_mean)
+        if add_noise:
+            delta_state_mean, delta_state_var = self.gp.likelihood.predict_mean_and_var(
+                delta_state_mean, delta_state_var
+            )
+        next_state_mean, next_state_var = gp_predict_dynamics_wrapper(
+            delta_state_mean,
+            delta_state_var,
             state_mean=state_mean,
-            control_mean=control_mean,
             state_var=state_var,
-            control_var=control_var,
             predict_state_difference=predict_state_difference,
             gp_dims=self.gp_dims,
-            add_noise=add_noise,
         )
+        return next_state_mean, next_state_var
