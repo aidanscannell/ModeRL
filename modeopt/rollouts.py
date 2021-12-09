@@ -59,6 +59,7 @@ def rollout_policy_in_dynamics(
 ) -> Tuple[
     ttf.Tensor2[HorizonPlusOne, StateDim], ttf.Tensor2[HorizonPlusOne, StateDim]
 ]:
+    """Rollout a policy in gp dynamics model
 
     :returns: (states_means, state_vars)
     """
@@ -105,7 +106,6 @@ def rollout_policy_in_env(
     """Rollout a policy in environment
 
     :param policy: Callable representing policy to rollout
-    :param timesteps: number of timesteps to rollout
     :returns: (states, delta_states)
     """
     env.state_init = start_state.numpy()
