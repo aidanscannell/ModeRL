@@ -9,6 +9,7 @@ import tensorflow as tf
 from gpflow import Module, default_float
 from gpflow.conditionals import base_conditional
 from gpflow.mean_functions import MeanFunction
+from gpflow.quadrature import NDiagGHQuadrature
 from modeopt.dynamics.conditionals import (
     svgp_covariance_conditional,
     uncertain_conditional,
@@ -89,6 +90,7 @@ class ModeOptDynamics(Module):
         self.state_dim = state_dim
         self.control_dim = control_dim
 
+        # TODO set this differently when K>2
         self._gating_gp = self.mosvgpe.gating_network
 
         self.optimiser = optimiser
