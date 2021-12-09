@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from functools import partial
 from typing import Callable, NewType, Optional, Union
 
 import tensor_annotations.tensorflow as ttf
@@ -8,11 +7,6 @@ from geoflow.manifolds import GPManifold
 from gpflow import default_float
 from gpflow.models import GPModel
 from tensor_annotations import axes
-from modeopt.policies import (
-    VariationalGaussianPolicy,
-    VariationalPolicy,
-    DeterministicPolicy,
-)
 
 StateDim = NewType("StateDim", axes.Axis)
 ControlDim = NewType("ControlDim", axes.Axis)
@@ -23,8 +17,7 @@ HorizonPlusOne = NewType("HorizonPlusOne", axes.Axis)
 
 
 class CostFunction:
-    """
-    The base cost function class.
+    """Base cost function class.
 
     To implement a mean function, write the __call__ method.
     """
@@ -288,7 +281,7 @@ class RiemannianEnergyCostFunction(CostFunction):
 
 
 class ModeProbCostFunction(CostFunction):
-    """Simple mode probability cost function class. """
+    """Simple mode probability cost function class."""
 
     def __init__(
         self,
