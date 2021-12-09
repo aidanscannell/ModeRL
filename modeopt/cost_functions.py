@@ -16,6 +16,7 @@ InputDim = Union[StateDim, ControlDim]
 One = NewType("One", axes.Axis)
 Horizon = NewType("Horizon", axes.Axis)
 HorizonPlusOne = NewType("HorizonPlusOne", axes.Axis)
+Batch = NewType("Batch", axes.Axis)
 
 
 class CostFunction:
@@ -323,9 +324,9 @@ def quadratic_cost_fn(
     cost = vector @ weight_matrix @ tf.transpose(vector, [0, 2, 1])
     if vector_var is not None:
         assert len(vector_var.shape) == 2
-        vector_var = tf.expand_dims(vector_var, -2)  # [Trajectory, 1, Dim]
-        trace = tf.linalg.trace(vector_var @ weight_matrix)  # [Trajectory,]
-        cost += trace  # [Trajectory, 1, 1]
+        vector_var = tf.expand_dims(vector_var, -2)  # [Horizon, 1, Dim]
+        trace = tf.linalg.trace(vector_var @ weight_matrix)  # [Horizon,]
+        cost += trace  # [Horizon, 1, 1]
     return cost[:, 0, 0]
 
 
