@@ -26,6 +26,9 @@ ControlDim = NewType("ControlDim", axes.Axis)
 StateControlDim = NewType("StateControlDim", axes.Axis)
 One = NewType("One", axes.Axis)
 
+DEFAULT_NUM_GAUSS_HERMITE_POINTS = 20  # Uses too much memory!
+DEFAULT_NUM_GAUSS_HERMITE_POINTS = 4
+
 
 @gin.configurable
 def init_ModeOptDynamics_from_mogpe_ckpt(
@@ -280,22 +283,75 @@ class ModeOptDynamics(Module):
 
         \sum_{t=1}^T \E_{p(\state_t, \control_t, h)} [\log \Pr(\alpha=k_* \mid h(\state_t, \control_t) )]
         """
-        # Calculate expected mode prob
-        gating_means, gating_vars = self.uncertain_predict_gating(
-            state_mean, control_mean, state_var, control_var
+
+        # TODO how to set Y shape if more than two modes?
+
+        def f(Xnew):
+            # TODO this only works for Bernoulli likelihood
+            # gating_means, gating_vars = self.gating_gp.predict_fs(Xnew, full_cov=False)
+            gating_means, gating_vars = self.gating_gp.predict_f(Xnew, full_cov=False)
+            print("gating_means.shape")
+            print(gating_means.shape)
+            Y = tf.ones(gating_means.shape, dtype=default_float()) * (
+                self.desired_mode + 1
+            )
+            # Y = tf.ones(gating_means.shape, dtype=default_float()) * 2
+            # Y = tf.ones(gating_means.shape, dtype=default_float())
+            # Y = tf.zeros(gating_means.shape, dtype=default_float())
+            gating_var_exp = self.gating_gp.likelihood.predict_log_density(
+                gating_means,
+                gating_vars,
+                Y,
+                # gating_means[..., self.desired_mode],
+                # gating_vars[..., self.desired_mode],
+                # Y[..., self.desired_mode],
+            )
+            return tf.expand_dims(gating_var_exp, -1)
+
+        # combing states and controls means/vars
+        input_mean = tf.concat([state_mean, control_mean], -1)
+        state_zeros = tf.zeros(state_mean.shape, dtype=default_float())
+        control_zeros = tf.zeros(control_mean.shape, dtype=default_float())
+        if state_var is not None and control_var is None:
+            input_var = tf.concat([state_var, control_zeros], -1)
+        elif state_var is None and control_var is not None:
+            input_var = tf.concat([state_zeros, control_var], -1)
+        elif state_var is None and control_var is None:
+            input_var = tf.concat([state_zeros, control_zeros], -1)
+        else:
+            input_var = tf.concat([state_var, control_var], -1)
+
+        gauss_quadrature = NDiagGHQuadrature(
+            dim=self.state_dim + self.control_dim,
+            n_gh=DEFAULT_NUM_GAUSS_HERMITE_POINTS,
         )
-        print("gating_means")
-        print(gating_means)
-        print(gating_vars)
-        Y = tf.ones(gating_means.shape, dtype=default_float()) * self.desired_mode
-        gating_var_exp = self.gating_gp.likelihood.variational_expectations(
-            gating_means, gating_vars, Y
-        )
-        print("gating_var_exp")
-        print(gating_var_exp)
-        sum_gating_var_exp = tf.reduce_sum(gating_var_exp)
-        print(sum_gating_var_exp)
-        return sum_gating_var_exp
+
+        print("input_mean.shape")
+        print(input_mean.shape)
+        print(input_var.shape)
+        var_exp = gauss_quadrature(f, input_mean, input_var)
+        # var_exp = f(input_mean)
+        print("var_exp")
+        print(var_exp)
+        sum_var_exp = tf.reduce_sum(var_exp)
+        print("sum_var_exp")
+        print(sum_var_exp)
+
+        # # Calculate expected mode prob
+        # gating_means, gating_vars = self.uncertain_predict_gating(
+        #     state_mean, control_mean, state_var, control_var
+        # )
+        # print("gating_means")
+        # print(gating_means)
+        # print(gating_vars)
+        # gating_var_exp = self.gating_gp.likelihood.variational_expectations(
+        #     gating_means, gating_vars, Y
+        # )
+        # print("gating_var_exp")
+        # print(gating_var_exp)
+        # sum_gating_var_exp = tf.reduce_sum(gating_var_exp)
+        # print(sum_gating_var_exp)
+        return sum_var_exp
 
     def uncertain_predict_gating(
         self,
