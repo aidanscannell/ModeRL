@@ -62,10 +62,15 @@ class VariationalTrajectoryOptimiser(TrajectoryOptimiser):
     """
 
     def __init__(
-        self, policy: VariationalPolicy, dynamics: GPDynamics, cost_fn: CostFunction
+        self,
+        policy: VariationalPolicy,
+        dynamics: GPDynamics,
+        cost_fn: CostFunction,
+        optimiser=gpf.optimizers.Scipy(),
     ):
-        super().__init__(policy=policy, dynamics=dynamics, cost_fn=cost_fn)
-        self.optimiser = gpf.optimizers.Scipy()
+        super().__init__(
+            policy=policy, dynamics=dynamics, cost_fn=cost_fn, optimiser=optimiser
+        )
         self._training_loss = None
 
     def objective(self, start_state: ttf.Tensor2[Batch, StateDim]):
@@ -101,9 +106,15 @@ class ModeVariationalTrajectoryOptimiser(VariationalTrajectoryOptimiser):
     """
 
     def __init__(
-        self, policy: VariationalPolicy, dynamics: GPDynamics, cost_fn: CostFunction
+        self,
+        policy: VariationalPolicy,
+        dynamics: GPDynamics,
+        cost_fn: CostFunction,
+        optimiser=gpf.optimizers.Scipy(),
     ):
-        super().__init__(policy=policy, dynamics=dynamics, cost_fn=cost_fn)
+        super().__init__(
+            policy=policy, dynamics=dynamics, cost_fn=cost_fn, optimiser=optimiser
+        )
 
     def elbo(self, start_state: ttf.Tensor2[Batch, StateDim]):
         """Optimise trajectories starting from an initial state"""
