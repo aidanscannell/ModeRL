@@ -1,0 +1,48 @@
+#+TITLE: =simenvs=: A Collection of Multimodal Simulation Environments
+
+This repo contains several simulation environments used for my PhD research.
+They are built using [[https://www.tensorflow.org/agents][TF-Agents]] environments module.
+Each environment is configured using a TOML configuration file and a gating mask (in bitmap format),
+which governs how the environment switches between the underlying dynamics modes over the state space.
+For each environment a new scenario can be instantiated by passing its constructor a different gating mask
+and/or TOML configuration file.
+
+* Environments
+There are two functioning environments:
+- *velocity_controlled_point_mass* A 2D velocity controlled point mass subject to different wind fields,
+  - *State*: 2D Euclidean coordinates $\mathbf{x} = [x, y]$,
+  - *Controls*: Speed in each direction $\mathbf{u} = [\dot{x}, \dot{y}]$.
+- *rotating-point-mass* A 2D torque/thrust controlled point mass subject to different wind fields,
+  - *State*: 2D Euclidean coordinates and the yaw angle $\mathbf{x} = [x, y, \phi]$,
+  - *Control*: Thrust and torque$\mathbf{u} = [f_z, \tau]$.
+
+* Example Usage
+Here's a simple example showing how to simulate a trajectory in =scenario-5= of the
+=velocity-controlled-point-mass= environment.
+#+begin_src python
+import numpy as np
+import simenvs
+
+# Initialise environment
+env_name = "velocity-controlled-point-mass/scenario-5"
+env = simenvs.make(env_name)
+
+# Create a dummy policy
+control_dim = env.action_spec().shape[0]
+horizon = 10
+
+def policy(timestep):
+    return np.random.randn(control_dim)
+
+start_state = np.array([0.0, 0.0])
+env.state_init = start_state
+env.reset()
+
+# Roll out the control in the environment
+state_trajectory = start_state
+for t in range(horizon):
+    control = policy(t)
+    next_time_step = env.step(control) # Simulate a single step in the environment
+    state_trajectory = np.concatenate([state_trajectory, next_time_step.observation])
+state_trajectory = np.stack(state_trajectory)
+#+end_src
