@@ -18,7 +18,8 @@ StateDim = NewType("StateDim", axes.Axis)
 ControlDim = NewType("ControlDim", axes.Axis)
 InputDim = Union[StateDim, ControlDim]
 One = NewType("One", axes.Axis)
-Trajectory = NewType("Trajectory", axes.Axis)
+Horizon = NewType("Horizon", axes.Axis)
+HorizonPlusOne = NewType("HorizonPlusOne", axes.Axis)
 
 
 class CostFunction:
@@ -30,10 +31,10 @@ class CostFunction:
 
     def __call__(
         self,
-        state: ttf.Tensor2[Trajectory, StateDim],
-        control: ttf.Tensor2[Trajectory, ControlDim],
-        state_var: Optional[ttf.Tensor2[Trajectory, StateDim]] = None,
-        control_var: Optional[ttf.Tensor2[Trajectory, ControlDim]] = None,
+        state: ttf.Tensor2[HorizonPlusOne, StateDim],
+        control: ttf.Tensor2[Horizon, ControlDim],
+        state_var: Optional[ttf.Tensor2[HorizonPlusOne, StateDim]] = None,
+        control_var: Optional[ttf.Tensor2[Horizon, ControlDim]] = None,
     ):
         """Expected cost func under Normally distributed states and controls
 
@@ -65,10 +66,10 @@ class Additive(CostFunction):
 
     def __call__(
         self,
-        state: ttf.Tensor2[Trajectory, StateDim],
-        control: ttf.Tensor2[Trajectory, ControlDim],
-        state_var: Optional[ttf.Tensor2[Trajectory, StateDim]] = None,
-        control_var: Optional[ttf.Tensor2[Trajectory, ControlDim]] = None,
+        state: ttf.Tensor2[HorizonPlusOne, StateDim],
+        control: ttf.Tensor2[Horizon, ControlDim],
+        state_var: Optional[ttf.Tensor2[HorizonPlusOne, StateDim]] = None,
+        control_var: Optional[ttf.Tensor2[Horizon, ControlDim]] = None,
     ):
         return tf.add(
             self.add_1(
@@ -89,10 +90,10 @@ class Additive(CostFunction):
 class ZeroCostFunction(CostFunction):
     def __call__(
         self,
-        state: ttf.Tensor2[Trajectory, StateDim],
-        control: ttf.Tensor2[Trajectory, ControlDim],
-        state_var: Optional[ttf.Tensor2[Trajectory, StateDim]] = None,
-        control_var: Optional[ttf.Tensor2[Trajectory, ControlDim]] = None,
+        state: ttf.Tensor2[HorizonPlusOne, StateDim],
+        control: ttf.Tensor2[Horizon, ControlDim],
+        state_var: Optional[ttf.Tensor2[HorizonPlusOne, StateDim]] = None,
+        control_var: Optional[ttf.Tensor2[Horizon, ControlDim]] = None,
     ):
         return tf.constant(0.0, dtype=default_float())
 
@@ -101,17 +102,18 @@ class StateQuadraticCostFunction(CostFunction):
     def __init__(
         self,
         weight_matrix: Union[
-            ttf.Tensor2[StateDim, StateDim], ttf.Tensor3[Trajectory, StateDim, StateDim]
+            ttf.Tensor2[StateDim, StateDim],
+            ttf.Tensor3[HorizonPlusOne, StateDim, StateDim],
         ],
     ):
         self.weight_matrix = weight_matrix
 
     def __call__(
         self,
-        state: ttf.Tensor2[Trajectory, StateDim],
-        control: ttf.Tensor2[Trajectory, ControlDim],
-        state_var: Optional[ttf.Tensor2[Trajectory, StateDim]] = None,
-        control_var: Optional[ttf.Tensor2[Trajectory, ControlDim]] = None,
+        state: ttf.Tensor2[HorizonPlusOne, StateDim],
+        control: ttf.Tensor2[Horizon, ControlDim],
+        state_var: Optional[ttf.Tensor2[HorizonPlusOne, StateDim]] = None,
+        control_var: Optional[ttf.Tensor2[Horizon, ControlDim]] = None,
     ):
         """Expected quadratic integral state cost func
 
@@ -144,17 +146,17 @@ class ControlQuadraticCostFunction(CostFunction):
     def __init__(
         self,
         weight_matrix: Union[
-            ttf.Tensor2[StateDim, StateDim], ttf.Tensor3[Trajectory, StateDim, StateDim]
+            ttf.Tensor2[StateDim, StateDim], ttf.Tensor3[Horizon, StateDim, StateDim]
         ],
     ):
         self.weight_matrix = weight_matrix
 
     def __call__(
         self,
-        state: ttf.Tensor2[Trajectory, StateDim],
-        control: ttf.Tensor2[Trajectory, ControlDim],
-        state_var: Optional[ttf.Tensor2[Trajectory, StateDim]] = None,
-        control_var: Optional[ttf.Tensor2[Trajectory, ControlDim]] = None,
+        state: ttf.Tensor2[HorizonPlusOne, StateDim],
+        control: ttf.Tensor2[Horizon, ControlDim],
+        state_var: Optional[ttf.Tensor2[HorizonPlusOne, StateDim]] = None,
+        control_var: Optional[ttf.Tensor2[Horizon, ControlDim]] = None,
     ):
         """Expected quadratic integral control cost func
 
@@ -180,9 +182,7 @@ class ControlQuadraticCostFunction(CostFunction):
 class TargetStateCostFunction(CostFunction):
     def __init__(
         self,
-        weight_matrix: Union[
-            ttf.Tensor2[StateDim, StateDim], ttf.Tensor3[Trajectory, StateDim, StateDim]
-        ],
+        weight_matrix: ttf.Tensor2[StateDim, StateDim],
         target_state: ttf.Tensor2[One, StateDim],
     ):
         self.weight_matrix = weight_matrix
@@ -190,10 +190,10 @@ class TargetStateCostFunction(CostFunction):
 
     def __call__(
         self,
-        state: ttf.Tensor2[Trajectory, StateDim],
-        control: ttf.Tensor2[Trajectory, ControlDim],
-        state_var: Optional[ttf.Tensor2[Trajectory, StateDim]] = None,
-        control_var: Optional[ttf.Tensor2[Trajectory, ControlDim]] = None,
+        state: ttf.Tensor2[HorizonPlusOne, StateDim],
+        control: ttf.Tensor2[Horizon, ControlDim],
+        state_var: Optional[ttf.Tensor2[HorizonPlusOne, StateDim]] = None,
+        control_var: Optional[ttf.Tensor2[Horizon, ControlDim]] = None,
     ):
         """Expected quadratic terminal state cost func
 
@@ -233,7 +233,8 @@ class RiemannianEnergyCostFunction(CostFunction):
         self,
         gp: GPModel,
         riemannian_metric_weight_matrix: Union[
-            ttf.Tensor2[StateDim, StateDim], ttf.Tensor3[Trajectory, StateDim, StateDim]
+            ttf.Tensor2[StateDim, StateDim],
+            ttf.Tensor3[HorizonPlusOne, StateDim, StateDim],
         ],
         covariance_weight: default_float() = 1.0,
     ):
@@ -244,10 +245,10 @@ class RiemannianEnergyCostFunction(CostFunction):
 
     def __call__(
         self,
-        state: ttf.Tensor2[Trajectory, StateDim],
-        control: ttf.Tensor2[Trajectory, ControlDim],
-        state_var: Optional[ttf.Tensor2[Trajectory, StateDim]] = None,
-        control_var: Optional[ttf.Tensor2[Trajectory, ControlDim]] = None,
+        state: ttf.Tensor2[HorizonPlusOne, StateDim],
+        control: ttf.Tensor2[Horizon, ControlDim],
+        state_var: Optional[ttf.Tensor2[HorizonPlusOne, StateDim]] = None,
+        control_var: Optional[ttf.Tensor2[Horizon, ControlDim]] = None,
     ):
         """Expected Riemannian energy cost func
 
@@ -299,10 +300,10 @@ class ModeProbCostFunction(CostFunction):
 
     def __call__(
         self,
-        state: ttf.Tensor2[Trajectory, StateDim],
-        control: ttf.Tensor2[Trajectory, ControlDim],
-        state_var: Optional[ttf.Tensor2[Trajectory, StateDim]] = None,
-        control_var: Optional[ttf.Tensor2[Trajectory, ControlDim]] = None,
+        state: ttf.Tensor2[HorizonPlusOne, StateDim],
+        control: ttf.Tensor2[Horizon, ControlDim],
+        state_var: Optional[ttf.Tensor2[HorizonPlusOne, StateDim]] = None,
+        control_var: Optional[ttf.Tensor2[Horizon, ControlDim]] = None,
     ):
         if state_var is None:
             state_var = None
@@ -320,11 +321,11 @@ class ModeProbCostFunction(CostFunction):
 
 
 def quadratic_cost_fn(
-    vector: ttf.Tensor2[Trajectory, InputDim],
+    vector: ttf.Tensor2[Batch, InputDim],
     weight_matrix: Union[
-        ttf.Tensor2[InputDim, InputDim], ttf.Tensor3[Trajectory, InputDim, InputDim]
+        ttf.Tensor2[InputDim, InputDim], ttf.Tensor3[Batch, InputDim, InputDim]
     ],
-    vector_var: Optional[ttf.Tensor2[Trajectory, InputDim]] = None,
+    vector_var: Optional[ttf.Tensor2[Batch, InputDim]] = None,
 ):
     assert len(vector.shape) == 2
     vector = tf.expand_dims(vector, -2)
@@ -338,17 +339,17 @@ def quadratic_cost_fn(
 
 
 def state_control_quadratic_cost_fn(
-    state: ttf.Tensor2[Trajectory, StateDim],
-    control: ttf.Tensor2[Trajectory, ControlDim],
+    state: ttf.Tensor2[HorizonPlusOne, StateDim],
+    control: ttf.Tensor2[Horizon, ControlDim],
     Q: Union[
-        ttf.Tensor2[StateDim, StateDim], ttf.Tensor3[Trajectory, StateDim, StateDim]
+        ttf.Tensor2[StateDim, StateDim], ttf.Tensor3[HorizonPlusOne, StateDim, StateDim]
     ],
     R: Union[
         ttf.Tensor2[ControlDim, ControlDim],
-        ttf.Tensor3[Trajectory, ControlDim, ControlDim],
+        ttf.Tensor3[Horizon, ControlDim, ControlDim],
     ],
-    state_var: Optional[ttf.Tensor2[Trajectory, StateDim]] = None,
-    control_var: Optional[ttf.Tensor2[Trajectory, ControlDim]] = None,
+    state_var: Optional[ttf.Tensor2[HorizonPlusOne, StateDim]] = None,
+    control_var: Optional[ttf.Tensor2[Horizon, ControlDim]] = None,
 ):
     state_cost = quadratic_cost_fn(state, Q, state_var)
     tf.print("state_cost yo")
@@ -364,11 +365,9 @@ def state_control_quadratic_cost_fn(
 
 def terminal_state_cost_fn(
     state: ttf.Tensor2[One, StateDim],
-    Q: Union[
-        ttf.Tensor2[StateDim, StateDim], ttf.Tensor3[Trajectory, StateDim, StateDim]
-    ],
+    Q: ttf.Tensor2[StateDim, StateDim],
     target_state: ttf.Tensor2[One, StateDim],
-    state_var: Optional[ttf.Tensor2[Trajectory, StateDim]] = None,
+    state_var: Optional[ttf.Tensor2[One, StateDim]] = None,
 ):
     error = state - target_state
     terminal_cost = quadratic_cost_fn(error, Q, state_var)
@@ -389,12 +388,12 @@ def terminal_state_cost_fn(
 
 
 def riemannian_energy_cost_fn(
-    state_trajectory: ttf.Tensor2[Trajectory, StateDim],
-    control_trajectory: ttf.Tensor2[Trajectory, ControlDim],
+    state_trajectory: ttf.Tensor2[HorizonPlusOne, StateDim],
+    control_trajectory: ttf.Tensor2[HorizonPlusOne, ControlDim],
     manifold: GPManifold,
     riemannian_metric_weight_matrix: float = 1.0,
-    state_trajectory_var: Optional[ttf.Tensor2[Trajectory, StateDim]] = None,
-    control_trajectory_var: Optional[ttf.Tensor2[Trajectory, ControlDim]] = None,
+    state_trajectory_var: Optional[ttf.Tensor2[HorizonPlusOne, StateDim]] = None,
+    control_trajectory_var: Optional[ttf.Tensor2[HorizonPlusOne, ControlDim]] = None,
 ):
     # Calcualted the expeted metric at each point along trajectory
     input_mean = tf.concat([state_trajectory, control_trajectory], -1)
