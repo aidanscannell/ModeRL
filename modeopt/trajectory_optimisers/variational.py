@@ -139,5 +139,5 @@ class ModeVariationalTrajectoryOptimiser(VariationalTrajectoryOptimiser):
             state_means[:-1, :], control_means, state_vars[:-1, :], control_vars
         )
 
-        elbo = -mode_var_exp - expected_costs + entropy
+        elbo = mode_var_exp - expected_costs + entropy
         return elbo
