@@ -227,12 +227,12 @@ class TargetStateCostFunction(CostFunction):
 
 
 class RiemannianEnergyCostFunction(CostFunction):
-    """Riemannian energy cost function class. """
+    """Riemannian energy cost function class."""
 
     def __init__(
         self,
         gp: GPModel,
-        riemmanian_metric_weight_matrix: Union[
+        riemannian_metric_weight_matrix: Union[
             ttf.Tensor2[StateDim, StateDim], ttf.Tensor3[Trajectory, StateDim, StateDim]
         ],
         covariance_weight: default_float() = 1.0,
@@ -240,7 +240,7 @@ class RiemannianEnergyCostFunction(CostFunction):
         self.gp = gp
         self.covariance_weight = covariance_weight
         self.manifold = GPManifold(gp=self.gp, covariance_weight=self.covariance_weight)
-        self.riemmanian_metric_weight_matrix = riemmanian_metric_weight_matrix
+        self.riemannian_metric_weight_matrix = riemannian_metric_weight_matrix
 
     def __call__(
         self,
@@ -375,24 +375,24 @@ def terminal_state_cost_fn(
     return terminal_cost
 
 
-# def build_riemmanian_energy_cost_fn(
+# def build_riemannian_energy_cost_fn(
 #     gp: GPModel,
-#     riemmanian_metric_weight_matrix: float = 1.0,
+#     riemannian_metric_weight_matrix: float = 1.0,
 #     covariance_weight: float = 1.0,
 # ) -> Callable:
 #     manifold = GPManifold(gp, covariance_weight=covariance_weight)
 #     return partial(
-#         riemmanian_energy_cost_fn,
+#         riemannian_energy_cost_fn,
 #         manifold=manifold,
-#         riemmanian_metric_weight_matrix=riemmanian_metric_weight_matrix,
+#         riemannian_metric_weight_matrix=riemannian_metric_weight_matrix,
 #     )
 
 
-def riemmanian_energy_cost_fn(
+def riemannian_energy_cost_fn(
     state_trajectory: ttf.Tensor2[Trajectory, StateDim],
     control_trajectory: ttf.Tensor2[Trajectory, ControlDim],
     manifold: GPManifold,
-    riemmanian_metric_weight_matrix: float = 1.0,
+    riemannian_metric_weight_matrix: float = 1.0,
     state_trajectory_var: Optional[ttf.Tensor2[Trajectory, StateDim]] = None,
     control_trajectory_var: Optional[ttf.Tensor2[Trajectory, ControlDim]] = None,
 ):
@@ -434,9 +434,9 @@ def riemmanian_energy_cost_fn(
 #     where v = (x, u) and where G(v) is the Riemannian metric at v.
 #     """
 #     state_control_cost_fn = partial(state_control_quadratic_cost_fn, Q=Q, R=R)
-#     riemannian_energy_cost_fn = build_riemmanian_energy_cost_fn(
+#     riemannian_energy_cost_fn = build_riemannian_energy_cost_fn(
 #         gp=gp,
-#         riemmanian_metric_weight_matrix=riemannian_metric_weight_matrix,
+#         riemannian_metric_weight_matrix=riemannian_metric_weight_matrix,
 #         covariance_weight=riemannian_metric_covariance_weight,
 #     )
 
