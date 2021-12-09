@@ -78,14 +78,12 @@ class VariationalGaussianPolicy(VariationalPolicy):
         )
 
     def __call__(self, time_step: int = None):
-        means = self.variational_dist.mean()
-        vars = self.variational_dist.variance()
         if time_step is None:
-            return means, vars
+            return self.means, self.vars
         else:
             return (
-                means[time_step : time_step + 1, :],
-                vars[time_step : time_step + 1, :],
+                self.means[time_step : time_step + 1, :],
+                self.vars[time_step : time_step + 1, :],
             )
 
     def control_constraints(self):
