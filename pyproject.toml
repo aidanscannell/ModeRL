@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "ModeOpt"
 version = "0.1.0"
-description = "Mode remaining active learning for multimodal dynamical systems in TensorFlow/GPflow."
+description = "Mode remaining learning based control for multimodal dynamical systems in TensorFlow/GPflow."
 authors = ["Aidan Scannell <scannell.aidan@gmail.com>"]
 
 [tool.poetry.dependencies]
