@@ -20,6 +20,8 @@ def make(env_name: str):
             env_dir = "velocity_controlled_point_mass/scenario-3"
         elif env_name == "velocity-controlled-point-mass/scenario-4":
             env_dir = "velocity_controlled_point_mass/scenario-4"
+        elif env_name == "velocity-controlled-point-mass/scenario-5":
+            env_dir = "velocity_controlled_point_mass/scenario-5"
         toml_env_config_file = os.path.join(this_dir, env_dir, "env_config.toml")
         gating_bitmap_file = os.path.join(this_dir, env_dir, "gating_mask.bmp")
         env = parse_toml_config_to_VelocityControlledPointMass2DEnv(
