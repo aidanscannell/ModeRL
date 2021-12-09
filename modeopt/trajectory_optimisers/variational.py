@@ -5,8 +5,8 @@ from dataclasses import dataclass
 import gpflow as gpf
 import tensor_annotations.tensorflow as ttf
 import tensorflow as tf
-from modeopt.dynamics import GPDynamics
 from modeopt.cost_functions import CostFunction
+from modeopt.dynamics import GPDynamics
 from modeopt.policies import VariationalPolicy
 from modeopt.rollouts import rollout_policy_in_dynamics
 from modeopt.trajectory_optimisers.base import (
