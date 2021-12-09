@@ -86,16 +86,15 @@ def rollout_controls_in_env(
 
     :returns: states
     """
-    env.state_init = start_state.numpy()
+    env.state_init = start_state
     env.reset()
-    states = start_state.numpy()
+    states = start_state
     horizon = controls.shape[0]
 
     for t in range(horizon):
-        # control, _ = policy(t)
-        next_time_step = env.step(controls[t].numpy())
-        states = np.concatenate([states, next_time_step.observation])
-    return np.stack(states)
+        next_time_step = env.step(controls[t])
+        states = tf.concat([states, next_time_step.observation], axis=0)
+    return tf.stack(states)
 
 
 def rollout_policy_in_env(
