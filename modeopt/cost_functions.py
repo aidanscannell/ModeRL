@@ -354,6 +354,7 @@ def terminal_state_cost_fn(
     target_state: ttf.Tensor2[One, StateDim],
     state_var: Optional[ttf.Tensor2[One, StateDim]] = None,
 ):
+    assert len(state.shape) == 2
     error = state - target_state
     terminal_cost = quadratic_cost_fn(error, Q, state_var)
     return terminal_cost
