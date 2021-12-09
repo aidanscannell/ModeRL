@@ -331,29 +331,23 @@ def quadratic_cost_fn(
     return cost[:, 0, 0]
 
 
-def state_control_quadratic_cost_fn(
-    state: ttf.Tensor2[HorizonPlusOne, StateDim],
-    control: ttf.Tensor2[Horizon, ControlDim],
-    Q: Union[
-        ttf.Tensor2[StateDim, StateDim], ttf.Tensor3[HorizonPlusOne, StateDim, StateDim]
-    ],
-    R: Union[
-        ttf.Tensor2[ControlDim, ControlDim],
-        ttf.Tensor3[Horizon, ControlDim, ControlDim],
-    ],
-    state_var: Optional[ttf.Tensor2[HorizonPlusOne, StateDim]] = None,
-    control_var: Optional[ttf.Tensor2[Horizon, ControlDim]] = None,
-):
-    state_cost = quadratic_cost_fn(state, Q, state_var)
-    tf.print("state_cost yo")
-    tf.print(state_cost)
-    control_cost = quadratic_cost_fn(control, R, control_var)
-    tf.print(control_cost)
-    print("state_cost yo")
-    print(state_cost)
-    print(control_cost)
-    # return state_cost + control_cost
-    return tf.reduce_sum(state_cost) + tf.reduce_sum(control_cost)
+# def state_control_quadratic_cost_fn(
+#     state: ttf.Tensor2[HorizonPlusOne, StateDim],
+#     control: ttf.Tensor2[Horizon, ControlDim],
+#     Q: Union[
+#         ttf.Tensor2[StateDim, StateDim], ttf.Tensor3[HorizonPlusOne, StateDim, StateDim]
+#     ],
+#     R: Union[
+#         ttf.Tensor2[ControlDim, ControlDim],
+#         ttf.Tensor3[Horizon, ControlDim, ControlDim],
+#     ],
+#     state_var: Optional[ttf.Tensor2[HorizonPlusOne, StateDim]] = None,
+#     control_var: Optional[ttf.Tensor2[Horizon, ControlDim]] = None,
+# ):
+#     state_cost = quadratic_cost_fn(state, Q, state_var)
+#     control_cost = quadratic_cost_fn(control, R, control_var)
+#     return state_cost + control_cost
+#     # return tf.reduce_sum(state_cost) + tf.reduce_sum(control_cost)
 
 
 def terminal_state_cost_fn(
