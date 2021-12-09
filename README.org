@@ -1,4 +1,4 @@
-#+TITLE: ModeOpt
+#+TITLE: =ModeOpt=: Mode remaining learning-based control for multimodal dynamical systems in TensorFlow/GPflow.
 /Disclaimer: This is unfinished research code accompanying my PhD./
 
 =ModeOpt= is a package for learning and controlling unknown, or partially unknown, multimodal dynamical systems.
