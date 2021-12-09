@@ -7,13 +7,15 @@ authors = ["Aidan Scannell <scannell.aidan@gmail.com>"]
 [tool.poetry.dependencies]
 python = "^3.8"
 simenvs = {path = "../sim-envs", develop=true}  # https://github.com/aidanscannell/simenvs
-mogpe = {path = "../mogpe", develop=true}  # https://github.com/aidanscannell/mogpe
+# mogpe = {path = "../mogpe", develop=true}  # https://github.com/aidanscannell/mogpe
+mogpe = {git = "https://github.com/aidanscannell/mogpe", tag = "v0.2.0"}
 gpflow = "^2.2.1"
 tensorflow = "^2.4.0"
 matplotlib = "^3.2.1"
 SciencePlots = "^1.0.8"
 gin = "^0.1.6"
-geoflow = {path = "../geoflow", develop=true}  # https://github.com/aidanscannell/geoflow
+# geoflow = {path = "../geoflow", develop=true}  # https://github.com/aidanscannell/geoflow
+geoflow = {git = "https://github.com/aidanscannell/geoflow.git", tag = "v0.1.0-alpha"}
 sklearn = "^0.0"
 
 [tool.poetry.dev-dependencies]
