@@ -286,7 +286,7 @@ def generate_random_transitions_dataset(num_samples, env, omit_data_mask=None):
 
     # create every combination of states and actions to get inputs
     # state_action_inputs = create_state_action_inputs(states, actions)
-    state_action_inputs = jnp.concatenate([states, actions], -1)
+    state_action_inputs = np.concatenate([states, actions], -1)
     print("State action inputs shape: ", state_action_inputs.shape)
     # print(state_action_inputs)
 
