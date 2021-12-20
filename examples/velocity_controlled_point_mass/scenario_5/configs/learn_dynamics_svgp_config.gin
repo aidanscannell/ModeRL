@@ -1,0 +1,33 @@
+# Environment config
+init_mode_opt.env_name = "velocity-controlled-point-mass/scenario-5"
+init_mode_opt.delta_time = 0.25
+
+# Data config
+load_vcpm_dataset.filename = "./velocity_controlled_point_mass/scenario_5/data/full_dataset_4000_samples_42_seed.npz"
+load_vcpm_dataset.test_split_size = 0.2
+load_vcpm_dataset.trim_coords = [[-1.0, -3.0], [2.0, 2.0]]
+load_vcpm_dataset.plot = True
+load_vcpm_dataset.standardise = False
+
+# ModeOpt config
+init_mode_opt.desired_mode = 0
+init_mode_opt.start_state = [3.0, 2.0]
+init_mode_opt.target_state = [-3.0, 1.0]
+init_mode_opt.policy = "DeterministicPolicy"
+init_mode_opt.mogpe_ckpt_dir = None
+init_mode_opt.mode_opt_ckpt_dir = None
+init_mode_opt.horizon = 10
+init_mode_opt.nominal_dynamics = False
+
+# Run ModeOpt.optimise_dynamics
+config_learn_dynamics.mogpe_config_file = "./velocity_controlled_point_mass/scenario_5/configs/svgp_mogpe_config.toml"
+config_learn_dynamics.log_dir = "./velocity_controlled_point_mass/scenario_5/logs/learn_dynamics/single_svgp"
+config_learn_dynamics.num_epochs = 15000
+config_learn_dynamics.batch_size = 32
+# config_learn_dynamics.learning_rate = 0.01
+config_learn_dynamics.learning_rate = 0.001
+config_learn_dynamics.logging_epoch_freq = 10
+config_learn_dynamics.fast_tasks_period = 10
+config_learn_dynamics.slow_tasks_period = 100
+config_learn_dynamics.num_ckpts = 5
+config_learn_dynamics.compile_loss_fn = True  # whether to wrap loss function in tf.function

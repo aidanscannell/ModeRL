@@ -20,8 +20,9 @@ from modeopt.cost_functions import (
     StateQuadraticCostFunction,
     TargetStateCostFunction,
     ZeroCostFunction,
-    state_control_quadratic_cost_fn,
-    terminal_state_cost_fn,
+    StateVarianceCostFunction,
+    # state_control_quadratic_cost_fn,
+    # terminal_state_cost_fn,
 )
 from modeopt.dynamics import ModeOptDynamics, ModeOptDynamicsTrainingSpec
 from modeopt.mode_opt import ModeOpt
@@ -83,12 +84,13 @@ def init_policy(
     velocity_constraints_upper,
 ):
     control_means = (
-        np.ones((horizon, control_dim))
+        # np.ones((horizon, control_dim))
         # np.ones((horizon, control_dim)) * [-5.0, 0.5]
+        np.ones((horizon, control_dim)) * [-1.0, 1.0]
         + np.random.random((horizon, control_dim)) * 0.1
     )
-    # control_means = control_means * 0.0
-    control_means = control_means * 100.0
+    control_means = control_means * 0.0
+    # control_means = control_means * 100.0
     if policy_name is None:
         policy = DeterministicPolicy
     # if isinstance(policy, DeterministicPolicy):
@@ -133,7 +135,8 @@ def init_mode_opt(
     horizon=None,
     velocity_constraints_lower=None,
     velocity_constraints_upper=None,
-    nominal_dynamics: Callable = velocity_controlled_point_mass_dynamics,
+    # nominal_dynamics: Callable = velocity_controlled_point_mass_dynamics,
+    nominal_dynamics: bool = True,
 ):
     # Configure environment
     env = make(env_name)
@@ -192,14 +195,20 @@ def init_mode_opt(
     )
 
     # Init dynamics
-    nominal_dynamics = partial(
-        velocity_controlled_point_mass_dynamics, delta_time=delta_time
-    )
+    if nominal_dynamics:
+        print("adding nominal dynamics")
+        nominal_dynamics = partial(
+            velocity_controlled_point_mass_dynamics, delta_time=delta_time
+        )
+    else:
+        print("no nominal dynamics")
+        nominal_dynamics = None
     if mogpe_config_file is None and mode_opt_ckpt_dir is not None:
         mogpe_config_file = mode_opt_ckpt_dir + "/mogpe_config.toml"
     mosvgpe = MixtureOfSVGPExperts_from_toml(mogpe_config_file, dataset=dataset)
     # gpf.set_trainable(mosvgpe.experts.experts_list[0], False)
     # gpf.set_trainable(mosvgpe.gating_network, False)
+
     dynamics = ModeOptDynamics(
         mosvgpe=mosvgpe,
         desired_mode=desired_mode,
@@ -232,7 +241,7 @@ def init_mode_opt(
         dynamics=dynamics,
         dataset=dataset,
         desired_mode=desired_mode,
-        horizon=horizon,
+        # horizon=horizon,
     )
 
     if mode_opt_ckpt_dir is not None:
@@ -247,6 +256,102 @@ def init_mode_opt(
     #     dynamics_q_mu.shape, dtype=default_float()
     # )
     return mode_optimiser
+
+
+@gin.configurable
+def config_learn_svgp(
+    mode_opt_config_file,
+    mogpe_config_file,
+    log_dir,
+    num_epochs,
+    batch_size,
+    learning_rate,
+    # optimiser,
+    logging_epoch_freq,
+    fast_tasks_period,
+    slow_tasks_period,
+    num_ckpts,
+    compile_loss_fn: bool = True,
+):
+    train_dataset, test_dataset = load_vcpm_dataset()
+
+    # mode_optimiser = init_mode_opt(
+    #     dataset=train_dataset, mogpe_config_file=mogpe_config_file
+    # )
+    # if mogpe_config_file is None and mode_opt_ckpt_dir is not None:
+    # mogpe_config_file = mode_opt_ckpt_dir + "/mogpe_config.toml"
+    # mosvgpe = MixtureOfSVGPExperts_from_toml(mogpe_config_file, dataset=dataset)
+    # print_summary(mo)
+    model = init_SVGP()
+
+    # Create monitor tasks (plots/elbo/model params etc)
+    log_dir = create_log_dir(
+        log_dir,
+        num_experts=1,
+        batch_size=batch_size,
+        # learning_rate=optimiser.learning_rate,
+        learning_rate=learning_rate,
+        bound="ELBO",
+        num_inducing=model.inducing_variable.inducing_variables[0].Z.shape[0],
+    )
+
+    test_inputs = create_test_inputs(*train_dataset)
+    # mogpe_plotter = QuadcopterPlotter(
+    # mogpe_plotter = Plotter2D(
+    #     model=
+    #     X=mode_optimiser.dataset[0],
+    #     Y=mode_optimiser.dataset[1],
+    #     test_inputs=test_inputs,
+    #     # static=False,
+    # )
+
+    train_dataset_tf, num_batches_per_epoch = create_tf_dataset(
+        train_dataset, num_data=train_dataset[0].shape[0], batch_size=batch_size
+    )
+    test_dataset_tf, _ = create_tf_dataset(
+        test_dataset, num_data=test_dataset[0].shape[0], batch_size=batch_size
+    )
+
+    training_loss = model.build_training_loss(train_dataset_tf, compile=compile_loss_fn)
+
+    fast_tasks = init_fast_tasks_bounds(
+        log_dir,
+        train_dataset_tf,
+        model,
+        test_dataset=test_dataset_tf,
+        # training_loss=training_loss,
+        fast_tasks_period=fast_tasks_period,
+    )
+    # slow_tasks = mogpe_plotter.tf_monitor_task_group(
+    #     log_dir,
+    #     slow_period=slow_tasks_period
+    #     # slow_tasks_period=slow_tasks_period,
+    # )
+    # monitor = Monitor(fast_tasks, slow_tasks)
+    monitor = Monitor(fast_tasks)
+
+    # Init checkpoint manager for saving model during training
+    manager = init_checkpoint_manager(
+        model=model,
+        log_dir=log_dir,
+        num_ckpts=num_ckpts,
+        mode_opt_gin_config=mode_opt_config_file,
+        mogpe_toml_config=mogpe_config_file,
+        train_dataset=train_dataset,
+        test_dataset=test_dataset,
+    )
+
+    training_spec = ModeOptDynamicsTrainingSpec(
+        num_epochs=num_epochs,
+        batch_size=batch_size,
+        # optimiser=optimiser,
+        learning_rate=learning_rate,
+        logging_epoch_freq=logging_epoch_freq,
+        compile_loss_fn=compile_loss_fn,
+        monitor=monitor,
+        manager=manager,
+    )
+    return mode_optimiser, training_spec, train_dataset
 
 
 @gin.configurable
@@ -352,8 +457,6 @@ def config_traj_opt(
     # method,
     disp,
     mode_chance_constraint_lower,
-    velocity_constraints_lower,
-    velocity_constraints_upper,
     compile_loss_fn,
     compile_mode_constraint_fn,
     log_dir,
@@ -361,6 +464,8 @@ def config_traj_opt(
     fast_tasks_period,
     slow_tasks_period,
     trajectory_optimiser,
+    velocity_constraints_lower=None,
+    velocity_constraints_upper=None,
     method: str = None,
     horizon: int = None,
     horizon_new: int = None,
@@ -370,6 +475,7 @@ def config_traj_opt(
     riemannian_metric_cost_weight: default_float() = None,
     riemannian_metric_covariance_weight: default_float() = 1.0,
     prob_cost_weight=None,
+    state_var_cost_weight=None,
 ):
     # Load data set from ckpt dir
     train_dataset = np.load(os.path.join(mode_opt_ckpt_dir, "train_dataset.npz"))
@@ -379,6 +485,9 @@ def config_traj_opt(
     mode_optimiser = init_mode_opt(dataset=dataset, mode_opt_ckpt_dir=mode_opt_ckpt_dir)
 
     # Init policy
+    print("velocity_constraints_lower")
+    print(velocity_constraints_lower)
+    print(velocity_constraints_upper)
     if horizon_new is not None:
         if isinstance(mode_optimiser.policy, DeterministicPolicy):
             policy_name = "DeterministicPolicy"
@@ -457,6 +566,9 @@ def config_traj_opt(
             weight=prob_cost_weight,
         )
         print("Using MODE PROB cost")
+    if state_var_cost_weight is not None:
+        print("Using STATE VAR cost")
+        cost_fn += StateVarianceCostFunction(weight=state_var_cost_weight)
 
     # weight_matrix = tf.eye(control_dim, dtype=default_float())
     # Q = weight_matrix * 0.0
