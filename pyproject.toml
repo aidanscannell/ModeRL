@@ -6,7 +6,7 @@ authors = ["Aidan Scannell <scannell.aidan@gmail.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.8"
-gpflow = "^2.2.1"
+# gpflow = "^2.2.1" # specified in mogpe so not needed here
 tensorflow = "^2.4.0"
 matplotlib = "^3.2.1"
 SciencePlots = "^1.0.8"
@@ -14,11 +14,15 @@ gin = "^0.1.6"
 sklearn = "^0.0"
 
 # My packages on GitHub
-simenvs = { git = "https://github.com/aidanscannell/simenvs"}
-mogpe = {git = "https://github.com/aidanscannell/mogpe", tag = "v0.2.0"}
-geoflow = {git = "https://github.com/aidanscannell/geoflow.git", tag = "v0.1.0-alpha"}
-# simenvs = {path = "../sim-envs", develop=true}  # https://github.com/aidanscannell/simenvs
-# mogpe = {path = "../mogpe", develop=true}  # https://github.com/aidanscannell/mogpe
+# simenvs = { git = "https://github.com/aidanscannell/simenvs"}
+# mogpe = {git = "https://github.com/aidanscannell/mogpe", tag = "v0.2.0"}
+# geoflow = {git = "https://github.com/aidanscannell/geoflow.git", tag = "v0.1.1-alpha"}
+geoflow = {path = "../geoflow", develop=true}
+mogpe = {path = "../mogpe", develop=true}  # https://github.com/aidanscannell/mogpe
+simenvs = {path = "../sim-envs", develop=true}  # https://github.com/aidanscannell/mogpe
+mlflow = "^1.22.0"
+hydra-core = {path = "/Users/aidanscannell/Developer/forked-repos/hydra", develop=true}
+wandb = "^0.12.10"
 # geoflow = {path = "../geoflow", develop=true}  # https://github.com/aidanscannell/geoflow
 
 [tool.poetry.dev-dependencies]
