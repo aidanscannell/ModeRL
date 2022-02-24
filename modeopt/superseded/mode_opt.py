@@ -50,26 +50,39 @@ class ModeOpt(Module):
         dynamics: ModeOptDynamics,
         dataset: Tuple,
         desired_mode: int = 1,
-        horizon: int = 10,
+        # horizon: int = 10,
     ):
         self.start_state = start_state
         self.target_state = target_state
         self.dynamics = dynamics
         self.dataset = dataset
         self.desired_mode = desired_mode
-        self.horizon = horizon
+        # self.horizon = horizon
 
         # Set policy
         if policy is None:
-            self.policy = init_variational_gaussian_policy(
-                horizon, control_dim=self.dynamics.control_dim
-            )
+            # self.policy = init_variational_gaussian_policy(
+            #     horizon, control_dim=self.dynamics.control_dim
+            # )
+            raise NotImplementedError("Policy must be passed to constructor")
         else:
             self.policy = policy
 
         # Init tf environment
         self.env = env
         self.tf_env = tf_py_environment.TFPyEnvironment(env)
+
+    @property
+    def horizon(self):
+        return self.policy.horizon
+
+    @property
+    def state_dim(self):
+        return self.dynamics.state_dim
+
+    @property
+    def control_dim(self):
+        return self.dynamics.control_dim
 
     def optimise_policy(
         self,
@@ -106,11 +119,12 @@ class ModeOpt(Module):
         # print(self.policy.trainable_variables)
         # gpf.set_trainable(self.policy, True)
         gpf.utilities.print_summary(self)
+        constraints = self.policy.control_constraints()
         if (
             training_spec.mode_chance_constraint_lower is None
             or training_spec.mode_chance_constraint_lower <= 0.0
         ):
-            mode_chance_constraints = []
+            mode_chance_constraints = None
             print(
                 "Turning mode chance constraints off because training_spec.mode_chance_constraint_lower is None or <=0.0"
             )
@@ -123,10 +137,18 @@ class ModeOpt(Module):
                 upper_bound=1.0,
                 compile=training_spec.compile_mode_constraint_fn,
             )
+        if mode_chance_constraints is not None:
+            if constraints is None:
+                constraints = mode_chance_constraints
+            else:
+                constraints = [constraints, mode_chance_constraints]
+        if constraints is None:
+            constraints = []
         return trajectory_optimiser.optimise(
             start_state=start_state,
             training_spec=training_spec,
-            constraints=mode_chance_constraints,
+            # constraints=mode_chance_constraints,
+            constraints=constraints,
         )
 
     def dynamics_rollout(self, start_state, start_state_var=None):

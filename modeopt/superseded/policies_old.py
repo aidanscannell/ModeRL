@@ -28,6 +28,10 @@ class VariationalPolicy(abc.ABC, Module):
     def variational_dist(self):
         return self._variational_dist
 
+    @property
+    def horizon(self):
+        return self.num_time_steps
+
     def __call__(self, time_step: int = None):
         if time_step is None:
             return self.variational_dist
@@ -39,6 +43,8 @@ class VariationalPolicy(abc.ABC, Module):
 
     def control_constraints(self):
         """Linear constraints on the mean of the control dist."""
+        if self.constraints_upper_bound is None or self.constraints_lower_bound is None:
+            return None
         constraints_lower_bound = (
             np.ones((self.num_time_steps, 1)) * self.constraints_lower_bound
         )
@@ -58,8 +64,8 @@ class VariationalGaussianPolicy(VariationalPolicy):
         self,
         means,
         vars,
-        constraints_lower_bound=-np.inf,
-        constraints_upper_bound=np.inf,
+        constraints_lower_bound=None,
+        constraints_upper_bound=None,
     ):
         assert means.shape[0] == vars.shape[0]
         super().__init__(
@@ -87,6 +93,8 @@ class VariationalGaussianPolicy(VariationalPolicy):
             )
 
     def control_constraints(self):
+        if self.constraints_upper_bound is None or self.constraints_lower_bound is None:
+            return None
         # Setup linear constraints on the controls
         constraints_lower_bound = (
             np.ones((self.num_time_steps, 1)) * self.constraints_lower_bound
@@ -94,11 +102,14 @@ class VariationalGaussianPolicy(VariationalPolicy):
         constraints_upper_bound = (
             np.ones((self.num_time_steps, 1)) * self.constraints_upper_bound
         )
-        inf = np.ones(constraints_lower_bound.shape) * np.inf
-        constraints_lower_bound = np.concatenate([constraints_lower_bound, -inf], -1)
-        constraints_upper_bound = np.concatenate([constraints_upper_bound, inf], -1)
-        control_constraint_matrix = np.eye(self.num_time_steps * self.control_dim * 2)
-
+        # inf = np.ones(constraints_lower_bound.shape) * np.inf
+        # constraints_lower_bound = np.concatenate([constraints_lower_bound, -inf], -1)
+        # constraints_upper_bound = np.concatenate([constraints_upper_bound, inf], -1)
+        # control_constraint_matrix = np.eye(self.num_time_steps * self.control_dim * 2)
+        control_constraint_matrix = np.eye(
+            N=self.num_time_steps * self.control_dim,
+            M=self.num_time_steps * self.control_dim * 2,
+        )
         return LinearConstraint(
             control_constraint_matrix,
             constraints_lower_bound.reshape(-1),
