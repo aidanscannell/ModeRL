@@ -29,6 +29,7 @@ from modeopt.mode_opt import ModeOpt
 from modeopt.monitor import create_test_inputs, init_ModeOpt_monitor
 from modeopt.policies import DeterministicPolicy, VariationalGaussianPolicy
 from modeopt.rollouts import rollout_policy_in_dynamics
+from modeopt.utils import weight_to_matrix
 from modeopt.trajectory_optimisers import (
     ExplorativeTrajectoryOptimiserTrainingSpec,
     ModeVariationalTrajectoryOptimiserTrainingSpec,
@@ -61,19 +62,6 @@ def velocity_controlled_point_mass_dynamics(
         return delta_state_mean, delta_state_var
     else:
         return delta_state_mean
-
-
-def weight_to_matrix(value: Union[list, float], dim: int):
-    if isinstance(value, list):
-        if len(value) == dim:
-            value = tf.constant(value, dtype=default_float())
-            return tf.linalg.diag(value)
-        else:
-            raise NotImplementedError
-    elif value is None or value == 0.0:
-        return None
-    else:
-        return tf.eye(dim, dtype=default_float()) * value
 
 
 def init_policy(
@@ -256,102 +244,6 @@ def init_mode_opt(
     #     dynamics_q_mu.shape, dtype=default_float()
     # )
     return mode_optimiser
-
-
-@gin.configurable
-def config_learn_svgp(
-    mode_opt_config_file,
-    mogpe_config_file,
-    log_dir,
-    num_epochs,
-    batch_size,
-    learning_rate,
-    # optimiser,
-    logging_epoch_freq,
-    fast_tasks_period,
-    slow_tasks_period,
-    num_ckpts,
-    compile_loss_fn: bool = True,
-):
-    train_dataset, test_dataset = load_vcpm_dataset()
-
-    # mode_optimiser = init_mode_opt(
-    #     dataset=train_dataset, mogpe_config_file=mogpe_config_file
-    # )
-    # if mogpe_config_file is None and mode_opt_ckpt_dir is not None:
-    # mogpe_config_file = mode_opt_ckpt_dir + "/mogpe_config.toml"
-    # mosvgpe = MixtureOfSVGPExperts_from_toml(mogpe_config_file, dataset=dataset)
-    # print_summary(mo)
-    model = init_SVGP()
-
-    # Create monitor tasks (plots/elbo/model params etc)
-    log_dir = create_log_dir(
-        log_dir,
-        num_experts=1,
-        batch_size=batch_size,
-        # learning_rate=optimiser.learning_rate,
-        learning_rate=learning_rate,
-        bound="ELBO",
-        num_inducing=model.inducing_variable.inducing_variables[0].Z.shape[0],
-    )
-
-    test_inputs = create_test_inputs(*train_dataset)
-    # mogpe_plotter = QuadcopterPlotter(
-    # mogpe_plotter = Plotter2D(
-    #     model=
-    #     X=mode_optimiser.dataset[0],
-    #     Y=mode_optimiser.dataset[1],
-    #     test_inputs=test_inputs,
-    #     # static=False,
-    # )
-
-    train_dataset_tf, num_batches_per_epoch = create_tf_dataset(
-        train_dataset, num_data=train_dataset[0].shape[0], batch_size=batch_size
-    )
-    test_dataset_tf, _ = create_tf_dataset(
-        test_dataset, num_data=test_dataset[0].shape[0], batch_size=batch_size
-    )
-
-    training_loss = model.build_training_loss(train_dataset_tf, compile=compile_loss_fn)
-
-    fast_tasks = init_fast_tasks_bounds(
-        log_dir,
-        train_dataset_tf,
-        model,
-        test_dataset=test_dataset_tf,
-        # training_loss=training_loss,
-        fast_tasks_period=fast_tasks_period,
-    )
-    # slow_tasks = mogpe_plotter.tf_monitor_task_group(
-    #     log_dir,
-    #     slow_period=slow_tasks_period
-    #     # slow_tasks_period=slow_tasks_period,
-    # )
-    # monitor = Monitor(fast_tasks, slow_tasks)
-    monitor = Monitor(fast_tasks)
-
-    # Init checkpoint manager for saving model during training
-    manager = init_checkpoint_manager(
-        model=model,
-        log_dir=log_dir,
-        num_ckpts=num_ckpts,
-        mode_opt_gin_config=mode_opt_config_file,
-        mogpe_toml_config=mogpe_config_file,
-        train_dataset=train_dataset,
-        test_dataset=test_dataset,
-    )
-
-    training_spec = ModeOptDynamicsTrainingSpec(
-        num_epochs=num_epochs,
-        batch_size=batch_size,
-        # optimiser=optimiser,
-        learning_rate=learning_rate,
-        logging_epoch_freq=logging_epoch_freq,
-        compile_loss_fn=compile_loss_fn,
-        monitor=monitor,
-        manager=manager,
-    )
-    return mode_optimiser, training_spec, train_dataset
 
 
 @gin.configurable
@@ -684,10 +576,22 @@ def init_checkpoint_manager(
 
 def init_mode_traj_opt_from_ckpt(ckpt_dir):
     mode_opt_config_file = os.path.join(ckpt_dir, "mode_opt_config.gin")
-    gin.parse_config_files_and_bindings([mode_opt_config_file], None)
+    # gin.parse_config_files_and_bindings([mode_opt_config_file], None)
+    # mode_optimiser, training_spec = config_traj_opt(
+    #     mode_opt_config_file=mode_opt_config_file, log_dir=None
+    # )
+    temp_path = create_temporary_copy(mode_opt_config_file)
+    gin.parse_config_files_and_bindings([temp_path], None)
     mode_optimiser, training_spec = config_traj_opt(
-        mode_opt_config_file=mode_opt_config_file, log_dir=None
+        mode_opt_config_file=temp_path, log_dir=None
     )
+
+    # gin.parse_config_files_and_bindings([temp_path], None)
+    # gin.parse_config_files_and_bindings([mode_opt_config_file], None)
+    # mode_optimiser, training_spec, train_dataset = config_learn_dynamics(
+    #     mode_opt_config_file=temp_path
+    # )
+
     gpf.utilities.print_summary(mode_optimiser)
     controls_init = mode_optimiser.policy()
 
@@ -701,10 +605,21 @@ def init_mode_traj_opt_from_ckpt(ckpt_dir):
 
 def init_mode_opt_learn_dynamics_from_ckpt(ckpt_dir):
     mode_opt_config_file = os.path.join(ckpt_dir, "mode_opt_config.gin")
-    gin.parse_config_files_and_bindings([mode_opt_config_file], None)
+
+    # gin.parse_config_files_and_bindings([mode_opt_config_file], None)
+    # try:
+    #     gin.parse_config_files_and_bindings([mode_opt_config_file], None)
+    #     mode_optimiser, training_spec, train_dataset = config_learn_dynamics(
+    #         mode_opt_config_file=mode_opt_config_file
+    #     )
+    # except RuntimeError:
+    temp_path = create_temporary_copy(mode_opt_config_file)
+    gin.parse_config_files_and_bindings([temp_path], None)
+    # print("done gin")
     mode_optimiser, training_spec, train_dataset = config_learn_dynamics(
-        mode_opt_config_file=mode_opt_config_file
+        mode_opt_config_file=temp_path
     )
+
     gpf.utilities.print_summary(mode_optimiser)
 
     ckpt = tf.train.Checkpoint(model=mode_optimiser)
@@ -713,3 +628,18 @@ def init_mode_opt_learn_dynamics_from_ckpt(ckpt_dir):
     print("Restored ModeOpt")
     gpf.utilities.print_summary(mode_optimiser)
     return mode_optimiser, training_spec, train_dataset
+
+
+import tempfile, shutil, os, uuid
+
+
+def create_temporary_copy(path):
+    temp_dir = tempfile.gettempdir()
+    unique_filename = str(uuid.uuid4())
+    print("unique_filename")
+    print(unique_filename)
+    temp_path = os.path.join(temp_dir, unique_filename + ".gin")
+    # temp_path = os.path.join(temp_dir, "temp_file_name.gin")
+    shutil.copy2(path, temp_path)
+    print("copied")
+    return temp_path
