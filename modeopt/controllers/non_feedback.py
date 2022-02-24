@@ -7,20 +7,8 @@ import tensor_annotations.tensorflow as ttf
 import tensorflow as tf
 import tensorflow_probability as tfp
 from gpflow.optimizers.scipy import NonlinearConstraintClosure
-from modeopt.custom_types import (
-    ControlMeanAndVariance,
-    ControlTrajectoryMean,
-    ControlTrajectoryVariance,
-    Horizon,
-    SingleControlMeanAndVariance,
-)
-from modeopt.trajectory_optimisation.trajectories import (
-    BaseTrajectory,
-    ControlTrajectoryDist,
-    build_control_constraints,
-    initialise_deterministic_trajectory,
-    initialise_gaussian_trajectory,
-)
+from modeopt.custom_types import ControlMeanAndVariance
+from modeopt.trajectories import BaseTrajectory
 from scipy.optimize import LinearConstraint, NonlinearConstraint
 
 from .base import NonFeedbackController
