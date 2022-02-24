@@ -137,6 +137,9 @@ class StateQuadraticCostFunction(CostFunction):
         )
         return tf.reduce_sum(state_costs)
 
+    def get_config(self) -> dict:
+        return {"weight_matrix": self.weight_matrix.numpy()}
+
 
 class ControlQuadraticCostFunction(CostFunction):
     def __init__(
@@ -173,6 +176,9 @@ class ControlQuadraticCostFunction(CostFunction):
             vector_var=control_var,
         )
         return tf.reduce_sum(control_costs)
+
+    def get_config(self) -> dict:
+        return {"weight_matrix": self.weight_matrix.numpy()}
 
 
 class TargetStateCostFunction(CostFunction):
@@ -221,6 +227,44 @@ class TargetStateCostFunction(CostFunction):
         return terminal_cost
         # return terminal_cost[0]
 
+    def get_config(self) -> dict:
+        return {
+            "weight_matrix": self.weight_matrix.numpy(),
+            "target_state": self.target_state.numpy(),
+        }
+
+
+class StateVarianceCostFunction(CostFunction):
+    def __init__(self, weight: default_float()):
+        self.weight = weight
+
+    def __call__(
+        self,
+        state: ttf.Tensor2[HorizonPlusOne, StateDim],
+        control: ttf.Tensor2[Horizon, ControlDim],
+        state_var: Optional[ttf.Tensor2[HorizonPlusOne, StateDim]] = None,
+        control_var: Optional[ttf.Tensor2[Horizon, ControlDim]] = None,
+    ):
+        """Sum of state variance over trajectory
+
+        :param state: Tensor representing a state trajectory
+        :param control: Tensor representing control trajectory
+        :param state_var: Tensor representing the variance over state trajectory
+        :param control_var: Tensor representing control trajectory
+        :returns: scalar cost
+        """
+        if state_var is None:
+            return 0.0
+        else:
+            print("summing state var yo")
+            sum_state_var = tf.reduce_sum(state_var) * self.weight
+            tf.print("sum_state_var")
+            tf.print(sum_state_var)
+        return sum_state_var
+
+    def get_config(self) -> dict:
+        return {"weight": self.weight}
+
 
 class RiemannianEnergyCostFunction(CostFunction):
     """Riemannian energy cost function class."""
@@ -239,6 +283,17 @@ class RiemannianEnergyCostFunction(CostFunction):
         self.covariance_weight = covariance_weight
         self.manifold = GPManifold(gp=self.gp, covariance_weight=self.covariance_weight)
         self.riemannian_metric_weight_matrix = riemannian_metric_weight_matrix
+
+    # def get_config(self) -> dict:
+    #     gp
+    #     mean_function = tf.keras.layers.deserialize(
+    #         cfg["mean_function"], custom_objects=MEAN_FUNCTION_OBJECTS
+    #     )
+    #     return {
+    #         "gp": gp,
+    #         "riemannian_metric_weight_matrix": riemannian_metric_weight_matrix.numpy(),
+    #         "covariance_weight": self.covariance_weight,
+    #     }
 
     def __call__(
         self,
@@ -266,7 +321,6 @@ class RiemannianEnergyCostFunction(CostFunction):
         :param control_var: Tensor representing control trajectory
         :returns: scalar cost
         """
-
         energy_costs = riemannian_energy_cost_fn(
             manifold=self.manifold,
             riemannian_metric_weight_matrix=self.riemannian_metric_weight_matrix,
@@ -386,23 +440,9 @@ def riemannian_energy_cost_fn(
     active_dims: Optional[List[int]] = None,
 ):
     # Append zeros to control trajectory
-    control_trajectory = tf.concat(
-        [
-            control_trajectory,
-            tf.zeros([1, tf.shape(control_trajectory)[1]], dtype=default_float()),
-        ],
-        0,
+    control_trajectory, control_trajectory_var = append_zero_control(
+        control_trajectory, control_trajectory_var
     )
-    if control_trajectory_var is not None:
-        control_trajectory_var = tf.concat(
-            [
-                control_trajectory_var,
-                tf.zeros(
-                    [1, tf.shape(control_trajectory_var)[1]], dtype=default_float()
-                ),
-            ],
-            0,
-        )
 
     # Calcualted the expeted metric at each point along trajectory
     input_mean, input_var = combine_state_controls_to_input(
