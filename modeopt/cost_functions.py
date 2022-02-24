@@ -235,6 +235,7 @@ class RiemannianEnergyCostFunction(CostFunction):
         covariance_weight: default_float() = 1.0,
     ):
         self.gp = gp
+        self.active_dims = self.gp.kernel.active_dims
         self.covariance_weight = covariance_weight
         self.manifold = GPManifold(gp=self.gp, covariance_weight=self.covariance_weight)
         self.riemannian_metric_weight_matrix = riemannian_metric_weight_matrix
@@ -275,6 +276,7 @@ class RiemannianEnergyCostFunction(CostFunction):
             control_trajectory_var=control_var,
             # state_trajectory_var=None,
             # control_trajectory_var=None,
+            active_dims=self.active_dims,
         )
         return tf.reduce_sum(energy_costs)
 
@@ -381,6 +383,7 @@ def riemannian_energy_cost_fn(
     riemannian_metric_weight_matrix: float = 1.0,
     state_trajectory_var: Optional[ttf.Tensor2[HorizonPlusOne, StateDim]] = None,
     control_trajectory_var: Optional[ttf.Tensor2[HorizonPlusOne, ControlDim]] = None,
+    active_dims: Optional[List[int]] = None,
 ):
     # Append zeros to control trajectory
     control_trajectory = tf.concat(
@@ -408,6 +411,15 @@ def riemannian_energy_cost_fn(
         state_trajectory_var,
         control_trajectory_var,
     )
+
+    if isinstance(active_dims, slice):
+        input_mean = input_mean[..., active_dims]
+        input_var = input_var[..., active_dims]
+    elif active_dims is not None:
+        input_mean = tf.gather(input_mean, active_dims, axis=-1)
+        input_var = tf.gather(input_var, active_dims, axis=-1)
+    # print(manifold.metric(state_trajectory[:-1, :]))
+    # print(riemannian_metric_weight_matrix)
     # input_mean = tf.concat([state_trajectory, control_trajectory], -1)
     expected_riemannian_metric = (
         manifold.metric(input_mean[:-1, :]) @ riemannian_metric_weight_matrix
