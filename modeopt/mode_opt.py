@@ -1,151 +1,302 @@
 #!/usr/bin/env python3
-from typing import NewType, Tuple, Union
+import os
+from typing import Optional, Union
+from gpflow import default_float
 
-import gpflow as gpf
 import numpy as np
+import simenvs
 import tensor_annotations.tensorflow as ttf
-from gpflow import Module
-from tensor_annotations import axes
+import tensorflow as tf
+from gpflow.utilities.keras import try_array_except_none, try_val_except_none
 from tensor_annotations.axes import Batch
-from tf_agents.environments import tf_py_environment
 
-from modeopt.constraints import build_mode_chance_constraints_scipy
-from modeopt.dynamics.multimodal import ModeOptDynamics, ModeOptDynamicsTrainingSpec
-from modeopt.policies import VariationalGaussianPolicy, VariationalPolicy
-from modeopt.rollouts import rollout_policy_in_dynamics, rollout_policy_in_env
-from modeopt.trajectory_optimisers import (
-    ExplorativeTrajectoryOptimiser,
-    ExplorativeTrajectoryOptimiserTrainingSpec,
-    ModeVariationalTrajectoryOptimiser,
-    ModeVariationalTrajectoryOptimiserTrainingSpec,
-    VariationalTrajectoryOptimiser,
-    VariationalTrajectoryOptimiserTrainingSpec,
+from modeopt.controllers import FeedbackController, NonFeedbackController
+from modeopt.custom_types import Dataset, StateDim
+from modeopt.dynamics import ModeOptDynamics
+from modeopt.rollouts import (
+    rollout_controller_in_dynamics,
+    rollout_controller_in_env,
+    rollout_controls_in_dynamics,
+    rollout_controls_in_env,
 )
 
-StateDim = NewType("StateDim", axes.Axis)
-ControlDim = NewType("ControlDim", axes.Axis)
+Controller = Union[FeedbackController, NonFeedbackController]
+
+DEFAULT_DYNAMICS_FIT_KWARGS = {
+    "batch_size": 16,
+    "epochs": 1000,
+    "verbose": True,
+    "validation_split": 0.2,
+}
 
 
-def init_variational_gaussian_policy(
-    horizon, control_dim, mu_noise=0.1, var_noise=0.01
-):
-    control_means = (
-        np.ones((horizon, control_dim)) * 0.5
-        + np.random.random((horizon, control_dim)) * mu_noise
-    )
-    control_vars = (
-        np.ones((horizon, control_dim)) * 0.2
-        + np.random.random((horizon, control_dim)) * var_noise
-    )
-    return VariationalGaussianPolicy(means=control_means, vars=control_vars)
-
-
-class ModeOpt(Module):
+class ModeOpt(tf.keras.Model):
     def __init__(
         self,
         start_state: ttf.Tensor2[Batch, StateDim],
         target_state: ttf.Tensor2[Batch, StateDim],
-        env,
-        policy: VariationalPolicy,
+        env_name: str,
         dynamics: ModeOptDynamics,
-        dataset: Tuple,
+        mode_controller: Controller,
+        # explorative_controller: Controller,
+        dataset: Dataset = None,
         desired_mode: int = 1,
-        horizon: int = 10,
+        mode_satisfaction_probability: float = 0.7,  # Mode satisfaction probability (0, 1]
+        # batch_size: int = 16,
+        # num_epochs: int = 1000,
+        # validation_split: float = 0.2,
+        learning_rate: float = 0.01,
+        epsilon: float = 1e-8,
+        save_freq: Optional[Union[str, int]] = None,
+        log_dir: str = "./",
+        dynamics_fit_kwargs: dict = DEFAULT_DYNAMICS_FIT_KWARGS,
+        name: str = "ModeOpt",
     ):
+        super().__init__(name=name)
+        # TODO how to handle increasing number of inducing points?
         self.start_state = start_state
         self.target_state = target_state
+        self.env_name = env_name
+        self.env = simenvs.make(env_name)
         self.dynamics = dynamics
         self.dataset = dataset
         self.desired_mode = desired_mode
-        self.horizon = horizon
+        self.mode_satisfaction_probability = mode_satisfaction_probability
+        # self.batch_size = batch_size
+        # self.num_epochs = num_epochs
+        # self.validation_split = validation_split
+        self.learning_rate = learning_rate
+        self.epsilon = epsilon
+        self.save_freq = save_freq
+        self.log_dir = log_dir
+        self.dynamics_fit_kwargs = dynamics_fit_kwargs
 
-        # Set policy
-        if policy is None:
-            self.policy = init_variational_gaussian_policy(
-                horizon, control_dim=self.dynamics.control_dim
+        self.mode_controller = mode_controller
+
+        # TODO add early stopping callback
+
+        # Compile dynamics and initialise callbacks
+        optimiser = tf.keras.optimizers.Adam(
+            learning_rate=learning_rate, epsilon=epsilon
+        )
+        self.dynamics.compile(optimizer=optimiser)
+        # self.dynamics(self.dataset[0])  # Needs to be called to build shapes
+        self.dynamics_callbacks = [
+            tf.keras.callbacks.TensorBoard(log_dir=os.path.join(log_dir + "./logs"))
+        ]
+        if save_freq is not None:
+            # save_freq = int(initial_dataset[0].shape[0] / batch_size)
+            self.dynamics_callbacks.append(
+                tf.keras.callbacks.ModelCheckpoint(
+                    filepath=os.path.join(log_dir + "ckpts/ModeOptDynamics"),
+                    monitor="loss",
+                    save_format="tf",
+                    save_best_only=True,
+                    save_freq=save_freq,
+                )
             )
+
+    def call(self, input, training=False):
+        if not training:
+            return self.dynamics(input)
+
+    # def save(self):
+    #     import json
+
+    #     json_cfg = tf.keras.utils.serialize_keras_object(self)
+    #     print(json_cfg)
+    #     # with open("./ckpts/ModeOpt/config.json", "w") as file:
+    #     with open("./config.json", "w") as json_file:
+    #         json_cfg = json.dumps(json_cfg, ensure_ascii=False)
+    # json_cfg = json.dumps(json_cfg)
+    # json_file.write(json_cfg)
+    # json_file.write(json_cfg)
+    # json.dump(json_cfg, file, encoding="utf-8")
+    # self.save(os.path.join(log_dir + "ckpts/ModeOpt"))
+
+    def optimise(self):
+        at_target_state = False
+        while not at_target_state:
+            new_data = self.explore_env()
+            self.update_dataset(new_data=new_data)
+            self.optimise_dynamics()
+            (trajectory, at_target_state) = self.find_trajectory_to_target()
+            if at_target_state:
+                in_desired_mode = self.check_mode_remaining(trajectory)
+                if in_desired_mode:
+                    print("Found delta mode remaining trajectory to target state")
+                    return True
+                else:
+                    at_target_state = False
+
+    def optimise_dynamics(self):
+        X, Y = self.dataset
+        self.dynamics.mosvgpe._num_data = X.shape[0]
+        self.dynamics(X)  # Needs to be called to build shapes
+        self.dynamics.mosvgpe(X)  # Needs to be called to build shapes
+        # TODO: if callbacks in self.dynamics_fit_kwargs extract and append them
+        self.dynamics.fit(
+            X,
+            Y,
+            callbacks=self.dynamics_callbacks,
+            **self.dynamics_fit_kwargs,
+            # batch_size=self.batch_size,
+            # epochs=self.num_epochs,
+            # verbose=self.verbose,
+            # validation_split=self.validation_split,
+        )
+        self.save(os.path.join(self.log_dir, "ckpts/ModeOpt"))
+
+    def update_dataset(self, new_data: Dataset):
+        if self.dataset is not None:
+            Xold, Yold = self.dataset
+            Xnew, Ynew = new_data
+            X = np.concatenate([Xold, Xnew], 0)
+            Y = np.concatenate([Yold, Ynew], 0)
+            self.dataset = (X, Y)
         else:
-            self.policy = policy
+            self.dataset = new_data
 
-        # Init tf environment
-        self.env = env
-        self.tf_env = tf_py_environment.TFPyEnvironment(env)
+    def explore_env(self) -> Dataset:
+        """Optimise the controller and use it to explore the environment"""
+        self.explorative_controller.optimise()
+        # self.env_rollout(self.explorative_controller)
+        return rollout_controller_in_env(
+            env=self.env,
+            controller=self.explorative_controller,
+            start_state=self.start_state,
+        )
+        # return self.env_rollout(explorative_trajectory)
 
-    def optimise_policy(
-        self,
-        start_state,
-        training_spec: Union[
-            VariationalTrajectoryOptimiserTrainingSpec,
-            ModeVariationalTrajectoryOptimiserTrainingSpec,
-            ExplorativeTrajectoryOptimiserTrainingSpec,
-        ],
-    ):
-        if isinstance(training_spec, VariationalTrajectoryOptimiserTrainingSpec):
-            trajectory_optimiser = VariationalTrajectoryOptimiser(
-                self.policy,
-                self.dynamics,
-                cost_fn=training_spec.cost_fn,
-            )
-        elif isinstance(training_spec, ModeVariationalTrajectoryOptimiserTrainingSpec):
-            trajectory_optimiser = ModeVariationalTrajectoryOptimiser(
-                self.policy,
-                self.dynamics,
-                cost_fn=training_spec.cost_fn,
-            )
-        elif isinstance(training_spec, ExplorativeTrajectoryOptimiserTrainingSpec):
-            trajectory_optimiser = ExplorativeTrajectoryOptimiser(
-                self.policy,
-                self.dynamics,
-                cost_fn=training_spec.cost_fn,
-            )
+    # def optimise_controller(self):
+    def mode_remaining_trajectory_optimisation(self):
+        plan = self.mode_trajectory_optimiser.optimise(self.mode_objective_fn)
+        return plan
 
-        gpf.set_trainable(self.dynamics, False)
-        # print("param")
-        # for param in self.policy.trainable_parameters:
-        #     print(param)
-        # print(self.policy.trainable_variables)
-        # gpf.set_trainable(self.policy, True)
-        gpf.utilities.print_summary(self)
-        if (
-            training_spec.mode_chance_constraint_lower is None
-            or training_spec.mode_chance_constraint_lower <= 0.0
-        ):
-            mode_chance_constraints = []
-            print(
-                "Turning mode chance constraints off because training_spec.mode_chance_constraint_lower is None or <=0.0"
-            )
-        else:
-            mode_chance_constraints = build_mode_chance_constraints_scipy(
-                mode_opt_dynamics=self.dynamics,
-                start_state=start_state,
-                horizon=self.horizon,
-                lower_bound=training_spec.mode_chance_constraint_lower,
-                upper_bound=1.0,
-                compile=training_spec.compile_mode_constraint_fn,
-            )
-        return trajectory_optimiser.optimise(
-            start_state=start_state,
-            training_spec=training_spec,
-            constraints=mode_chance_constraints,
+        # self.controller.set_trainable(True)
+        # trajectory = self.controller.optimise()
+        # self.controller.set_trainable(False)
+        # return trajectory
+
+    # def check_mode_remaining(self, trajectory):
+    #     mode_probs = self.dynamics.predict_mode_probability(state_mean, control_mean)
+    #     if (mode_probs < self.mode_satisfaction_probability).any():
+    #         return False
+    #     else:
+    #         return True
+
+    def dynamics_rollout(self):
+        states = self.mode_controller.previous_solution.states
+        print("states")
+        print(states)
+        print("self.env.low_process_noise_mean")
+        print(self.env.low_process_noise_mean)
+        corrected_states = states - self.env.low_process_noise_mean
+        print("corrected_states")
+        print(corrected_states)
+        diff = corrected_states[1:, :] - corrected_states[:-1, :]
+        controls = tf.concat(
+            [diff, tf.zeros([1, states.shape[-1]], dtype=default_float())], 0
+        ) * [2.4, 9.0]
+        print("controls corrected")
+        print(controls)
+        print("controls original")
+        print(self.mode_controller.previous_solution.controls)
+        return rollout_controls_in_dynamics(
+            dynamics=self.dynamics,
+            control_means=controls,
+            control_vars=None,
+            start_state=self.start_state,
+        )
+        # return rollout_controller_in_dynamics(
+        #     dynamics=self.dynamics,
+        #     controller=self.mode_controller,
+        #     start_state=self.start_state,
+        # )
+
+    def env_rollout(self) -> Dataset:
+        return rollout_controller_in_env(
+            env=self.env, controller=self.mode_controller, start_state=self.start_state
         )
 
-    def dynamics_rollout(self, start_state, start_state_var=None):
-        return rollout_policy_in_dynamics(
-            self.policy, self.dynamics, start_state, start_state_var=start_state_var
+    def add_dynamics_callbacks(self, callbacks):
+        self.dynamics_callbacks.append(callbacks)
+
+    @property
+    def dataset(self):
+        return self._dataset
+
+    @dataset.setter
+    def dataset(self, dataset: Dataset):
+        if dataset is not None:
+            self.dynamics.mosvgpe._num_data = dataset[0].shape[0]
+        self._dataset = dataset
+
+    @property
+    def desired_mode(self):
+        return self._desired_mode
+
+    @desired_mode.setter
+    def desired_mode(self, desired_mode: int):
+        """Sets the desired dynamics GP (and builds its posterior)"""
+        self.dynamics.desired_mode = desired_mode
+        self._desired_mode = desired_mode
+
+    def get_config(self):
+        return {
+            "start_state": self.start_state,
+            "target_state": self.target_state,
+            "env_name": self.env_name,
+            # "dynamics": tf.keras.layers.serialize(self.dynamics),
+            "dynamics": tf.keras.utils.serialize_keras_object(self.dynamics),
+            "dataset": (self.dataset[0].numpy(), self.dataset[1].numpy()),
+            "desired_mode": self.desired_mode,
+            "mode_satisfaction_probability": self.mode_satisfaction_probability,
+            # "batch_size": self.batch_size,
+            # "num_epochs": self.num_epochs,
+            # "validation_split": self.validation_split,
+            "learning_rate": self.learning_rate,
+            "epsilon": self.epsilon,
+            "save_freq": self.save_freq,
+            "log_dir": self.log_dir,
+            "dynamics_fit_kwargs": self.dynamics_fit_kwargs,
+        }
+
+    @classmethod
+    def from_config(cls, cfg: dict):
+        dynamics = tf.keras.layers.deserialize(
+            cfg["dynamics"], custom_objects={"ModeOptDynamics": ModeOptDynamics}
         )
-
-    def env_rollout(self, start_state):
-        return rollout_policy_in_env(self.env, self.policy, start_state=start_state)
-
-    def optimise_dynamics(
-        self,
-        dataset,
-        training_spec: ModeOptDynamicsTrainingSpec,
-        trainable_variables=None,
-    ):
-        self.dynamics.set_trainable(True, trainable_variables=trainable_variables)
-        for param in self.policy.trainable_parameters:
-            gpf.set_trainable(param, False)
-        # gpf.set_trainable(self.policy, False)
-        gpf.utilities.print_summary(self)
-        self.dynamics._train(dataset, training_spec)
+        try:
+            log_dir = cfg["log_dir"]
+        except KeyError:
+            log_dir = "./"
+        try:
+            dataset = cfg["dataset"]
+            dataset = (np.array(dataset[0]), np.array(dataset[1]))
+        except (KeyError, TypeError):
+            dataset = None
+        try:
+            dynamics_fit_kwargs = cfg["dynamics_fit_kwargs"]
+        except KeyError:
+            dynamics_fit_kwargs = DEFAULT_DYNAMICS_FIT_KWARGS
+        return cls(
+            start_state=try_array_except_none(cfg, "start_state"),
+            target_state=try_array_except_none(cfg, "target_state"),
+            env_name=cfg["env_name"],
+            dynamics=dynamics,
+            mode_controller=None,  # TODO set this properly
+            dataset=dataset,
+            desired_mode=try_val_except_none(cfg, "desired_mode"),
+            mode_satisfaction_probability=try_val_except_none(
+                cfg, "mode_satisfaction_probability"
+            ),
+            # batch_size=try_val_except_none(cfg, "batch_size"),
+            # num_epochs=try_val_except_none(cfg, "num_epochs"),
+            # validation_split=try_val_except_none(cfg, "validation_split"),
+            learning_rate=try_val_except_none(cfg, "learning_rate"),
+            epsilon=try_val_except_none(cfg, "epsilon"),
+            save_freq=try_val_except_none(cfg, "save_freq"),
+            log_dir=log_dir,
+            dynamics_fit_kwargs=dynamics_fit_kwargs,
+        )
