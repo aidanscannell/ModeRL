@@ -8,7 +8,7 @@ from gpflow import default_float
 from gpflow.models import GPModel
 from tensor_annotations import axes
 
-from modeopt.utils import combine_state_contols_to_input
+from modeopt.utils import append_zero_control, combine_state_controls_to_input
 
 StateDim = NewType("StateDim", axes.Axis)
 ControlDim = NewType("ControlDim", axes.Axis)
@@ -402,7 +402,7 @@ def riemannian_energy_cost_fn(
         )
 
     # Calcualted the expeted metric at each point along trajectory
-    input_mean, input_var = combine_state_contols_to_input(
+    input_mean, input_var = combine_state_controls_to_input(
         state_trajectory,
         control_trajectory,
         state_trajectory_var,
