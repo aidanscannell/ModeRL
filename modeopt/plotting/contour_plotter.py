@@ -1,13 +1,10 @@
 #!/usr/bin/env python3
 import matplotlib.pyplot as plt
 import numpy as np
-import palettable
 import tensorflow as tf
-from modeopt.mode_opt_new import ModeOpt
-from modeopt.trajectory_optimisation.trajectories import GeodesicTrajectory
+from modeopt.mode_opt import ModeOpt
+from modeopt.trajectories import GeodesicTrajectory
 from mogpe.keras.plotting import MixtureOfSVGPExpertsContourPlotter
-
-CMAP = palettable.scientific.sequential.Bilbao_15.mpl_colormap
 
 LABELS = {"env": "Environment", "dynamics": "Dynamics"}
 COLORS = {"env": "c", "dynamics": "m"}
@@ -26,13 +23,7 @@ class ModeOptContourPlotter:
     Can handle arbitrary number of experts and output dimensions.
     """
 
-    def __init__(
-        # self, mosvgpe: MixtureOfSVGPExperts, test_inputs=None, static: bool = False
-        self,
-        mode_optimiser: ModeOpt,
-        test_inputs=None,
-        static: bool = True,
-    ):
+    def __init__(self, mode_optimiser: ModeOpt, test_inputs=None, static: bool = True):
         self.mode_optimiser = mode_optimiser
         self.mosvgpe_plotter = MixtureOfSVGPExpertsContourPlotter(
             mode_optimiser.dynamics.mosvgpe, test_inputs=test_inputs, static=static
@@ -43,10 +34,15 @@ class ModeOptContourPlotter:
 
         if not isinstance(self.test_inputs, tf.Tensor):
             self.test_inputs = tf.constant(self.test_inputs)
-        metric = self.mode_optimiser.mode_controller.previous_solution.manifold.metric(
-            self.test_inputs[:, 0 : self.mode_optimiser.dynamics.state_dim]
-        )
-        self.metric_trace = tf.linalg.trace(metric)
+        if isinstance(
+            self.mode_optimiser.mode_controller.previous_solution, GeodesicTrajectory
+        ):
+            metric = (
+                self.mode_optimiser.mode_controller.previous_solution.manifold.metric(
+                    self.test_inputs[:, 0 : self.mode_optimiser.dynamics.state_dim]
+                )
+            )
+            self.metric_trace = tf.linalg.trace(metric)
 
     def plot_model(self):
         self.plot_trajectories_over_gating_network_gps()
