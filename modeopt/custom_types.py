@@ -19,6 +19,7 @@ NumData = NewType("NumData", axes.Axis)
 InputDim = NewType("InputDim", axes.Axis)
 OutputDim = NewType("OutputDim", axes.Axis)
 TwoStateDim = NewType("StateDim", axes.Axis)
+HorizonPlusOne = NewType("HorizonPlusOne", axes.Axis)
 
 Times = None
 
