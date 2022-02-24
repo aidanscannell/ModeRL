@@ -1,0 +1,20 @@
+dynamics:
+  ckpt_dir: "../../../../train_dynamics/2022.02.16/210508/ckpts"
+  control_dim: 2
+  state_dim: 2
+
+start_state: [3.0, -1.0]
+target_state: [-3.0, 2.5]
+num_iterations: 1000
+horizon: 20
+covariance_weight: 5.0
+control_cost_weight: [[0.01, 0.0], [0.0, 0.01]] # R
+collocation_constraints_lower: -0.1
+collocation_constraints_upper: 0.1
+method: "SLSQP" # or "SLSQP" or "L-BFGS-B"
+t_init: -1.0  # start time
+t_end: 1.0  # end time
+
+hydra:
+  run:
+    dir: velocity_controlled_point_mass/scenario_5/experiments/trajectory_optimisation/collocation/${now:%Y.%m.%d}/${now:%H%M%S}

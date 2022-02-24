@@ -1,0 +1,31 @@
+scenario: 5
+
+dynamics:
+  # ckpt_dir: ../../../../../scenario_${scenario}/train_dynamics/2022.02.18/133118/ckpts
+  ckpt_dir: ../../../../../scenario_${scenario}/train_dynamics/2022.02.18/145206/ckpts
+  control_dim: 2
+  state_dim: 2
+  # desired_mode: 0
+  desired_mode: 1
+
+cost_fn:
+  riemannian_metric_cost_matrix: [[1.0, 0.0], [0.0, 1.0]] # G: \E[G(state)] @ riemannian_metric_cost_weight
+  riemannian_metric_covariance_weight: 1.0
+  terminal_state_cost_matrix: [[1000.0, 0.0], [0.0, 1000.0]]  # Q_terminal
+  control_cost_matrix: [[1.0, 0.0], [0.0, 1.0]] # R
+  # control_cost_matrix: [[0.01, 0.0], [0.0, 0.01]] # R
+
+env_name: velocity-controlled-point-mass/scenario-${scenario}
+
+start_state: [3.0, -1.0]
+target_state: [-3.0, 2.5]
+num_iterations: 1000
+horizon: 20
+control_constraints_lower: [-5, -5]
+control_constraints_upper: [4, 4]
+gaussian_controls: false
+method: "SLSQP" # or "SLSQP" or "L-BFGS-B"
+
+hydra:
+  run:
+    dir: velocity_controlled_point_mass/experiments/scenario_${scenario}/trajectory_optimisation/riemannian_energy/${now:%Y.%m.%d}/${now:%H%M%S}

@@ -1,0 +1,29 @@
+scenario: 7
+
+dynamics:
+  ckpt_dir: ../../../../../scenario_${scenario}/mode_opt_train_dynamics/2022.02.22/132351/ckpts/ModeOptDynamics
+  control_dim: 2
+  state_dim: 2
+  desired_mode: 1
+
+cost_fn:
+  state_cost_matrix: [[1.0, 0.0], [0.0, 1.0]] # R
+
+collocation_constraints:
+  riemannian_metric_covariance_weight: 0.5
+  collocation_constraints_lower: -1.0 # good for horizon=10
+  collocation_constraints_upper: 1.0
+
+env_name: velocity-controlled-point-mass/scenario-${scenario}
+
+target_state: [1.7, 3.0]
+start_state: [ 0.5, -2.0]
+horizon: 10
+num_iterations: 1000
+t_init: -1.0  # start time
+t_end: 1.0  # end time
+method: "SLSQP" # or "SLSQP" or "L-BFGS-B"
+
+hydra:
+  run:
+    dir: velocity_controlled_point_mass/experiments/scenario_${scenario}/trajectory_optimisation/geodesic_collocation/${now:%Y.%m.%d}/${now:%H%M%S}

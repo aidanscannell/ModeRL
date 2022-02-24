@@ -1,0 +1,11 @@
+scenario: 7
+
+dynamics:
+  # ckpt_dir: "../../../mode_opt_train_dynamics/2022.02.19/123734/ckpts/ModeOpt"
+  ckpt_dir: ../../../mode_opt_train_dynamics/2022.02.22/132351/ckpts/ModeOpt
+
+logging_epoch_freq: 100  # plot images every logging_epoch_freq epochs
+
+hydra:
+  run:
+    dir: velocity_controlled_point_mass/experiments/scenario_${scenario}/mode_opt_continue_training_dynamics/${now:%Y.%m.%d}/${now:%H%M%S}
