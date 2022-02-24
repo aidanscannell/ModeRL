@@ -21,7 +21,7 @@ ControlDim = typing.NewType("ControlDim", axes.Axis)
 
 
 @dataclass
-class VariationalTrajectoryOptimiserTrainingSpec(TrajectoryOptimiserTrainingSpec):
+class VariationalTrajectoryOptimiserTrainingSpec:
     """
     Specification data class for model training. Models that require additional parameters for
     training should create a subclass of this class and add additional properties.
@@ -35,6 +35,7 @@ class VariationalTrajectoryOptimiserTrainingSpec(TrajectoryOptimiserTrainingSpec
     compile_loss_fn: bool = True  # loss function in tf.function?
     monitor: gpf.monitor.Monitor = None
     manager: tf.train.CheckpointManager = None
+    cost_fn: CostFunction = None
 
 
 @dataclass
@@ -53,6 +54,38 @@ class ModeVariationalTrajectoryOptimiserTrainingSpec:
     monitor: gpf.monitor.Monitor = None
     manager: tf.train.CheckpointManager = None
     cost_fn: CostFunction = None
+
+
+# class VariationalTrajectoryOptimiser(TrajectoryOptimiser):
+#     """
+#     A trajectory optimiser optimises a sequence of actions given a model of the
+#     the environment that is used for virtual rollouts.
+#     """
+#     policy: VariationalPolicy,
+#     dynamics: GPDynamics,
+#     cost_fn: CostFunction,
+#     optimiser=gpf.optimizers.Scipy(),
+
+#     def objective(self, start_state: ttf.Tensor2[Batch, StateDim]):
+#         return self.elbo(start_state=start_state)
+
+#     def elbo(self, start_state: ttf.Tensor2[Batch, StateDim]):
+#         """Evidence LOwer Bound"""
+#         entropy = self.policy.entropy()  # calculate entropy of policy dist
+
+#         # Rollout controls in dynamics
+#         state_means, state_vars = rollout_policy_in_dynamics(
+#             self.policy, self.dynamics, start_state
+#         )
+
+#         # Calculate costs
+#         control_means, control_vars = self.policy()
+#         expected_costs = self.cost_fn(
+#             state=state_means,
+#             control=control_means,
+#             state_var=state_vars,
+#             control_var=control_vars,
+#         )
 
 
 class VariationalTrajectoryOptimiser(TrajectoryOptimiser):
@@ -139,5 +172,16 @@ class ModeVariationalTrajectoryOptimiser(VariationalTrajectoryOptimiser):
             state_means[:-1, :], control_means, state_vars[:-1, :], control_vars
         )
 
-        elbo = mode_var_exp - expected_costs + entropy
+        tf.print("control_vars.min()")
+        tf.print(tf.reduce_min(control_vars))
+        tf.print("entropy")
+        tf.print(entropy)
+        tf.print("expected_costs")
+        tf.print(expected_costs)
+        tf.print("mode_var_exp")
+        tf.print(mode_var_exp)
+        elbo = mode_var_exp - expected_costs + entropy / self.horizon
+        # elbo = mode_var_exp - expected_costs
+        tf.print("elbo")
+        tf.print(elbo)
         return elbo
