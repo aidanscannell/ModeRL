@@ -20,6 +20,7 @@ init_mode_opt.policy = "VariationalGaussianPolicy"
 init_mode_opt.mogpe_ckpt_dir = None
 init_mode_opt.mode_opt_ckpt_dir = None
 init_mode_opt.horizon = 10
+init_mode_opt.nominal_dynamics = True
 
 # Run ModeOpt.optimise_dynamics
 config_learn_dynamics.mogpe_config_file = "./velocity_controlled_point_mass/scenario_5/configs/subset_mogpe_config.toml"

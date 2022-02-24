@@ -7,9 +7,18 @@ if __name__ == "__main__":
     mode_opt_config_file = (
         # "./scenario_4/configs/mode_remaining_traj_opt_config.gin",
         # "./scenario_4/configs/mode_remaining_riemannian_energy_traj_opt_config.gin",
-        # "./scenario_4/configs/mode_remaining_conditioning_energy_traj_opt_config.gin",
+        # "./scenario_4/configs/mode_remaining_riemannian_energy_traj_opt_subset_3_config.gin",
+        "./scenario_4/configs/mode_remaining_conditioning_energy_traj_opt_config.gin",
+        # "./scenario_4/configs/mode_remaining_conditioning_energy_uncertain_traj_opt_config.gin",
+        # "./scenario_4/configs/mode_remaining_conditioning_energy_traj_opt_subset_3_config.gin",
+        # "./scenario_4/configs/mode_remaining_conditioning_energy_traj_opt_subset_2_no_nominal_config.gin",
+        # "./scenario_4/configs/mode_remaining_svgp_config.gin",
+        # "./scenario_4/configs/mode_remaining_mode_conditioning_traj_opt_config.gin",
+        # "./scenario_4/configs/mode_remaining_mode_conditioning_traj_opt_subset_3_config.gin",
+        # "./scenario_4/configs/mode_remaining_geodesic_collocation_traj_opt_config.gin",
+        # "./scenario_4/configs/mode_remaining_prob_traj_opt_config.gin",
+        # "./scenario_4/configs/baseline_traj_opt_config.gin",
         # "./scenario_4/configs/mode_remaining_chance_constraints_traj_opt_config.gin",
-        "./scenario_4/configs/mode_remaining_mode_conditioning_traj_opt_config.gin",
         # "./configs/mode_remaining_traj_opt_config.gin",
     )
     gin.parse_config_files_and_bindings([mode_opt_config_file[0]], None)

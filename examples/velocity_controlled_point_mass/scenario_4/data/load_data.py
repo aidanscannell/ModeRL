@@ -13,7 +13,8 @@ from sklearn.model_selection import train_test_split
 def load_vcpm_dataset(
     filename: str,
     trim_coords: Optional[list] = None,  # [x1_low, x1_high, x2]
-    standardise: bool = True,
+    standardise: bool = False,
+    # standardise: bool = True,
     plot: Optional[bool] = False,
     test_split_size: float = 0.0,
 ):
@@ -49,6 +50,13 @@ def load_vcpm_dataset(
 
     print("Trimmed input data shape: ", X.shape)
     print("Trimmed output data shape: ", Y.shape)
+
+    if standardise:
+        X[:, 0] = (X[:, 0] - X[:, 0].mean()) / X[:, 0].std()
+        X[:, 1] = (X[:, 1] - X[:, 1].mean()) / X[:, 1].std()
+        Y[:, 0] = (Y[:, 0] - Y[:, 0].mean()) / Y[:, 0].std()
+        Y[:, 1] = (Y[:, 1] - Y[:, 1].mean()) / Y[:, 1].std()
+        # Y = (Y - Y.mean()) / Y.std()
 
     if test_split_size > 0:
         X_train, X_test, Y_train, Y_test = train_test_split(

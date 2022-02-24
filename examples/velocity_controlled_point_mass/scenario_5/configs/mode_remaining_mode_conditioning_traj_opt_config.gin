@@ -1,33 +1,43 @@
 # Environment config
-init_mode_opt.env_name = "velocity-controlled-point-mass/scenario-4"
+init_mode_opt.env_name = "velocity-controlled-point-mass/scenario-5"
 init_mode_opt.delta_time = 0.05
 
 # ModeOpt config
-# init_mode_opt.desired_mode = 0
-init_mode_opt.desired_mode = 1
+init_mode_opt.desired_mode = 0
 init_mode_opt.start_state = [3.0, -1.0]
-init_mode_opt.target_state = [-3.0, 1.0]
+# init_mode_opt.target_state = [-3.0, 1.0]
+init_mode_opt.target_state = [-3.0, 2.5]
 init_mode_opt.policy = "DeterministicPolicy"
-init_mode_opt.policy = "VariationalGaussianPolicy"
+# init_mode_opt.policy = "VariationalGaussianPolicy"
 init_mode_opt.horizon = 10
+init_mode_opt.nominal_dynamics = False
 
 # Trajectory Optimisation config
-config_traj_opt.mode_opt_ckpt_dir = "./velocity_controlled_point_mass/scenario_5/logs/learn_dynamics/subset_dataset/white=True/2_experts/batch_size_32/learning_rate_0.01/further_gating_bound/num_inducing_90/12-07-173939"
+# config_traj_opt.mode_opt_ckpt_dir = "./velocity_controlled_point_mass/scenario_5/logs/learn_dynamics/subset_dataset/white=True/2_experts/batch_size_32/learning_rate_0.01/further_gating_bound/num_inducing_90/12-07-173939"
+# config_traj_opt.mode_opt_ckpt_dir = "./velocity_controlled_point_mass/scenario_5/logs/learn_dynamics/subset_dataset/white=True/2_experts/batch_size_32/learning_rate_0.01/further_gating_bound/num_inducing_90/12-10-124629"
+# config_traj_opt.mode_opt_ckpt_dir = "./velocity_controlled_point_mass/scenario_5/logs/learn_dynamics/subset_dataset/white=True/2_experts/batch_size_32/learning_rate_0.01/further_gating_bound/num_inducing_90/12-14-141017"
+# config_traj_opt.mode_opt_ckpt_dir = "./velocity_controlled_point_mass/scenario_5/logs/learn_dynamics/subset_dataset/white=True/no-nominal/constant-mean-func/2_experts/batch_size_32/learning_rate_0.01/further_gating_bound/num_inducing_90/12-15-093210"
+config_traj_opt.mode_opt_ckpt_dir = "./velocity_controlled_point_mass/scenario_5/logs/learn_dynamics/subset_dataset/white=True/no-nominal/zero-mean-func/2_experts/batch_size_32/learning_rate_0.01/further_gating_bound/num_inducing_90/12-15-135504"
 config_traj_opt.trajectory_optimiser = "ModeVariationalTrajectoryOptimiser"
 config_traj_opt.mode_chance_constraint_lower = None # set as None to turn off mode constraints
 config_traj_opt.compile_mode_constraint_fn = True  # whether to wrap constraints_fn in tf.function
 config_traj_opt.compile_loss_fn = True # whether to wrap loss function in tf.function
-config_traj_opt.velocity_constraints_lower = [-8, -8]
-config_traj_opt.velocity_constraints_upper = [8, 8]
+config_traj_opt.velocity_constraints_lower = [-5, -5]
+config_traj_opt.velocity_constraints_upper = [4, 4]
 config_traj_opt.max_iterations = 1000
 config_traj_opt.method = "SLSQP" # or "SLSQP" or "L-BFGS-B"
 config_traj_opt.disp = True
 config_traj_opt.log_dir = "mode_remaining_mode_conditioning_traj_opt"
 config_traj_opt.num_ckpts = 5
-config_traj_opt.slow_tasks_period = 10
+config_traj_opt.slow_tasks_period = 5
 config_traj_opt.fast_tasks_period = 1
-# config_traj_opt.horizon_new = 15
+config_traj_opt.horizon_new = 20
+# config_traj_opt.horizon_new = 10
 
 # Cost Weights
-config_traj_opt.control_cost_weight = 0.01 # R = tf.eye(control_dim) * control_cost_weight
-config_traj_opt.terminal_state_cost_weight = [15.0, 15.0]  # Q_terminal = tf.eye(state_dim) * terminal_state_cost_weight
+# config_traj_opt.control_cost_weight = 0.00005 # R = tf.eye(control_dim) * control_cost_weight
+# config_traj_opt.terminal_state_cost_weight = [15.0, 15.0]  # Q_terminal = tf.eye(state_dim) * terminal_state_cost_weight
+# config_traj_opt.control_cost_weight = 0.005 # R = tf.eye(control_dim) * control_cost_weight
+config_traj_opt.control_cost_weight = 0.05 # R = tf.eye(control_dim) * control_cost_weight
+# config_traj_opt.terminal_state_cost_weight = [1000.0, 1000.0]  # Q_terminal = tf.eye(state_dim) * terminal_state_cost_weight
+config_traj_opt.terminal_state_cost_weight = [100.0, 100.0]  # Q_terminal = tf.eye(state_dim) * terminal_state_cost_weight

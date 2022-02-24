@@ -20,6 +20,8 @@ from modeopt.cost_functions import (
     StateQuadraticCostFunction,
     TargetStateCostFunction,
     ZeroCostFunction,
+    # state_control_quadratic_cost_fn,
+    # terminal_state_cost_fn,
 )
 from modeopt.dynamics import ModeOptDynamics, ModeOptDynamicsTrainingSpec
 from modeopt.mode_opt import ModeOpt
@@ -72,6 +74,48 @@ def weight_to_matrix(value: Union[list, float], dim: int):
         return tf.eye(dim, dtype=default_float()) * value
 
 
+def init_policy(
+    policy_name: str,
+    horizon: int,
+    control_dim: int,
+    velocity_constraints_lower,
+    velocity_constraints_upper,
+):
+    control_means = (
+        np.ones((horizon, control_dim))
+        # np.ones((horizon, control_dim)) * [-5.0, 0.5]
+        + np.random.random((horizon, control_dim)) * 0.1
+    )
+    # control_means = control_means * 0.0
+    control_means = control_means * 100.0
+    if policy_name is None:
+        policy = DeterministicPolicy
+    # if isinstance(policy, DeterministicPolicy):
+    if policy_name == "DeterministicPolicy":
+        policy = DeterministicPolicy(
+            control_means,
+            constraints_lower_bound=velocity_constraints_lower,
+            constraints_upper_bound=velocity_constraints_upper,
+        )
+    elif policy_name == "VariationalGaussianPolicy":
+        # elif isinstance(policy, VariationalGaussianPolicy):
+        control_vars = (
+            np.ones((horizon, control_dim)) * 0.2
+            + np.random.random((horizon, control_dim)) * 0.01
+        )
+        policy = VariationalGaussianPolicy(
+            means=control_means,
+            vars=control_vars,
+            constraints_lower_bound=velocity_constraints_lower,
+            constraints_upper_bound=velocity_constraints_upper,
+        )
+    else:
+        raise NotImplementedError(
+            "policy should be DeterministicPolicy or VariationalGaussianPolicy"
+        )
+    return policy
+
+
 @gin.configurable
 def init_mode_opt(
     env_name,
@@ -104,39 +148,47 @@ def init_mode_opt(
     state_dim = env.observation_spec().shape[0]
     control_dim = env.action_spec().shape[0]
 
+    # # Init policy
+    # control_means = (
+    #     np.ones((horizon, control_dim))
+    #     # np.ones((horizon, control_dim)) * [-5.0, 0.5]
+    #     + np.random.random((horizon, control_dim)) * 0.1
+    # )
+    # # control_means = control_means * 0.0
+    # # control_means = control_means * 100000000.0
+    # if policy is None:
+    #     policy = DeterministicPolicy
+    # # if isinstance(policy, DeterministicPolicy):
+    # if policy == "DeterministicPolicy":
+    #     policy = DeterministicPolicy(
+    #         control_means,
+    #         constraints_lower_bound=velocity_constraints_lower,
+    #         constraints_upper_bound=velocity_constraints_upper,
+    #     )
+    # elif policy == "VariationalGaussianPolicy":
+    #     # elif isinstance(policy, VariationalGaussianPolicy):
+    #     control_vars = (
+    #         np.ones((horizon, control_dim)) * 0.2
+    #         + np.random.random((horizon, control_dim)) * 0.01
+    #     )
+    #     policy = VariationalGaussianPolicy(
+    #         means=control_means,
+    #         vars=control_vars,
+    #         constraints_lower_bound=velocity_constraints_lower,
+    #         constraints_upper_bound=velocity_constraints_upper,
+    #     )
+    # else:
+    #     raise NotImplementedError(
+    #         "policy should be DeterministicPolicy or VariationalGaussianPolicy"
+    #     )
     # Init policy
-    control_means = (
-        np.ones((horizon, control_dim))
-        # np.ones((horizon, control_dim)) * [-5.0, 0.5]
-        + np.random.random((horizon, control_dim)) * 0.1
+    policy = init_policy(
+        policy,
+        horizon,
+        control_dim,
+        velocity_constraints_lower,
+        velocity_constraints_upper,
     )
-    # control_means = control_means * 0.0
-    # control_means = control_means * 100000000.0
-    if policy is None:
-        policy = DeterministicPolicy
-    # if isinstance(policy, DeterministicPolicy):
-    if policy == "DeterministicPolicy":
-        policy = DeterministicPolicy(
-            control_means,
-            constraints_lower_bound=velocity_constraints_lower,
-            constraints_upper_bound=velocity_constraints_upper,
-        )
-    elif policy == "VariationalGaussianPolicy":
-        # elif isinstance(policy, VariationalGaussianPolicy):
-        control_vars = (
-            np.ones((horizon, control_dim)) * 0.2
-            + np.random.random((horizon, control_dim)) * 0.01
-        )
-        policy = VariationalGaussianPolicy(
-            means=control_means,
-            vars=control_vars,
-            constraints_lower_bound=velocity_constraints_lower,
-            constraints_upper_bound=velocity_constraints_upper,
-        )
-    else:
-        raise NotImplementedError(
-            "policy should be DeterministicPolicy or VariationalGaussianPolicy"
-        )
 
     # Init dynamics
     nominal_dynamics = partial(
@@ -145,6 +197,8 @@ def init_mode_opt(
     if mogpe_config_file is None and mode_opt_ckpt_dir is not None:
         mogpe_config_file = mode_opt_ckpt_dir + "/mogpe_config.toml"
     mosvgpe = MixtureOfSVGPExperts_from_toml(mogpe_config_file, dataset=dataset)
+    # gpf.set_trainable(mosvgpe.experts.experts_list[0], False)
+    # gpf.set_trainable(mosvgpe.gating_network, False)
     dynamics = ModeOptDynamics(
         mosvgpe=mosvgpe,
         desired_mode=desired_mode,
@@ -153,6 +207,20 @@ def init_mode_opt(
         nominal_dynamics=nominal_dynamics,
         # optimiser=optimiser,
     )
+
+    # import matplotlib.pyplot as plt
+    # states, state_vars = rollout_policy_in_dynamics(policy, dynamics, start_state)
+    # plt.plot(states[:, 0], states[:, 1], color="b")
+    # # Init policy
+    # control_means = np.ones((horizon, control_dim)) * [-5.0, 0.5]
+    # policy = DeterministicPolicy(
+    #     control_means,
+    #     constraints_lower_bound=velocity_constraints_lower,
+    #     constraints_upper_bound=velocity_constraints_upper,
+    # )
+    # states, state_vars = rollout_policy_in_dynamics(policy_2, dynamics, start_state)
+    # plt.plot(states[:, 0], states[:, 1], color="r")
+    # plt.show()
 
     # Init ModeOpt
     mode_optimiser = ModeOpt(
@@ -172,6 +240,11 @@ def init_mode_opt(
         ckpt.restore(manager.latest_checkpoint)
         print("Restored ModeOpt")
         gpf.utilities.print_summary(mode_optimiser)
+
+    # dynamics_q_mu = mode_optimiser.dynamics.dynamics_gp.q_mu
+    # dynamics_q_mu = dynamics_q_mu + 0.5 * tf.ones(
+    #     dynamics_q_mu.shape, dtype=default_float()
+    # )
     return mode_optimiser
 
 
@@ -275,7 +348,7 @@ def config_traj_opt(
     mode_opt_ckpt_dir,
     mode_opt_config_file,
     max_iterations,
-    method,
+    # method,
     disp,
     mode_chance_constraint_lower,
     velocity_constraints_lower,
@@ -287,7 +360,9 @@ def config_traj_opt(
     fast_tasks_period,
     slow_tasks_period,
     trajectory_optimiser,
+    method: str = None,
     horizon: int = None,
+    horizon_new: int = None,
     state_cost_weight: default_float() = None,
     control_cost_weight: default_float() = None,
     terminal_state_cost_weight: default_float() = None,
@@ -301,6 +376,21 @@ def config_traj_opt(
 
     # Init mode_opt from gin config
     mode_optimiser = init_mode_opt(dataset=dataset, mode_opt_ckpt_dir=mode_opt_ckpt_dir)
+
+    # Init policy
+    if horizon_new is not None:
+        if isinstance(mode_optimiser.policy, DeterministicPolicy):
+            policy_name = "DeterministicPolicy"
+        elif isinstance(mode_optimiser.policy, VariationalGaussianPolicy):
+            policy_name = "VariationalGaussianPolicy"
+        policy = init_policy(
+            policy_name,
+            horizon_new,
+            mode_optimiser.dynamics.control_dim,
+            velocity_constraints_lower,
+            velocity_constraints_upper,
+        )
+        mode_optimiser.policy = policy
 
     # Create nested log_dir inside learn_dynamics dir
     if log_dir is not None:
@@ -357,7 +447,7 @@ def config_traj_opt(
         cost_fn += RiemannianEnergyCostFunction(
             gp=mode_optimiser.dynamics.gating_gp,
             covariance_weight=riemannian_metric_covariance_weight,
-            riemmanian_metric_weight_matrix=riemannian_metric_weight_matrix,
+            riemannian_metric_weight_matrix=riemannian_metric_weight_matrix,
         )
         print("Using RIEMANNIAN ENERGY cost")
     if prob_cost_weight is not None:
@@ -366,6 +456,42 @@ def config_traj_opt(
             weight=prob_cost_weight,
         )
         print("Using MODE PROB cost")
+
+    # weight_matrix = tf.eye(control_dim, dtype=default_float())
+    # Q = weight_matrix * 0.0
+    # R = weight_matrix * 0.1
+    # # R = weight_matrix * 10.0
+    # H = weight_matrix * 1000.0
+    # cost_fn = TargetStateCostFunction(
+    #     weight_matrix=H, target_state=mode_optimiser.target_state
+    # )
+    # print("target_s")
+    # cost_fn += ControlQuadraticCostFunction(weight_matrix=R)
+
+    # integral_cost_fn = partial(state_control_quadratic_cost_fn, Q=Q, R=R)
+    # terminal_cost_fn = partial(
+    #     terminal_state_cost_fn, Q=H, target_state=mode_optimiser.target_state
+    # )
+
+    # def cost_fn(state, control, state_var, control_var):
+    #     # print("inside cost_fn")
+    #     # print(state.shape)
+    #     # print(control.shape)
+    #     # print(state_var.shape)
+    #     # print(control_var.shape)
+    #     int_cost = integral_cost_fn(
+    #         state=state[:-1, :],
+    #         control=control,
+    #         state_var=state_var[:-1, :],
+    #         control_var=control_var,
+    #     )
+    #     terminal_cost = terminal_cost_fn(
+    #         state=state[-1:, :], state_var=state_var[-1:, :]
+    #     )
+    #     # terminal_cost = terminal_cost_fn(state=state[-1:, :])
+    #     cost = tf.reduce_sum(int_cost) + tf.reduce_sum(terminal_cost)
+    #     # cost = tf.reduce_sum(terminal_cost)
+    #     return cost
 
     if trajectory_optimiser == "ModeVariationalTrajectoryOptimiser":
         print("ModeVariationalTrajectoryOptimiser")

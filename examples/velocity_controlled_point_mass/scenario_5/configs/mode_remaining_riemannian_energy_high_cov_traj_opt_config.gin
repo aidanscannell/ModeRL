@@ -47,4 +47,5 @@ config_traj_opt.control_cost_weight = 0.01 # R = tf.eye(control_dim) * control_c
 # config_traj_opt.control_cost_weight = 0.5 # R = tf.eye(control_dim) * control_cost_weight
 config_traj_opt.terminal_state_cost_weight = [1000.0, 1000.0]  # Q_terminal = tf.eye(state_dim) * terminal_state_cost_weight
 config_traj_opt.riemannian_metric_cost_weight = 1.0 # G = \E[G(state)] * riemannian_metric_cost_weight
-config_traj_opt.riemannian_metric_covariance_weight = 10.0
+# config_traj_opt.riemannian_metric_covariance_weight = 10.0
+config_traj_opt.riemannian_metric_covariance_weight = 5.0

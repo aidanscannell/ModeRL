@@ -1,8 +1,8 @@
 num_samples = 1 # number of samples to approximate variational expectation with
 num_experts = 2
-# bound = "tight" # which ELBO to use, either "tight" or "further", default is "further"
+bound = "tight" # which ELBO to use, either "tight" or "further", default is "further"
 # bound = "further" # which ELBO to use, either "tight" or "further", default is "further"
-bound = "further_gating" # which ELBO to use, either "tight" or "further", default is "further"
+# bound = "further_gating" # which ELBO to use, either "tight" or "further", default is "further"
 
 [[experts]]
     name = "expert_1" # specify a name

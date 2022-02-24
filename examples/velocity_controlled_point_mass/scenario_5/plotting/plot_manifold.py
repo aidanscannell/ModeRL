@@ -10,20 +10,25 @@ from modeopt.monitor import create_test_inputs
 from velocity_controlled_point_mass.utils import init_mode_opt_learn_dynamics_from_ckpt
 
 if __name__ == "__main__":
-    ckpt_dir = "./velocity_controlled_point_mass/scenario_5/logs/learn_dynamics/subset_dataset/white=True/2_experts/batch_size_32/learning_rate_0.01/further_gating_bound/num_inducing_90/12-07-113403"
+    # ckpt_dir = "./velocity_controlled_point_mass/scenario_5/logs/learn_dynamics/subset_dataset/white=True/2_experts/batch_size_32/learning_rate_0.01/further_gating_bound/num_inducing_90/12-07-113403"
+    ckpt_dir = "./velocity_controlled_point_mass/scenario_5/logs/learn_dynamics/subset_dataset/white=True/2_experts/batch_size_32/learning_rate_0.01/further_gating_bound/num_inducing_90/12-07-173939"
     save_dir = "./velocity_controlled_point_mass/scenario_5/images/man"
+
+    # ckpt_dir = "./velocity_controlled_point_mass/scenario_5/logs/learn_dynamics/subset_dataset/white=True/2_experts/batch_size_32/learning_rate_0.01/further_gating_bound/num_inducing_90/12-10-124629"
+    # save_dir = "./velocity_controlled_point_mass/scenario_5/images/man-new"
 
     (mode_opt, training_spec, train_dataset) = init_mode_opt_learn_dynamics_from_ckpt(
         ckpt_dir
     )
 
     # manifold = GPManifold(gp=mode_opt.dynamics.gating_gp, covariance_weight=0.01)
-    # manifold = GPManifold(gp=mode_opt.dynamics.gating_gp, covariance_weight=1.0)
+    manifold = GPManifold(gp=mode_opt.dynamics.gating_gp, covariance_weight=1.0)
     # manifold = GPManifold(gp=mode_opt.dynamics.gating_gp, covariance_weight=1000.0)
     # manifold = GPManifold(gp=mode_opt.dynamics.gating_gp, covariance_weight=100.0)
     # manifold = GPManifold(gp=mode_opt.dynamics.gating_gp, covariance_weight=50.0)
     # manifold = GPManifold(gp=mode_opt.dynamics.dynamics_gp, covariance_weight=10.0)
-    manifold = GPManifold(gp=mode_opt.dynamics.gating_gp, covariance_weight=10.0)
+    # manifold = GPManifold(gp=mode_opt.dynamics.gating_gp, covariance_weight=10.0)
+    manifold = GPManifold(gp=mode_opt.dynamics.gating_gp, covariance_weight=20.0)
     # manifold = GPManifold(gp=mode_opt.dynamics.gating_gp, covariance_weight=5.0)
     # manifold = GPManifold(gp=mode_opt.dynamics.gating_gp, covariance_weight=0.05)
 
