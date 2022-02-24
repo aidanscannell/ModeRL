@@ -31,8 +31,7 @@ def load_vcpm_dataset(
     #     Y = data["y"]
     X = data["x"]
     Y = data["y"]
-    print("Input data shape: ", X.shape)
-    print("Output data shape: ", Y.shape)
+    print("X: {}, Y: {}".format(X.shape, Y.shape))
 
     # remove some data points
     def trim_dataset(X, Y, trim_coords):
@@ -46,12 +45,10 @@ def load_vcpm_dataset(
         return X_partial, Y_partial
 
     if trim_coords is not None:
-        print("trim_coords")
-        print(trim_coords)
+        # print("trim_coords")
+        # print(trim_coords)
         X, Y = trim_dataset(X, Y, trim_coords)
-
-    print("Trimmed input data shape: ", X.shape)
-    print("Trimmed output data shape: ", Y.shape)
+    print("X_trimmed: {}, Y_trimmed: {}".format(X.shape, Y.shape))
 
     if standardise:
         X[:, 0] = (X[:, 0] - X[:, 0].mean()) / X[:, 0].std()
@@ -74,7 +71,7 @@ def load_vcpm_dataset(
     Y_train = tf.convert_to_tensor(Y_train, dtype=default_float())
     train_data = (X_train, Y_train)
 
-    plot = False
+    # plot = False
     if plot:
         plt.quiver(
             X_train[:, 0],
@@ -96,11 +93,18 @@ def load_vcpm_dataset(
         plt.legend()
         plt.show()
 
-    print("Train input data shape: ", X_train.shape)
-    print("Train output data shape: ", Y_train.shape)
+    # print("X_train[:, 0].min()")
+    # print(tf.reduce_min(X_train[:, 0]))
+    # print(tf.reduce_min(X_train[:, 1]))
+    # print(tf.reduce_min(X_train[:, 2]))
+    # print(tf.reduce_min(X_train[:, 3]))
+    # print(tf.reduce_max(X_train[:, 0]))
+    # print(tf.reduce_max(X_train[:, 1]))
+    # print(tf.reduce_max(X_train[:, 2]))
+    # print(tf.reduce_max(X_train[:, 3]))
+    print("X_train: {}, Y_train: {}".format(X_train.shape, Y_train.shape))
     if test_split_size > 0:
-        print("Test input data shape: ", X_test.shape)
-        print("Test output data shape: ", Y_test.shape)
+        print("X_test: {}, Y_test: {}".format(X_test.shape, Y_test.shape))
         return train_data, test_data
     else:
         return train_data, None
@@ -124,6 +128,7 @@ def generate_random_transitions_dataset_from_env(
     """
     np.random.seed(random_seed)
     tf.random.set_seed(random_seed)
+    # key = random.PRNGKey(random_seed)
 
     # configure environment from toml config file
     env = make(env_name)
