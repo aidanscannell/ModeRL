@@ -1,22 +1,22 @@
 #!/usr/bin/env python3
-from typing import Callable, NewType, Optional, Union
+from typing import Callable, List, Optional, Union
 
 import tensor_annotations.tensorflow as ttf
 import tensorflow as tf
 from geoflow.manifolds import GPManifold
 from gpflow import default_float
 from gpflow.models import GPModel
-from tensor_annotations import axes
+from tensor_annotations.axes import Batch
 
+from modeopt.custom_types import (
+    ControlDim,
+    Horizon,
+    HorizonPlusOne,
+    InputDim,
+    One,
+    StateDim,
+)
 from modeopt.utils import append_zero_control, combine_state_controls_to_input
-
-StateDim = NewType("StateDim", axes.Axis)
-ControlDim = NewType("ControlDim", axes.Axis)
-InputDim = Union[StateDim, ControlDim]
-One = NewType("One", axes.Axis)
-Horizon = NewType("Horizon", axes.Axis)
-HorizonPlusOne = NewType("HorizonPlusOne", axes.Axis)
-Batch = NewType("Batch", axes.Axis)
 
 
 class CostFunction:
