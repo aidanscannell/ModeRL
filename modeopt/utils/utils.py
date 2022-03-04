@@ -1,19 +1,17 @@
 #!/usr/bin/env python3
 import typing
-from typing import Tuple, Union
+from typing import Union
 
-import tensor_annotations.tensorflow as ttf
 import tensorflow as tf
 from gpflow import default_float
-from tensor_annotations import axes
-from tensor_annotations.axes import Batch
 from modeopt.custom_types import (
+    ControlMean,
+    ControlVariance,
     StateControlMeanAndVariance,
     StateMean,
-    ControlMean,
     StateVariance,
-    ControlVariance,
 )
+from tensor_annotations import axes
 
 StateDim = typing.NewType("StateDim", axes.Axis)
 ControlDim = typing.NewType("ControlDim", axes.Axis)
