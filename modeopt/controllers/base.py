@@ -1,15 +1,24 @@
 #!/usr/bin/env python3
 import abc
+import json
+import os
 from typing import Union
 
+import tensorflow as tf
 import tensorflow_probability as tfp
+from keras import backend
+from keras.saving.saved_model import json_utils
 from modeopt.custom_types import State
+from mogpe.keras.utils import save_json_config
 from scipy.optimize import LinearConstraint, NonlinearConstraint
 
 tfd = tfp.distributions
 
+JSON_CONFIG_FILENAME = "config.json"
 
-class Controller(abc.ABC):
+
+class Controller(tf.Module, abc.ABC):
+    # class Controller(abc.ABC):
     @abc.abstractmethod
     def optimise(self):
         raise NotImplementedError
@@ -19,6 +28,51 @@ class Controller(abc.ABC):
 
     def control_dim(self) -> int:
         raise NotImplementedError
+
+    def get_config(self) -> dict:
+        """Returns the config of the Model"""
+        return {}
+
+    @classmethod
+    def from_config(cls, config, custom_objects=None):
+        """Instantiaite cls from config.
+
+        This method should be overriden if custom instantiation is requred.
+        """
+        try:
+            return cls(**config)
+        except TypeError as e:
+            raise TypeError(
+                "Unable to revive model from config. When overriding "
+                "the `get_config()`, make sure that the returned "
+                "config contains all items used as arguments in the "
+                f"constructor to {cls}, which is the default behavior. "
+                "You can override this default behavior by defining a "
+                "`from_config` method to specify how to create an "
+                f"instance of {cls.__name__} from the config. \n\n"
+                f"Error encountered during deserialization:\n{e}"
+            )
+
+    def to_json(self, **kwargs):
+        """Returns a JSON string containing the network configuration.
+        To load a network from a JSON save file, use
+        `keras.models.model_from_json(json_string, custom_objects={})`.
+        Args:
+            **kwargs: Additional keyword arguments
+                to be passed to `json.dumps()`.
+        Returns:
+            A JSON string.
+        """
+        from keras import __version__ as keras_version
+
+        config = self.get_config()
+        model_config = {
+            "class_name": self.__class__.__name__,
+            "config": config,
+            "keras_version": keras_version,
+            "backend": backend.backend(),
+        }
+        return json.dumps(model_config, default=json_utils.get_json_type, **kwargs)
 
 
 class FeedbackController(Controller, abc.ABC):
