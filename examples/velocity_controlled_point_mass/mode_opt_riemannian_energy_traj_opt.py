@@ -2,28 +2,15 @@
 from typing import List, Optional
 
 import hydra
-import matplotlib.pyplot as plt
 import numpy as np
-import tensor_annotations.tensorflow as ttf
 import tensorflow as tf
 import tensorflow_probability as tfp
 from gpflow import default_float
-from modeopt.controllers import TrajectoryOptimisationController
-from modeopt.cost_functions import (
-    ControlQuadraticCostFunction,
-    RiemannianEnergyCostFunction,
-    TargetStateCostFunction,
-)
-from modeopt.custom_types import StateDim
 from modeopt.dynamics import ModeOptDynamics
+from modeopt.controllers.utils import build_riemannian_energy_controller
 from modeopt.mode_opt import ModeOpt
 from modeopt.monitor.callbacks import PlotFn, TensorboardImageCallbackScipy
-from modeopt.objectives import build_variational_objective
 from modeopt.plotting import ModeOptContourPlotter
-from modeopt.trajectories import (
-    initialise_deterministic_trajectory,
-    initialise_gaussian_trajectory,
-)
 from omegaconf import DictConfig
 
 tfd = tfp.distributions
@@ -37,98 +24,74 @@ np.random.seed(meaning_of_life)
     config_path="keras_configs/scenario_7/trajectory_optimisation",
     # config_path="keras_configs/scenario_5/trajectory_optimisation",
     config_name="riemannian_energy",
+    # config_name="riemannian_energy_high",
+    # config_name="riemannian_energy_low",
 )
 def riemannian_energy_trajectory_optimisation_from_cfg(cfg: DictConfig):
     dynamics = tf.keras.models.load_model(
         cfg.dynamics.ckpt_dir, custom_objects={"ModeOptDynamics": ModeOptDynamics}
     )
-    dynamics.desired_mode = cfg.dynamics.desired_mode  # update desired mode
-    # env_name = "velocity-controlled-point-mass/scenario-" + str(cfg.scenario)
-    riemannian_energy_trajectory_optimisation(
-        tf.reshape(tf.constant(cfg.start_state, dtype=default_float()), shape=(1, -1)),
-        tf.reshape(tf.constant(cfg.target_state, dtype=default_float()), shape=(1, -1)),
-        cfg.env_name,
-        cfg.num_iterations,
+    start_state = tf.reshape(
+        tf.constant(cfg.start_state, dtype=default_float()), shape=(1, -1)
+    )
+    target_state = tf.reshape(
+        tf.constant(cfg.target_state, dtype=default_float()), shape=(1, -1)
+    )
+    riemannian_metric_cost_matrix = tf.constant(
+        cfg.cost_fn.riemannian_metric_cost_matrix, dtype=default_float()
+    )
+    terminal_state_cost_matrix = tf.constant(
+        cfg.cost_fn.terminal_state_cost_matrix, dtype=default_float()
+    )
+    control_cost_matrix = tf.constant(
+        cfg.cost_fn.control_cost_matrix, dtype=default_float()
+    )
+
+    controller = build_riemannian_energy_controller(
+        start_state,
+        target_state,
+        dynamics,
+        cfg.dynamics.desired_mode,
         cfg.horizon,
         cfg.dynamics.control_dim,
-        dynamics,
-        tf.constant(cfg.cost_fn.riemannian_metric_cost_matrix, dtype=default_float()),
-        cfg.cost_fn.riemannian_metric_covariance_weight,
-        tf.constant(cfg.cost_fn.terminal_state_cost_matrix, dtype=default_float()),
-        tf.constant(cfg.cost_fn.control_cost_matrix, dtype=default_float()),
-        cfg.control_constraints_lower,
-        cfg.control_constraints_upper,
-        cfg.gaussian_controls,
-    )
-
-
-def riemannian_energy_trajectory_optimisation(
-    start_state,
-    target_state,
-    env_name: str,
-    num_iterations: int,
-    horizon: int,
-    control_dim: int,
-    dynamics: ModeOptDynamics,
-    riemannian_metric_cost_matrix: ttf.Tensor2[StateDim, StateDim],
-    riemannian_metric_covariance_weight: float,
-    terminal_state_cost_matrix: ttf.Tensor2[StateDim, StateDim],
-    control_cost_weight,
-    control_constraints_lower: List[float],
-    control_constraints_upper: List[float],
-    gaussian_controls: bool = False,
-):
-    energy_cost_fn = RiemannianEnergyCostFunction(
-        gp=dynamics.gating_gp,
-        riemannian_metric_weight_matrix=riemannian_metric_cost_matrix,
-        covariance_weight=riemannian_metric_covariance_weight,
-    )
-    terminal_cost_fn = TargetStateCostFunction(
-        weight_matrix=terminal_state_cost_matrix, target_state=target_state
-    )
-    control_cost_fn = ControlQuadraticCostFunction(weight_matrix=control_cost_weight)
-    cost_fn = energy_cost_fn + terminal_cost_fn + control_cost_fn
-    # cost_fn = terminal_cost_fn + control_cost_fn
-    objective_fn = build_variational_objective(dynamics, cost_fn, start_state)
-
-    if gaussian_controls:
-        initial_solution = initialise_gaussian_trajectory(horizon, control_dim)
-    else:
-        initial_solution = initialise_deterministic_trajectory(horizon, control_dim)
-
-    controller = TrajectoryOptimisationController(
-        num_iterations=num_iterations,
-        initial_solution=initial_solution,
-        objective_fn=objective_fn,
-        constraints_lower_bound=control_constraints_lower,
-        constraints_upper_bound=control_constraints_upper,
-        # keep_last_solution=keep_last_solution,
-        # constraints=constraints,
-        # method=method,
+        control_cost_matrix,
+        terminal_state_cost_matrix,
+        riemannian_metric_cost_matrix,
+        riemannian_metric_covariance_weight=cfg.cost_fn.riemannian_metric_covariance_weight,
+        max_iterations=cfg.max_iterations,
+        constraints_lower_bound=list(cfg.control_constraints_lower),
+        constraints_upper_bound=list(cfg.control_constraints_upper),
+        # keep_last_solution
+        method=cfg.method,
     )
 
     mode_optimiser = ModeOpt(
         start_state,
         target_state,
-        env_name=env_name,
+        env_name=cfg.env_name,
         dynamics=dynamics,
         mode_controller=controller,
     )
 
-    plotting_callbacks = build_contour_plotter_callbacks(mode_optimiser)
-    # controller.optimise(callback=plotting_callbacks[0])
-    controller.optimise(callback=plotting_callbacks)
-    mode_optimiser_plotter = ModeOptContourPlotter(
-        mode_optimiser=mode_optimiser,
-        test_inputs=create_test_inputs(x_min=[-3, -3], x_max=[3, 3], input_dim=4),
+    plotting_callbacks = build_contour_plotter_callbacks(
+        mode_optimiser, logging_freq=cfg.logging_freq
     )
-    mode_optimiser_plotter.plot_model()
-    plt.show()
+    mode_optimiser.mode_controller_callback = plotting_callbacks
+    mode_optimiser.optimise_mode_controller()
+
+    # mode_optimiser.optimise_mode_controller(callback=plotting_callbacks)
+    # controller.optimise(callback=plotting_callbacks)
+    # mode_optimiser_plotter = ModeOptContourPlotter(
+    #     mode_optimiser=mode_optimiser,
+    #     test_inputs=create_test_inputs(x_min=[-3, -3], x_max=[3, 3], input_dim=4),
+    # )
+    # mode_optimiser_plotter.plot_model()
+    # plt.show()
 
 
 def build_contour_plotter_callbacks(
     mode_optimiser: ModeOpt,
-    logging_epoch_freq: Optional[int] = 3,
+    logging_freq: Optional[int] = 3,
     log_dir: Optional[str] = "./logs",
 ) -> List[PlotFn]:
     test_inputs = create_test_inputs(x_min=[-3, -3], x_max=[3, 3], input_dim=4)
@@ -138,13 +101,13 @@ def build_contour_plotter_callbacks(
     )
     gating_gps_plotting_cb = TensorboardImageCallbackScipy(
         plot_fn=mode_optimiser_plotter.plot_trajectories_over_gating_network_gps,
-        logging_epoch_freq=logging_epoch_freq,
+        logging_epoch_freq=logging_freq,
         log_dir=log_dir,
         name="Trajectories over gating function GPs",
     )
     mixing_probs_plotting_cb = TensorboardImageCallbackScipy(
         plot_fn=mode_optimiser_plotter.plot_trajectories_over_mixing_probs,
-        logging_epoch_freq=logging_epoch_freq,
+        logging_epoch_freq=logging_freq,
         log_dir=log_dir,
         name="Trajectories over mixing probabilities",
     )
@@ -157,10 +120,11 @@ def build_contour_plotter_callbacks(
 
 
 def create_test_inputs(
-    x_min=[-3, -3], x_max=[3, 3], input_dim=4, num_test: int = 400, factor: float = 1.2
+    x_min=[-3, -3], x_max=[3, 3], input_dim=4, num_test: int = 1600, factor: float = 1.2
 ):
     sqrtN = int(np.sqrt(num_test))
-    xx = np.linspace(x_min[0] * factor, x_max[0] * factor, sqrtN)
+    # xx = np.linspace(x_min[0] * factor, x_max[0] * factor, sqrtN)
+    xx = np.linspace(x_min[0] * factor, x_max[0], sqrtN)
     yy = np.linspace(x_min[1] * factor, x_max[1] * factor, sqrtN)
     xx, yy = np.meshgrid(xx, yy)
     test_inputs = np.column_stack([xx.reshape(-1), yy.reshape(-1)])

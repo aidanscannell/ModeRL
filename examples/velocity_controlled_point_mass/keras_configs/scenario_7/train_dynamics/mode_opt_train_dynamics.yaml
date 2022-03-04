@@ -1,5 +1,8 @@
 scenario: 7
 
+mlflow:
+  experiment_name: velocity_controlled_point_mass/scenario_${scenario}/mode_opt_train_dynamics
+
 dataset:
   filename: ../../../../../data/scenario_${scenario}/full_dataset_t0p25_4000_samples_42_seed.npz
   # trim_coords: [[-2.0, -1.5], [1.5, 3.5]]
@@ -14,6 +17,10 @@ logging_epoch_freq: 100  # plot images every logging_epoch_freq epochs
 hydra:
   run:
     dir: velocity_controlled_point_mass/experiments/scenario_${scenario}/mode_opt_train_dynamics/${now:%Y.%m.%d}/${now:%H%M%S}
+  # job:
+  #   env_set:
+  #     MLFLOW_TRACKING_DIR: file://${hydra:runtime.cwd}/.mlflow
+  #     MLFLOW_TRACKING_URI: file://${hydra:runtime.cwd}/.mlflow
 
 mode_opt:
   class_name: ModeOpt

@@ -14,15 +14,16 @@ cost_fn:
 #   collocation_constraints_lower: -0.4 # good for horizon=10
 #   collocation_constraints_upper: 0.4
 collocation_constraints:
-  riemannian_metric_covariance_weight: 30.0
+  # riemannian_metric_covariance_weight: 30.0
+  riemannian_metric_covariance_weight: 80.0
   collocation_constraints_lower: -0.25 # good for horizon=
   collocation_constraints_upper: 0.25
 
 env_name: velocity-controlled-point-mass/scenario-${scenario}
 
+start_state: [ 0.5, -2.0]
 # target_state: [1.7, 3.0]
 target_state: [1.7, 2.0]
-start_state: [ 0.5, -2.0]
 horizon: 15
 num_iterations: 1000
 t_init: -1.0  # start time
