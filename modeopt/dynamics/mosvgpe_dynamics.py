@@ -4,7 +4,6 @@ import gpflow as gpf
 
 import tensorflow as tf
 import tensorflow_probability as tfp
-from gpflow.likelihoods import Bernoulli
 from gpflow.models import SVGP
 from mogpe.custom_types import DatasetBatch
 from mogpe.keras.mixture_of_experts import MixtureOfSVGPExperts
@@ -25,16 +24,13 @@ class ModeOptDynamics(tf.keras.Model):
         self,
         mosvgpe: MixtureOfSVGPExperts,
         state_dim: int,
-        # control_dim: int,
         desired_mode: int = 1,
-        # logger: Optional[Logger] = None,
         name: str = "ModeOptDynamics",
     ):
         super().__init__(name=name)
         self.mosvgpe = mosvgpe
         self.state_dim = state_dim
         self.desired_mode = desired_mode
-        # self.predict_state_difference = predict_state_difference
 
     def call(
         self,
@@ -100,8 +96,6 @@ class ModeOptDynamics(tf.keras.Model):
     @desired_mode_dynamics_gp.setter
     def desired_mode_dynamics_gp(self, dynamics_gp: SVGP) -> SVGPDynamicsWrapper:
         self._desired_mode_dynamics_gp = SVGPDynamicsWrapper(dynamics_gp)
-        print("setting desired_mode_dynamics_gp")
-        print(self._desired_mode_dynamics_gp)
         gpf.utilities.print_summary(self._desired_mode_dynamics_gp.svgp_posterior)
 
     @property
@@ -113,7 +107,6 @@ class ModeOptDynamics(tf.keras.Model):
         """Set the desired dynamics mode GP (and build GP posterior)"""
         assert desired_mode < self.mosvgpe.num_experts
         self._desired_mode = desired_mode
-        print("setting desired_mode: {}".format(self._desired_mode))
         self.desired_mode_dynamics_gp = self.mosvgpe.experts_list[desired_mode].gp
         self.desired_mode_gating_gp = self.mosvgpe.gating_network.gp
 
@@ -148,7 +141,6 @@ class ModeOptDynamics(tf.keras.Model):
             "mosvgpe": tf.keras.layers.serialize(self.mosvgpe),
             "state_dim": self.state_dim,
             "desired_mode": self.desired_mode,
-            # "predict_state_difference": self.predict_state_difference,
         }
 
     @classmethod
@@ -161,13 +153,8 @@ class ModeOptDynamics(tf.keras.Model):
             desired_mode = cfg["desired_mode"]
         except KeyError:
             desired_mode = 1
-        # try:
-        #     predict_state_difference = cfg["predict_state_difference"]
-        # except KeyError:
-        #     predict_state_difference = True
         return cls(
             mosvgpe=mosvgpe,
             state_dim=cfg["state_dim"],
             desired_mode=desired_mode,
-            # predict_state_difference=predict_state_difference,
         )
