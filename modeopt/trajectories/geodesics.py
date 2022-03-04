@@ -1,25 +1,18 @@
 #!/usr/bin/env python3
-import gpflow as gpf
 import numpy as np
 import tensor_annotations.tensorflow as ttf
 import tensorflow as tf
+import tensorflow_probability as tfp
 from geoflow.manifolds import GPManifold
 from gpflow import default_float
 from gpflow.models import SVGP, GPModel
 from gpflow.utilities.keras import try_val_except_none
 from modeopt.constraints import hermite_simpson_collocation_constraints_fn
-from modeopt.custom_types import (
-    ControlDim,
-    ControlTrajectory,
-    ControlTrajectoryMean,
-    FlatOutputDim,
-    Horizon,
-    StateDim,
-    Times,
-    TwoStateDim,
-)
+from modeopt.custom_types import ControlDim, Horizon, StateDim, TwoStateDim
 
 from .base import BaseTrajectory
+
+tfd = tfp.distributions
 
 
 class GeodesicTrajectory(BaseTrajectory):
@@ -51,8 +44,6 @@ class GeodesicTrajectory(BaseTrajectory):
         self.manifold = GPManifold(
             gp=gp, covariance_weight=riemannian_metric_covariance_weight
         )
-        gpf.utilities.set_trainable(self.manifold.gp, False)
-        gpf.utilities.print_summary(self)
 
     def geodesic_collocation_constraints(self):
         return hermite_simpson_collocation_constraints_fn(
@@ -77,9 +68,6 @@ class GeodesicTrajectory(BaseTrajectory):
 
     @property
     def state_derivatives(self) -> ttf.Tensor2[Horizon, TwoStateDim]:
-        # flat_output_plus_a_zero = tf.concat(
-        #     [self.flat_output, tf.zeros([1, self.flat_dim], dtype=default_float())], 0
-        # )
         diff = self.states[1:, :] - self.states[:-1, :]
         return tf.concat(
             [diff, tf.zeros([1, self.state_dim], dtype=default_float())], 0
@@ -88,11 +76,6 @@ class GeodesicTrajectory(BaseTrajectory):
     @property
     def controls(self) -> ttf.Tensor2[Horizon, ControlDim]:
         raise NotImplementedError
-        # flat_output_plus_a_zero = tf.concat(
-        #     [self.flat_output, tf.zeros([1, self.flat_dim], dtype=default_float())], 0
-        # )
-        # diff = self.states[1:, :] - self.states[:-1, :]
-        # return tf.concat([diff, tf.zeros([1, self.flat_dim], dtype=default_float())], 0)
 
     @property
     def horizon(self) -> int:
@@ -101,10 +84,6 @@ class GeodesicTrajectory(BaseTrajectory):
     @property
     def state_dim(self) -> int:
         return self.states.shape[-1]
-
-    # @property
-    # def control_dim(self) -> int:
-    #     raise NotImplementedError
 
     def copy(self):
         return GeodesicTrajectory(
@@ -119,13 +98,13 @@ class GeodesicTrajectory(BaseTrajectory):
 
     def get_config(self):
         return {
-            "start_state": self.start_state,
-            "target_state": self.target_state,
-            "gp": tf.keras.layers.serialize(self.gp),
+            "start_state": self.start_state.numpy(),
+            "target_state": self.target_state.numpy(),
+            "gp": tf.keras.layers.serialize(self.manifold.gp),
             "riemannian_metric_covariance_weight": self.manifold.covariance_weight,
             "horizon": self.horizon,
-            "t_init": self.t_init,
-            "t_end": self.t_end,
+            "t_init": self.times[0].numpy(),
+            "t_end": self.times[-1].numpy(),
         }
 
     @classmethod
@@ -133,8 +112,12 @@ class GeodesicTrajectory(BaseTrajectory):
         # TODO this should accept any type of GP not just SVGP...
         gp = tf.keras.layers.deserialize(cfg["gp"], custom_objects={"SVGP": SVGP})
         return cls(
-            start_state=np.array(cfg["start_state"]),
-            target_state=np.array(cfg["target_state"]),
+            start_state=tf.constant(
+                np.array(cfg["start_state"]), dtype=default_float()
+            ),
+            target_state=tf.constant(
+                np.array(cfg["target_state"]), dtype=default_float()
+            ),
             gp=gp,
             riemannian_metric_covariance_weight=cfg[
                 "riemannian_metric_covariance_weight"

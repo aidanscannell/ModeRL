@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-from typing import Optional, Union
 import abc
+from typing import Optional, Union
 
 import tensorflow as tf
 from modeopt.custom_types import ControlTrajectory, ControlTrajectoryMean
 
 
-class BaseTrajectory(tf.keras.layers.Layer, abc.ABC):
+class BaseTrajectory(tf.Module, abc.ABC):
     def __call__(
         self, timestep: Optional[int] = None, variance: Optional[bool] = False
     ) -> Union[ControlTrajectory, ControlTrajectoryMean]:
@@ -14,9 +14,6 @@ class BaseTrajectory(tf.keras.layers.Layer, abc.ABC):
             return self.controls, None
         else:
             return self.controls
-
-    def call(self, input) -> ControlTrajectory:
-        return self.controls
 
     @property
     def controls(self) -> ControlTrajectoryMean:
@@ -32,4 +29,8 @@ class BaseTrajectory(tf.keras.layers.Layer, abc.ABC):
 
     @abc.abstractmethod
     def copy(self):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def from_config(self):
         raise NotImplementedError
