@@ -1,46 +1,22 @@
 #!/usr/bin/env python3
-from functools import partial
-from typing import Callable, Optional
+from typing import Callable
 
 import tensor_annotations.tensorflow as ttf
 import tensorflow as tf
-from geoflow.manifolds import GPManifold
-from gpflow.models import GPModel
+
 from modeopt.cost_functions import (
-    CostFunction,
     ControlQuadraticCostFunction,
     CostFunction,
     RiemannianEnergyCostFunction,
     TargetStateCostFunction,
 )
-from modeopt.custom_types import ControlTrajectory, State, StateDim
+from modeopt.custom_types import State, StateDim
 from modeopt.dynamics import ModeOptDynamics, SVGPDynamicsWrapper
-from modeopt.mode_opt import ModeOpt
 from modeopt.rollouts import rollout_controls_in_dynamics
 
-from .constraints import hermite_simpson_collocation_constraints_fn
-from .trajectories import BaseTrajectory, ControlTrajectoryDist, FlatOutputTrajectory
+from .trajectories import BaseTrajectory, ControlTrajectoryDist
 
 ObjectiveFn = Callable[[BaseTrajectory], ttf.Tensor0]
-
-
-def build_riemannian_energy_objective_from_ModeOpt(
-    mode_optimiser: ModeOpt,
-    initial_solution,
-    riemannian_metric_cost_matrix: ttf.Tensor2[StateDim, StateDim],
-    riemannian_metric_covariance_weight: float,
-    terminal_state_cost_matrix: ttf.Tensor2[StateDim, StateDim],
-    control_cost_weight,
-) -> ObjectiveFn:
-    return build_riemannian_energy_objective(
-        mode_optimiser.start_state,
-        mode_optimiser.target_state,
-        mode_optimiser.dynamics,
-        riemannian_metric_cost_matrix,
-        riemannian_metric_covariance_weight,
-        terminal_state_cost_matrix,
-        control_cost_weight,
-    )
 
 
 def build_riemannian_energy_objective(
@@ -144,101 +120,3 @@ def build_mode_variational_objective(
         horizon = control_means.shape[0]
         elbo = mode_var_exp - expected_costs + entropy / horizon
         return elbo
-
-
-def build_collocation_objective(trajectory, cost_fn: CostFunction):
-    def collocation_objective(initial_solution: FlatOutputTrajectory):
-        states = trajectory.flat_output_to_state(initial_solution)
-        controls = trajectory.flat_output_to_control(initial_solution)
-
-        cost = cost_fn(states, controls)
-        print("cost")
-        print(cost.shape)
-        cost = tf.reduce_sum(cost)
-        print(cost.shape)
-        return cost
-
-
-# def build_geodesic_collocation_lagrange_objective(
-#     gp: GPModel, covariance_weight: float = 1.0, cost_fn: Optional[CostFunction] = None
-# ) -> Callable[[FlatOutputTrajectory], ttf.Tensor0]:
-
-#     manifold = GPManifold(gp=gp, covariance_weight=covariance_weight)
-#     geodesic_constraints_fn = partial(
-#         hermite_simpson_collocation_constraints_fn, ode_fn=manifold.geodesic_ode
-#     )
-
-#     def objective_fn(initial_solution: FlatOutputTrajectory) -> ttf.Tensor0:
-#         eq_constraints = geodesic_constraints_fn(initial_solution=initial_solution)
-#         print("eq_constraints")
-#         print(eq_constraints)
-#         lagrange_term = tf.reduce_sum(
-#             tf.reshape(initial_solution.lagrange_multipliers, [-1]) * eq_constraints
-#         )
-#         print("lagrange_term")
-#         print(lagrange_term)
-#         lagrange_objective = lagrange_term
-#         return lagrange_objective
-
-#     if cost_fn is not None:
-
-#         def objective_fn_with_cost(
-#             initial_solution: FlatOutputTrajectory,
-#         ) -> ttf.Tensor0:
-#             cost = cost_fn(
-#                 state=initial_solution.states, control=initial_solution.controls
-#             )
-#             print("cost")
-#             print(cost)
-#             lagrange_objective = objective_fn(initial_solution)
-#             return cost + lagrange_objective
-
-#         return objective_fn_with_cost
-#     else:
-#         return objective_fn
-
-
-def build_geodesic_collocation_lagrange_objective(
-    gp: GPModel, cost_fn: CostFunction, covariance_weight: float = 1.0
-) -> Callable[[FlatOutputTrajectory], ttf.Tensor0]:
-
-    manifold = GPManifold(gp=gp, covariance_weight=covariance_weight)
-    geodesic_constraints_fn = partial(
-        hermite_simpson_collocation_constraints_fn, ode_fn=manifold.geodesic_ode
-    )
-
-    def objective_fn(initial_solution: FlatOutputTrajectory) -> ttf.Tensor0:
-        return cost_fn(state=initial_solution.states, control=initial_solution.controls)
-
-    return build_lagrange_dual_objective(
-        eq_constraints_fn=geodesic_constraints_fn, objective_fn=objective_fn
-    )
-
-
-def build_lagrange_dual_objective(
-    eq_constraints_fn, objective_fn: Optional[CostFunction] = None
-) -> Callable[[FlatOutputTrajectory], ttf.Tensor0]:
-    def lagrange_dual_objective_fn(
-        initial_solution: FlatOutputTrajectory,
-    ) -> ttf.Tensor0:
-        with tf.GradientTape(persistent=True, watch_accessed_variables=False) as tape:
-            tape.watch(initial_solution.trainable_variables)
-            eq_constraints = eq_constraints_fn(initial_solution=initial_solution)
-            loss = objective_fn(initial_solution) - tf.reduce_sum(
-                tf.reshape(initial_solution.lagrange_multipliers, [-1]) * eq_constraints
-            )
-            print("loss")
-            print(loss)
-        grad_loss = tape.gradient(loss, initial_solution.trainable_variables)
-        print("grad_loss")
-        print(grad_loss)
-        lagrange_loss = 0
-        for grads in grad_loss:
-            lagrange_loss += tf.reduce_sum(grads)
-        print("lagrange_loss")
-        print(lagrange_loss)
-        # return grad_loss
-        return -lagrange_loss
-        # lagrange_objective = grad_loss + eq
-
-    return lagrange_dual_objective_fn
