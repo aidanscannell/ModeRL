@@ -98,10 +98,6 @@ def hermite_simpson_collocation_constraints_fn(
     #     + 4 * state_prime_at_mid_points
     #     + state_prime_at_knots_after
     # )
-    print("Collcation Defects")
-    print(defects)
-    tf.print("Collcation Defects")
-    tf.print(defects)
     return tf.reshape(defects, [-1])
     # return defects.flatten()
 
