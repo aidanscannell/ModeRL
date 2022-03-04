@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from collections import OrderedDict
 import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
@@ -50,20 +51,23 @@ class ModeOptContourPlotter:
 
     def plot_trajectories_over_gating_network_gps(self):
         fig = self.mosvgpe_plotter.plot_gating_network_gps()
+        fig = self.plot_env_given_fig(fig)
         self.plot_trajectories_given_fig(fig)
         return fig
 
     def plot_trajectories_over_mixing_probs(self):
         fig = self.mosvgpe_plotter.plot_mixing_probs()
+        fig = self.plot_env_given_fig(fig)
         self.plot_trajectories_given_fig(fig)
         return fig
 
     def plot_trajectories_over_metric_trace(self):
         fig = plt.figure(figsize=(self.mosvgpe_plotter.figsize))
-        gs = fig.add_gridspec(1, 1, wspace=0.3)
+        gs = fig.add_gridspec(1, 1)
         ax = gs.subplots()
-        fig.suptitle("Trace of expected metric $\\text{tr}(\mathbb{E}[G(\mathbf{x})])$")
+        # fig.suptitle("Trace of expected metric $\\text{tr}(\mathbb{E}[G(\mathbf{x})])$")
         self.mosvgpe_plotter.plot_contf(ax, z=self.metric_trace)
+        fig = self.plot_env_given_fig(fig)
         self.plot_trajectories_given_fig(fig)
         return fig
 
@@ -71,17 +75,46 @@ class ModeOptContourPlotter:
         trajectories = self.generate_trajectories()
         for key in trajectories.keys():
             self.plot_trajectory_given_fig(fig, trajectories[key], key)
+        # fig.legend(loc="lower center", bbox_transform=fig.transFigure)
+        handles, labels = plt.gca().get_legend_handles_labels()
+        by_label = OrderedDict(zip(labels, handles))
+        fig.legend(
+            by_label.values(),
+            by_label.keys(),
+            loc="upper center",
+            # loc="lower center",
+            bbox_transform=fig.transFigure,
+            ncol=len(by_label),
+        )
+        # fig.legend(loc="lower center", bbox_transform=fig.transFigure, ncol=8)
+
+    # def map_over_axs(fig):
+    #     axs = fig.get_axes()
+    #     if isinstance(axs, np.ndarray):
+    #         axs = axs.flat
+    #         # for ax in axs.flat:
+    #         #     fn(ax, trajectory, key)
+    #     # elif isinstance(axs, list):
+    #     for ax in axs:
+    #         fn(ax, trajectory, key)
+    #     # else:
+    #     # self.plot_trajectory_given_ax(axs, trajectory, key)
 
     def plot_trajectory_given_fig(self, fig, trajectory, key):
         axs = fig.get_axes()
+        # if isinstance(axs, np.ndarray):
+        #     for ax in axs.flat:
+        #         self.plot_trajectory_given_ax(ax, trajectory, key)
+        # elif isinstance(axs, list):
+        #     for ax in axs:
+        #         self.plot_trajectory_given_ax(ax, trajectory, key)
+        # else:
+        #     self.plot_trajectory_given_ax(axs, trajectory, key)
+        # return fig
         if isinstance(axs, np.ndarray):
-            for ax in axs.flat:
-                self.plot_trajectory_given_ax(ax, trajectory, key)
-        elif isinstance(axs, list):
-            for ax in axs:
-                self.plot_trajectory_given_ax(ax, trajectory, key)
-        else:
-            self.plot_trajectory_given_ax(axs, trajectory, key)
+            axs = axs.flat
+        for ax in axs:
+            self.plot_trajectory_given_ax(ax, trajectory, key)
         return fig
 
     def plot_trajectory_given_ax(self, ax, trajectory, key):
@@ -96,6 +129,45 @@ class ModeOptContourPlotter:
         )
         self.plot_start_end_pos_given_ax(ax)
         # self.plot_no_observations_given_fig_ax(fig, ax)
+
+    def plot_env(self):
+        fig = plt.figure(figsize=(self.mosvgpe_plotter.figsize))
+        gs = fig.add_gridspec(1, 1, wspace=0.3)
+        ax = gs.subplots()
+        fig.suptitle("Environment gating mask")
+        test_states = self.test_inputs[:, 0 : self.mode_opt.dynamics.state_dim]
+        mode_probs = []
+        for test_state in test_states:
+            mode_probs.append(self.mode_optimiser.env.state_to_pixel(test_states))
+        self.plot_contf(fig, ax, mode_probs)
+        self.plot_start_end_pos_given_ax(ax)
+        return fig
+
+    def plot_env_given_fig(self, fig):
+        axs = fig.get_axes()
+        if isinstance(axs, np.ndarray):
+            axs = axs.flat
+        for ax in axs:
+            self.plot_env_given_ax(ax)
+        return fig
+
+    def plot_env_given_ax(self, ax):
+        test_states = self.test_inputs[:, 0 : self.mode_optimiser.dynamics.state_dim]
+        mode_probs = []
+        for test_state in test_states:
+            pixel = self.mode_optimiser.env.state_to_pixel(test_state.numpy())
+            mode_probs.append(self.mode_optimiser.env.gating_bitmap[pixel[0], pixel[1]])
+        mode_probs = tf.stack(mode_probs, 0)
+        CS = ax.tricontour(
+            test_states[:, 0],
+            test_states[:, 1],
+            mode_probs.numpy(),
+            [0.5],
+        )
+        ax.clabel(CS, inline=True, fontsize=10, fmt={0.5: "Boundary"})
+        # ax.clabel(CS, inline=True, fontsize=10)
+        # CS.collections[0].set_label("Mode boundary")
+        # ax.clabel(CS, inline=True, fontsize=10, fmt={0.5: "Mode boundary"})
 
     def plot_start_end_pos_given_ax(self, ax):
         ax.scatter(
@@ -123,13 +195,24 @@ class ModeOptContourPlotter:
 
     def generate_trajectories(self):
         if isinstance(
-            self.mode_optimiser.mode_controller.previous_solution, GeodesicTrajectory
+            # self.mode_optimiser.mode_controller.previous_solution,
+            self.mode_optimiser.mode_controller.previous_solution,
+            GeodesicTrajectory,
         ):
-            collocation_trajectory = {
-                "collocation": self.mode_optimiser.mode_controller.previous_solution.states
+            print("is instance of GeodesicTrajectory")
+            # collocation_trajectory = {
+            #     "collocation": self.mode_optimiser.mode_controller.previous_solution.states
+            # }
+            # trajectories = collocation_trajectory
+            dynamics_trajectory = self.mode_optimiser.dynamics_rollout()[0]
+            env_trajectory = self.mode_optimiser.env_rollout()
+            trajectories = {
+                "env": env_trajectory,
+                "dynamics": dynamics_trajectory,
+                "collocation": self.mode_optimiser.mode_controller.previous_solution.states,
             }
-            trajectories = collocation_trajectory
         else:
+            print("is NOT instance of GeodesicTrajectory")
             dynamics_trajectory = self.mode_optimiser.dynamics_rollout()[0]
             env_trajectory = self.mode_optimiser.env_rollout()
             trajectories = {"env": env_trajectory, "dynamics": dynamics_trajectory}
