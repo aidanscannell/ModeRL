@@ -2,37 +2,38 @@
 from typing import Optional
 
 import numpy as np
+import tensorflow_probability as tfp
+from modeopt.trajectories import ControlTrajectoryDist
 from scipy.optimize import LinearConstraint
+
+tfd = tfp.distributions
 
 
 def build_linear_control_constraints(
-    self,
-    horizon: int,
-    control_dim: int,
-    lower_bound: Optional[float] = None,
-    upper_bound: Optional[float] = None,
-    gaussian: Optional[
-        bool
-    ] = False,  # if True adjust constraint matrix for mean AND variance
-):
-    """Linear constraints on the mean of the control dist."""
+    trajectory: ControlTrajectoryDist, lower_bound=None, upper_bound=None
+) -> Optional[LinearConstraint]:
+    """Linear constraints on control trajectory"""
     # TODO handle sequence of inputs
     if upper_bound is None and lower_bound is None:
         return None
     if upper_bound is not None:
-        constraints_upper_bound = np.ones((horizon, 1)) * upper_bound
+        constraints_upper_bound = np.ones((trajectory.horizon, 1)) * upper_bound
     else:
-        constraints_upper_bound = np.ones((horizon, 1)) * np.inf
+        constraints_upper_bound = np.ones((trajectory.horizon, 1)) * np.inf
     if lower_bound is not None:
-        constraints_lower_bound = np.ones((horizon, 1)) * lower_bound
+        constraints_lower_bound = np.ones((trajectory.horizon, 1)) * lower_bound
     else:
-        constraints_lower_bound = np.ones((horizon, 1)) * -np.inf
-    if gaussian:
+        constraints_lower_bound = np.ones((trajectory.horizon, 1)) * -np.inf
+
+    # TODO move this check to dispatcher?
+    if isinstance(trajectory.dist, tfd.Deterministic):
+        print("building constraints for tfd.Deterministic")
+        control_constraint_matrix = np.eye(trajectory.horizon * trajectory.control_dim)
+    else:
         control_constraint_matrix = np.eye(
-            N=horizon * control_dim, M=horizon * control_dim * 2
+            N=trajectory.horizon * trajectory.control_dim,
+            M=trajectory.horizon * trajectory.control_dim * 2,
         )
-    else:
-        control_constraint_matrix = np.eye(horizon * control_dim)
     return LinearConstraint(
         control_constraint_matrix,
         constraints_lower_bound.reshape(-1),
