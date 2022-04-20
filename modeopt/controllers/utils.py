@@ -10,8 +10,14 @@ from modeopt.cost_functions import (
 )
 from modeopt.custom_types import ControlDim, StateDim
 from modeopt.dynamics import ModeOptDynamics
-from modeopt.objectives import build_variational_objective
-from modeopt.trajectories import initialise_deterministic_trajectory
+from modeopt.objectives import (
+    build_variational_objective,
+    build_mode_variational_objective,
+)
+from modeopt.trajectories import (
+    initialise_deterministic_trajectory,
+    initialise_gaussian_trajectory,
+)
 from scipy.optimize import LinearConstraint, NonlinearConstraint
 
 from .non_feedback.trajectory_optimisation import TrajectoryOptimisationController
@@ -59,6 +65,50 @@ def build_riemannian_energy_controller(
         objective_fn=objective_fn,
         constraints_lower_bound=constraints_lower_bound,
         constraints_upper_bound=constraints_upper_bound,
+        keep_last_solution=keep_last_solution,
+        constraints=constraints,
+        method=method,
+    )
+    return controller
+
+
+def build_control_as_inference_controller(
+    start_state,
+    target_state,
+    dynamics: ModeOptDynamics,
+    desired_mode: int,
+    horizon: int,
+    control_dim: int,
+    control_cost_matrix: Optional[ttf.Tensor2[ControlDim, ControlDim]],
+    terminal_state_cost_matrix: Optional[ttf.Tensor2[StateDim, StateDim]],
+    max_iterations: int,
+    # constraints_lower_bound: float,
+    # constraints_upper_bound: float,
+    constraints: Optional[List[Union[LinearConstraint, NonlinearConstraint]]] = [],
+    keep_last_solution: bool = True,
+    method: str = "SLSQP",
+    gaussian_controls: bool = True,
+):
+    dynamics.desired_mode = desired_mode  # update desired mode
+    terminal_cost_fn = TargetStateCostFunction(
+        weight_matrix=terminal_state_cost_matrix, target_state=target_state
+    )
+    control_cost_fn = ControlQuadraticCostFunction(weight_matrix=control_cost_matrix)
+    cost_fn = terminal_cost_fn + control_cost_fn
+
+    objective_fn = build_mode_variational_objective(dynamics, cost_fn, start_state)
+
+    if gaussian_controls:
+        initial_solution = initialise_gaussian_trajectory(horizon, control_dim)
+    else:
+        initial_solution = initialise_deterministic_trajectory(horizon, control_dim)
+
+    controller = TrajectoryOptimisationController(
+        max_iterations=max_iterations,
+        initial_solution=initial_solution,
+        objective_fn=objective_fn,
+        # constraints_lower_bound=constraints_lower_bound,
+        # constraints_upper_bound=constraints_upper_bound,
         keep_last_solution=keep_last_solution,
         constraints=constraints,
         method=method,
