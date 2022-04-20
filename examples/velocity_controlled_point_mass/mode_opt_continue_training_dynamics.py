@@ -14,7 +14,8 @@ np.random.seed(meaning_of_life)
 
 # @hydra.main(config_path="keras_configs/scenario_7", config_name="train_dynamics")
 @hydra.main(
-    config_path="keras_configs/scenario_7/train_dynamics",
+    # config_path="keras_configs/scenario_7/train_dynamics",
+    config_path="keras_configs/scenario_5/train_dynamics",
     config_name="mode_opt_continue_training_dynamics",
 )
 def continue_training_dynamics_from_cfg(cfg: DictConfig):

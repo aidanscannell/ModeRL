@@ -21,16 +21,19 @@ np.random.seed(meaning_of_life)
 
 
 @hydra.main(
-    config_path="keras_configs/scenario_7/trajectory_optimisation",
-    # config_path="keras_configs/scenario_5/trajectory_optimisation",
-    config_name="riemannian_energy",
+    # config_path="keras_configs/scenario_9/trajectory_optimisation",
+    # config_path="keras_configs/scenario_7/trajectory_optimisation",
+    config_path="keras_configs/scenario_5/trajectory_optimisation",
+    # config_name="riemannian_energy",
     # config_name="riemannian_energy_high",
+    config_name="riemannian_energy_low_2",
     # config_name="riemannian_energy_low",
 )
 def riemannian_energy_trajectory_optimisation_from_cfg(cfg: DictConfig):
     dynamics = tf.keras.models.load_model(
         cfg.dynamics.ckpt_dir, custom_objects={"ModeOptDynamics": ModeOptDynamics}
     )
+    dynamics.desired_mode = cfg.dynamics.desired_mode  # update desired mode
     start_state = tf.reshape(
         tf.constant(cfg.start_state, dtype=default_float()), shape=(1, -1)
     )

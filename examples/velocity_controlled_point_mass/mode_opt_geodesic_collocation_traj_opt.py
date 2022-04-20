@@ -29,32 +29,18 @@ np.random.seed(meaning_of_life)
 
 
 @hydra.main(
-    config_path="keras_configs/scenario_7/trajectory_optimisation",
-    config_name="geodesic_collocation",
-    # config_name="geodesic_collocation_high_cov_weight",
+    config_path="keras_configs/scenario_5/trajectory_optimisation",
+    # config_path="keras_configs/scenario_9/trajectory_optimisation",
+    # config_path="keras_configs/scenario_7/trajectory_optimisation",
+    # config_name="geodesic_collocation_mid_point",
+    # config_name="geodesic_collocation",
+    # config_name="geodesic_collocation_low",
+    # config_name="geodesic_collocation_high",
+    config_name="geodesic_collocation_high_mid_point",
 )
 def collocation_trajectory_optimisation_via_constraints_from_cfg(
     cfg: DictConfig,
 ):
-    # # Set path to mlruns directory
-    # mlflow.set_tracking_uri("file://" + hydra.utils.get_original_cwd() + "/mlruns")
-    # mlflow.set_experiment(cfg.mlflow.experiment_name)
-
-    # with mlflow.start_run():
-
-    #     dynamics = tf.keras.models.load_model(
-    #         cfg.dynamics.ckpt_dir, custom_objects={"ModeOptDynamics": ModeOptDynamics}
-    #     )
-    #     dynamics.desired_mode = cfg.dynamics.desired_mode  # update desired mode
-    #     # env_name = "velocity-controlled-point-mass/scenario-" + str(cfg.scenario)
-    #     # # autolog your metrics, parameters, and model
-    #     # mlflow.keras.log_model(dynamics)
-    #     mlflow.keras.save_model(
-    #         dynamics,
-    #         path="./saved_model",
-    #         custom_objects={"ModeOptDynamics": ModeOptDynamics},
-    #     )
-    #     mlflow.keras.autolog()
     dynamics = tf.keras.models.load_model(
         cfg.dynamics.ckpt_dir, custom_objects={"ModeOptDynamics": ModeOptDynamics}
     )
@@ -68,7 +54,16 @@ def collocation_trajectory_optimisation_via_constraints_from_cfg(
     dummy_cost_weight = tf.constant(
         cfg.controller.dummy_cost_matrix, dtype=default_float()
     )
+    try:
+        mid_state = tf.reshape(
+            tf.constant(cfg.controller.mid_state, dtype=default_float()), shape=(1, -1)
+        )
+    except:
+        mid_state = None
 
+    # controller= tf.keras.models.load_model(
+    #     cfg.dynamics.ckpt_dir, custom_objects={"GeodesicController": GeodesicController}
+    # )
     controller = GeodesicController(
         start_state=start_state,
         target_state=target_state,
@@ -85,16 +80,8 @@ def collocation_trajectory_optimisation_via_constraints_from_cfg(
         num_inference_iterations=cfg.controller.num_inference_iterations,
         num_control_samples=cfg.controller.num_control_samples,
         method=cfg.controller.method,
+        mid_state=mid_state,
     )
-
-    filename = "config.json"
-    save_json_config(controller, filename=filename)
-    loaded_model = load_from_json_config(
-        filename=filename, custom_objects={"GeodesicController": GeodesicController}
-    )
-    print("loaded_model")
-    print(loaded_model)
-    print(type(loaded_model))
 
     mode_optimiser = ModeOpt(
         start_state,
