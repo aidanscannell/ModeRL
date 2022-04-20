@@ -1,18 +1,19 @@
 class_name: ModeOpt
 config:
-  start_state: [3.0, -1.0]
-  target_state: [-3.0, 2.5]
-  env_name: velocity-controlled-point-mass/scenario-5
+  start_state: [-1.0, -2.0]
+  target_state: [1.7, 3.0]
+  env_name: velocity-controlled-point-mass/scenario-7
   dataset: null
   desired_mode: 1
-  mode_satisfaction_probability: 0.7
+  mode_satisfaction_probability: 0.8
   learning_rate: 0.01
   epsilon: 1.0e-08
+  mode_controller: null
   save_freq: 1000  # save model after every save_freq of batches
   log_dir: ./
   dynamics_fit_kwargs: # args to pass to keras model.fit(X, Y, callbacks, **dynamics_fit_kwargs)
     # epochs: 1000
-    epochs: 20
+    epochs: 100
     batch_size: 16
     validation_split: 0.2
   dynamics:

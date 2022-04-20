@@ -1,8 +1,12 @@
 scenario: 5
+mlflow:
+  experiment_name: velocity_controlled_point_mass/scenario_${scenario}/mode_opt_train_dynamics
 
 dataset:
-  filename: ../../../../../data/scenario_${scenario}/full_dataset_t0p25_4000_samples_42_seed.npz
-  trim_coords: [[-1.0, -3.0], [2.0, 2.0]]
+  # filename: ../../../../../data/scenario_${scenario}/full_dataset_t0p25_4000_samples_42_seed.npz
+  filename: ../../../../../data/scenario_${scenario}/full_dataset_t0p25_4000_samples_43_seed.npz
+  # trim_coords: [[-1.0, -3.0], [2.0, 2.0]]
+  trim_coords: [[-0.5, -3.0], [2.0, 1.0]]
   standardise: false
   input_dim: 4
   output_dim: 2
@@ -20,16 +24,19 @@ mode_opt:
     target_state: [-3.0, 2.5]
     env_name: velocity-controlled-point-mass/scenario-5
     dataset: null
+    mode_controller: null
     desired_mode: 1
     mode_satisfaction_probability: 0.7
     learning_rate: 0.01
     epsilon: 1.0e-08
-    save_freq: 1000  # save model after every save_freq of batches
+    save_freq: 8000  # save model after every save_freq of batches
     log_dir: ./
     dynamics_fit_kwargs: # args to pass to keras model.fit(X, Y, callbacks, **dynamics_fit_kwargs)
+      epochs: 8000
+      # epochs: 1800
       # epochs: 1000
-      epochs: 20
-      batch_size: 16
+      # batch_size: 16
+      batch_size: 128
       validation_split: 0.2
     dynamics:
       class_name: ModeOptDynamics
