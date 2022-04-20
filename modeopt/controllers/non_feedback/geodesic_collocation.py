@@ -38,6 +38,7 @@ class GeodesicController(NonFeedbackController):
         num_inference_iterations: int = 100,  # num optimisation steps to use for control inference
         num_control_samples: int = 1,  # number of samples to draw from control variational posterior
         method: Optional[str] = "SLSQP",
+        mid_state: ttf.Tensor1[StateDim] = None,
         name: str = "GeodesicController",
     ):
         super().__init__(name=name)
@@ -59,6 +60,7 @@ class GeodesicController(NonFeedbackController):
             horizon=horizon,
             t_init=t_init,
             t_end=t_end,
+            mid_state=mid_state,
         )
 
         if dummy_cost_weight is not None:
@@ -71,7 +73,14 @@ class GeodesicController(NonFeedbackController):
                     weight_matrix=dummy_cost_weight,
                     vector_var=None,
                 )
-                return tf.reduce_sum(costs)
+                # costs += quadratic_cost_fn(
+                #     vector=initial_solution.states,
+                #     # vector=initial_solution.state_derivatives,
+                #     weight_matrix=dummy_cost_weight / 1000.0,
+                #     vector_var=None,
+                # )
+                return tf.math.sqrt(tf.reduce_sum(costs))
+                # return tf.reduce_sum(costs)
 
         else:
             objective_fn = lambda initial_solution: 1.0
@@ -112,8 +121,7 @@ class GeodesicController(NonFeedbackController):
                 tf.ones(
                     (initial_solution.horizon, initial_solution.state_dim),
                     dtype=default_float(),
-                )
-                * 1.0,  # TODO make this use control_dim?
+                ),  # TODO make this use control_dim?
                 trainable=False,
             ),
         )
