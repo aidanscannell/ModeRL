@@ -5,11 +5,13 @@ from .utils import generate_random_transitions_dataset_from_env
 if __name__ == "__main__":
 
     scenario = "5"
-    scenario = "7"
+    # scenario = "7"
+    # scenario = "8"
+    # scenario = "9"
     num_samples = 4000
     # num_samples = 3800
     # num_samples = 1000
-    random_seed = 42
+    random_seed = 43
 
     env_name = "velocity-controlled-point-mass/scenario-" + scenario
     # save_dir = "./velocity_controlled_point_mass/scenario_5/data/full_dataset_"
