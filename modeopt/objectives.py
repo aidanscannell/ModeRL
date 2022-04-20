@@ -3,6 +3,9 @@ from typing import Callable
 
 import tensor_annotations.tensorflow as ttf
 import tensorflow as tf
+import tensorflow_probability as tfp
+from gpflow import default_float, default_jitter
+from gpflow.conditionals import base_conditional, uncertain_conditional
 
 from modeopt.cost_functions import (
     ControlQuadraticCostFunction,
@@ -12,9 +15,14 @@ from modeopt.cost_functions import (
 )
 from modeopt.custom_types import State, StateDim
 from modeopt.dynamics import ModeOptDynamics, SVGPDynamicsWrapper
+from modeopt.dynamics.conditionals import svgp_covariance_conditional
+from modeopt.mode_opt import ModeOpt
 from modeopt.rollouts import rollout_controls_in_dynamics
+from modeopt.utils import combine_state_controls_to_input
 
 from .trajectories import BaseTrajectory, ControlTrajectoryDist
+
+tfd = tfp.distributions
 
 ObjectiveFn = Callable[[BaseTrajectory], ttf.Tensor0]
 
@@ -58,18 +66,12 @@ def build_variational_objective(
 
         # Rollout controls in dynamics
         control_means, control_vars = initial_solution(variance=True)
-        tf.print("control_vars IN BOUNd")
-        tf.print(control_means)
-        tf.print(control_vars)
         state_means, state_vars = rollout_controls_in_dynamics(
             dynamics=dynamics,
             start_state=start_state,
             control_means=control_means,
             control_vars=control_vars,
         )
-        tf.print("state_means IN BOUNd")
-        tf.print(state_means)
-        tf.print(state_vars)
 
         # Calculate costs
         expected_costs = cost_fn(
@@ -96,7 +98,7 @@ def build_mode_variational_objective(
         entropy = initial_solution.entropy()
 
         # Rollout controls in dynamics
-        control_means, control_vars = initial_solution()
+        control_means, control_vars = initial_solution(variance=True)
         state_means, state_vars = rollout_controls_in_dynamics(
             dynamics=dynamics,
             start_state=start_state,
@@ -118,5 +120,72 @@ def build_mode_variational_objective(
         )
 
         horizon = control_means.shape[0]
+        # elbo = -expected_costs + entropy / horizon
+        # elbo = -expected_costs
+        # elbo = mode_var_exp - expected_costs - entropy
+        # elbo = mode_var_exp - expected_costs + entropy
         elbo = mode_var_exp - expected_costs + entropy / horizon
-        return elbo
+        # elbo = mode_var_exp - expected_costs
+        return -elbo
+
+    return mode_variational_objective
+
+
+def build_explorative_objective(
+    dynamics: SVGPDynamicsWrapper, cost_fn: CostFunction, start_state: State
+) -> ObjectiveFn:
+    def explorative_objective(
+        initial_solution: ControlTrajectoryDist,
+    ) -> ttf.Tensor0:
+        # Rollout controls in dynamics
+        control_means, control_vars = initial_solution(variance=True)
+        state_means, state_vars = rollout_controls_in_dynamics(
+            dynamics=dynamics,
+            start_state=start_state,
+            control_means=control_means,
+            #         control_vars=control_vars,
+        )
+
+        h_means_prior, h_vars_prior = dynamics.uncertain_predict_gating(
+            state_means[1:, :], control_means
+        )
+        gating_gp = dynamics.desired_mode_gating_gp
+
+        input_means, input_vars = combine_state_controls_to_input(
+            state_means[1:, :],
+            control_means,
+            state_vars[1:, :],
+            control_vars,
+        )
+
+        h_means, h_vars = h_means_prior[0:1, :], h_vars_prior[0:1, :]
+        for t in range(1, initial_solution.horizon):
+            Xnew = input_means[t : t + 1, :]
+            Xobs = input_means[0:t, :]
+            f = h_means_prior[0:t, :]
+
+            Knn = svgp_covariance_conditional(X1=Xnew, X2=Xnew, svgp=gating_gp)[0, 0, :]
+            Kmm = svgp_covariance_conditional(X1=Xobs, X2=Xobs, svgp=gating_gp)[0, :, :]
+            Kmn = svgp_covariance_conditional(X1=Xobs, X2=Xnew, svgp=gating_gp)[0, :, :]
+            Kmm += tf.eye(Kmm.shape[0], dtype=default_float()) * default_jitter()
+            # Lm = tf.linalg.cholesky(Kmm)
+            # A = tf.linalg.triangular_solve(Lm, Kmn, lower=True)  # [..., M, N]
+            h_mean, h_var = base_conditional(
+                Kmn=Kmn,
+                Kmm=Kmm,
+                Knn=Knn,
+                f=f,
+                full_cov=False,
+                q_sqrt=None,
+                white=False,
+            )
+            h_means = tf.concat([h_means, h_mean], 0)
+            h_vars = tf.concat([h_vars, h_var], 0)
+        h_dist = tfd.MultivariateNormalDiag(h_means, h_vars)
+        gating_entropy = h_dist.entropy()
+
+        return -tf.reduce_sum(gating_entropy) + cost_fn(
+            state_means, control_means, state_vars, control_vars
+        )
+
+    return explorative_objective
