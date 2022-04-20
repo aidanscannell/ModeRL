@@ -78,7 +78,7 @@ class TrajectoryOptimisationController(NonFeedbackController):
 
     def optimise(
         self,
-        callback: Optional[Callable[[tf.Tensor, tf.Tensor, int], None]] = [],
+        callback: Optional[Callable[[tf.Tensor, tf.Tensor, int], None]] = None,
     ) -> ControlMeanAndVariance:
         """Returns a sequence of controls of length self.horizon"""
         if self.objective_fn is None:
@@ -140,7 +140,7 @@ class TrajectoryOptimisationController(NonFeedbackController):
     def control_dim(self) -> int:
         return self.previous_solution.control_dim
 
-    def get_config(self):
+    def get_config(self) -> dict:
         return {
             "max_iterations": self.max_iterations,
             "initial_solution": tf.keras.utils.serialize_keras_object(
