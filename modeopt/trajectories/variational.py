@@ -6,7 +6,8 @@ import numpy as np
 import tensor_annotations.tensorflow as ttf
 import tensorflow as tf
 import tensorflow_probability as tfp
-from gpflow import default_float
+from gpflow import default_float, Parameter
+from gpflow.utilities.bijectors import positive
 from modeopt.custom_types import ControlTrajectory, ControlTrajectoryMean, Horizon
 
 from .base import BaseTrajectory
@@ -73,26 +74,32 @@ class ControlTrajectoryDist(BaseTrajectory):
 def initialise_gaussian_trajectory(
     horizon: int, control_dim: int, diag: Optional[bool] = True
 ) -> ControlTrajectoryDist:
-    controls = tf.Variable(np.zeros((horizon, control_dim)))
+    # controls = tf.Variable(np.zeros((horizon, control_dim)))
+    controls = tf.Variable(
+        np.ones((horizon, control_dim)) * 0.2
+        + np.random.random((horizon, control_dim)) * 0.01
+    )
     if diag:
-        control_vars = tf.Variable(
+        control_vars = Parameter(
             np.ones((horizon, control_dim)) * 0.2
-            + np.random.random((horizon, control_dim)) * 0.01
+            + np.random.random((horizon, control_dim)) * 0.01,
+            dtype=default_float(),
+            transform=positive(),
         )
         dist = tfd.MultivariateNormalDiag(loc=controls, scale_diag=control_vars)
     else:
-        raise NotImplementedError()
+        raise NotImplementedError
     return ControlTrajectoryDist(dist)
 
 
 def initialise_deterministic_trajectory(
     horizon: int, control_dim: int
 ) -> ControlTrajectoryDist:
-    controls = tf.Variable(np.zeros((horizon, control_dim)))
+    # controls = tf.Variable(np.zeros((horizon, control_dim)))
+    # controls = tf.Variable(controls)
     controls = tf.Variable(
         np.ones((horizon, control_dim)) * 0.2
         + np.random.random((horizon, control_dim)) * 0.01
     )
-    controls = tf.Variable(controls)
     dist = tfd.Deterministic(loc=controls)
     return ControlTrajectoryDist(dist)
