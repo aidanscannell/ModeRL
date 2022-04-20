@@ -85,6 +85,9 @@ class TrajectoryOptimisationController(NonFeedbackController):
             raise RuntimeError(
                 "Please set `objective_fn` before using TrajectoryOptimisationController"
             )
+        if not self.keep_last_solution:
+            self.reset()
+
         objective_fn_closure = partial(
             self.objective_fn, initial_solution=self.previous_solution
         )
