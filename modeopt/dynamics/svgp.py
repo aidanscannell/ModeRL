@@ -1,25 +1,19 @@
 #!/usr/bin/env python3
-import typing
 from functools import partial
 
-import tensor_annotations.tensorflow as ttf
 import tensorflow as tf
 import tensorflow_probability as tfp
 from gpflow import posteriors
 from gpflow.conditionals import uncertain_conditional
 from gpflow.models import SVGP
-from tensor_annotations import axes
-from tensor_annotations.axes import Batch
-from modeopt.utils import combine_state_controls_to_input
 from modeopt.custom_types import (
-    StateDim,
-    ControlDim,
-    StateMeanAndVariance,
-    StateMean,
     ControlMean,
-    StateVariance,
     ControlVariance,
+    StateMean,
+    StateMeanAndVariance,
+    StateVariance,
 )
+from modeopt.utils import combine_state_controls_to_input
 
 tfd = tfp.distributions
 
