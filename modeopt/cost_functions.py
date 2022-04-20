@@ -234,6 +234,46 @@ class TargetStateCostFunction(CostFunction):
         }
 
 
+class StateDiffCostFunction(CostFunction):
+    def __init__(
+        self,
+        weight_matrix: ttf.Tensor2[StateDim, StateDim],
+        target_state: ttf.Tensor2[One, StateDim],
+    ):
+        self.weight_matrix = weight_matrix
+        self.target_state = target_state
+
+    def __call__(
+        self,
+        state: ttf.Tensor2[HorizonPlusOne, StateDim],
+        control: ttf.Tensor2[Horizon, ControlDim],
+        state_var: Optional[ttf.Tensor2[HorizonPlusOne, StateDim]] = None,
+        control_var: Optional[ttf.Tensor2[Horizon, ControlDim]] = None,
+    ):
+        """Expected quadratic state diff cost func
+
+        :param state: Tensor representing a state trajectory
+        :param control: Tensor representing control trajectory
+        :param state_var: Tensor representing the variance over state trajectory
+        :param control_var: Tensor representing control trajectory
+        :returns: scalar cost
+        """
+        state_diffs = state[1:, :] - self.target_state
+        # state_diffs = state[1:-1, :] - self.target_state
+        state_diffs_cost = quadratic_cost_fn(
+            vector=state_diffs,
+            weight_matrix=self.weight_matrix,
+            vector_var=state_var,
+        )
+        return tf.reduce_sum(state_diffs_cost)
+
+    def get_config(self) -> dict:
+        return {
+            "weight_matrix": self.weight_matrix.numpy(),
+            "target_state": self.target_state.numpy(),
+        }
+
+
 class StateVarianceCostFunction(CostFunction):
     def __init__(self, weight: default_float()):
         self.weight = weight
