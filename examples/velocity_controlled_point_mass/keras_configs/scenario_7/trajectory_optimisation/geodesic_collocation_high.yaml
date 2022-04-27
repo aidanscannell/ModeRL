@@ -9,8 +9,8 @@ dynamics:
   desired_mode: 1
 
 controller:
-  # target_state: [1.7, 3.0]
-  target_state: [2.5, 3.0]
+  target_state: [1.7, 3.0]
+  # target_state: [2.5, 3.0]
   start_state: [ 0.5, -2.0]
   # horizon: 10
   horizon: 20
@@ -23,8 +23,10 @@ controller:
   # riemannian_metric_covariance_weight: 100.0
   max_collocation_iterations: 1000
   # max_collocation_iterations: 1
-  collocation_constraints_lower: -0.25
-  collocation_constraints_upper: 0.25
+  # collocation_constraints_lower: -0.25
+  # collocation_constraints_upper: 0.25
+  collocation_constraints_lower: -0.24
+  collocation_constraints_upper: 0.24
   dummy_cost_matrix: [[0.1, 0.0], [0.0, 0.1]] # R
   # dummy_cost_matrix: [[100.0, 0.0], [0.0, 100.0]] # R
   num_inference_iterations: 100

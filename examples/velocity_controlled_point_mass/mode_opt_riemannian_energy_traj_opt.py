@@ -22,11 +22,11 @@ np.random.seed(meaning_of_life)
 
 @hydra.main(
     # config_path="keras_configs/scenario_9/trajectory_optimisation",
-    # config_path="keras_configs/scenario_7/trajectory_optimisation",
-    config_path="keras_configs/scenario_5/trajectory_optimisation",
-    # config_name="riemannian_energy",
+    config_path="keras_configs/scenario_7/trajectory_optimisation",
+    # config_path="keras_configs/scenario_5/trajectory_optimisation",
+    config_name="riemannian_energy",
     # config_name="riemannian_energy_high",
-    config_name="riemannian_energy_low_2",
+    # config_name="riemannian_energy_low_2",
     # config_name="riemannian_energy_low",
 )
 def riemannian_energy_trajectory_optimisation_from_cfg(cfg: DictConfig):
@@ -81,6 +81,7 @@ def riemannian_energy_trajectory_optimisation_from_cfg(cfg: DictConfig):
     )
     mode_optimiser.mode_controller_callback = plotting_callbacks
     mode_optimiser.optimise_mode_controller()
+    mode_optimiser.save()
 
     # mode_optimiser.optimise_mode_controller(callback=plotting_callbacks)
     # controller.optimise(callback=plotting_callbacks)

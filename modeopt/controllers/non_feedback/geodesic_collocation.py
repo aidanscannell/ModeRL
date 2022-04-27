@@ -52,7 +52,7 @@ class GeodesicController(NonFeedbackController):
             learning_rate=0.1
         )  # optimiser for control inference
 
-        initial_solution = GeodesicTrajectory(
+        self._initial_solution = GeodesicTrajectory(
             start_state=start_state,
             target_state=target_state,
             gp=dynamics.desired_mode_gating_gp,
@@ -87,10 +87,10 @@ class GeodesicController(NonFeedbackController):
 
         self.trajectory_optimiser = TrajectoryOptimisationController(
             max_collocation_iterations,
-            initial_solution,
+            self._initial_solution,
             objective_fn,
             keep_last_solution=keep_last_solution,
-            nonlinear_constraint_closure=initial_solution.geodesic_collocation_constraints,
+            nonlinear_constraint_closure=self._initial_solution.geodesic_collocation_constraints,
             nonlinear_constraint_kwargs={
                 "lb": collocation_constraints_lower,
                 "ub": collocation_constraints_upper,
@@ -101,28 +101,30 @@ class GeodesicController(NonFeedbackController):
         # Initialise prior/variational posterior for control inference (from states)
         self.controls_prior = tfd.MultivariateNormalDiag(
             loc=tf.zeros(
-                (initial_solution.horizon, initial_solution.state_dim),
+                (self._initial_solution.horizon, self._initial_solution.state_dim),
                 dtype=default_float(),
             ),
             scale_diag=tf.ones(
-                (initial_solution.horizon, initial_solution.state_dim),
+                (self._initial_solution.horizon, self._initial_solution.state_dim),
                 dtype=default_float(),
             ),
         )
         self.controls_posterior = tfd.MultivariateNormalDiag(
             loc=tf.Variable(
                 tf.zeros(
-                    (initial_solution.horizon, initial_solution.state_dim),
+                    (self._initial_solution.horizon, self._initial_solution.state_dim),
                     dtype=default_float(),
                 ),
-                trainable=False,
+                # trainable=False,
+                trainable=True,
             ),
             scale_diag=tf.Variable(
                 tf.ones(
-                    (initial_solution.horizon, initial_solution.state_dim),
+                    (self._initial_solution.horizon, self._initial_solution.state_dim),
                     dtype=default_float(),
                 ),  # TODO make this use control_dim?
-                trainable=False,
+                # trainable=False,
+                trainable=True,
             ),
         )
         gpf.utilities.print_summary(self)
@@ -157,7 +159,7 @@ class GeodesicController(NonFeedbackController):
         callback: Optional[Callable[[tf.Tensor, tf.Tensor, int], None]] = [],
         num_steps: int = 0,
     ):
-        gpf.utilities.set_trainable(self.controls_posterior, True)
+        # gpf.utilities.set_trainable(self.controls_posterior, True)
 
         @tf.function
         def optimisation_step():

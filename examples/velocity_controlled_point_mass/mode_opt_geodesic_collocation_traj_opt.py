@@ -29,14 +29,15 @@ np.random.seed(meaning_of_life)
 
 
 @hydra.main(
-    config_path="keras_configs/scenario_5/trajectory_optimisation",
+    # config_path="keras_configs/scenario_5/trajectory_optimisation",
     # config_path="keras_configs/scenario_9/trajectory_optimisation",
-    # config_path="keras_configs/scenario_7/trajectory_optimisation",
+    config_path="keras_configs/scenario_7/trajectory_optimisation",
     # config_name="geodesic_collocation_mid_point",
     # config_name="geodesic_collocation",
     # config_name="geodesic_collocation_low",
-    # config_name="geodesic_collocation_high",
-    config_name="geodesic_collocation_high_mid_point",
+    # config_name="geodesic_collocation_low_2",
+    config_name="geodesic_collocation_high",
+    # config_name="geodesic_collocation_high_mid_point",
 )
 def collocation_trajectory_optimisation_via_constraints_from_cfg(
     cfg: DictConfig,
@@ -97,6 +98,7 @@ def collocation_trajectory_optimisation_via_constraints_from_cfg(
 
     mode_optimiser.mode_controller_callback = plotting_callbacks
     mode_optimiser.optimise_mode_controller()
+    mode_optimiser.save()
 
     # mode_optimiser_plotter = ModeOptContourPlotter(
     #     mode_optimiser=mode_optimiser,

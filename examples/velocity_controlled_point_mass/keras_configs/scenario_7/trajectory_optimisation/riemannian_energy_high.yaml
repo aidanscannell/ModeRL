@@ -19,7 +19,8 @@ cost_fn:
   control_cost_matrix: [[0.1, 0.0], [0.0, 0.1]] # R
 
 start_state: [0.5, -2.0]
-target_state: [2.2, 2.5]
+# target_state: [2.2, 2.5]
+target_state: [1.7, 3.0]
 max_iterations: 1000
 # horizon: 10
 horizon: 20
