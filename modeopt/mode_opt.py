@@ -69,6 +69,7 @@ class ModeOpt(tf.Module):
             self.env = None
         self.dynamics = dynamics
         self.dataset_idx = tf.Variable(0, dtype=tf.int64)
+        # self.dataset_idx = tf.Variable(0, dtype=tf.float64)
         self.dataset = dataset
         self.desired_mode = desired_mode
         self.mode_satisfaction_probability = mode_satisfaction_probability
@@ -239,7 +240,9 @@ class ModeOpt(tf.Module):
             try:
                 # update checkpoint manager so it checkpoints controller
                 self.create_checkpoint_manager()
+                print("updated ckpt manager")
             except:
+                print("did NOT update ckpt manager")
                 pass
         else:
             self._explorative_controller = None
