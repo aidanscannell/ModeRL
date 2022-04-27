@@ -1,0 +1,150 @@
+scenario: 7
+mlflow:
+  experiment_name: velocity_controlled_point_mass/scenario_${scenario}/mode_opt_train_dynamics
+dataset:
+  filename: ../../../../../data/scenario_${scenario}/full_dataset_t0p25_4000_samples_42_seed.npz
+  trim_coords:
+  - - -1.0
+    - -1.0
+  - - 1.0
+    - 3.5
+  standardise: false
+  input_dim: 4
+  output_dim: 2
+logging_epoch_freq: 100
+mode_opt:
+  class_name: ModeOpt
+  config:
+    start_state:
+    - 3.0
+    - -1.0
+    target_state:
+    - -3.0
+    - 2.5
+    env_name: velocity-controlled-point-mass/scenario-5
+    dataset: null
+    mode_controller: null
+    desired_mode: 1
+    mode_satisfaction_probability: 0.7
+    learning_rate: 0.01
+    epsilon: 1.0e-08
+    save_freq: 3000
+    log_dir: ./
+    dynamics_fit_kwargs:
+      epochs: 1800
+      batch_size: 16
+      validation_split: 0.2
+    dynamics:
+      class_name: ModeOptDynamics
+      config:
+        desired_mode: 1
+        mosvgpe:
+          class_name: MixtureOfSVGPExperts
+          config:
+            experts_list:
+            - class_name: SVGPExpert
+              config:
+                kernel:
+                  class_name: SeparateIndependent
+                  config:
+                    kernels:
+                    - class_name: SquaredExponential
+                      config:
+                        lengthscales:
+                        - 1.0
+                        - 1.0
+                        - 1.0
+                        - 1.0
+                        variance: 1.0
+                    - class_name: SquaredExponential
+                      config:
+                        lengthscales:
+                        - 1.0
+                        - 1.0
+                        - 1.0
+                        - 1.0
+                        variance: 1.0
+                likelihood:
+                  class_name: Gaussian
+                  config:
+                    variance:
+                    - 1.0
+                    - 1.0
+                mean_function:
+                  class_name: Constant
+                  config:
+                    c:
+                    - 0.0
+                    - 0.0
+                inducing_variable:
+                  class_name: SharedIndependentInducingVariables
+                  config:
+                    inducing_variable:
+                      class_name: InducingPoints
+                      config:
+                        num_inducing: 90
+                        input_dim: 4
+                num_latent_gps: 2
+            - class_name: SVGPExpert
+              config:
+                kernel:
+                  class_name: SeparateIndependent
+                  config:
+                    kernels:
+                    - class_name: SquaredExponential
+                      config:
+                        lengthscales:
+                        - 1.0
+                        - 1.0
+                        - 1.0
+                        - 1.0
+                        variance: 1.0
+                    - class_name: SquaredExponential
+                      config:
+                        lengthscales:
+                        - 1.0
+                        - 1.0
+                        - 1.0
+                        - 1.0
+                        variance: 1.0
+                likelihood:
+                  class_name: Gaussian
+                  config:
+                    variance:
+                    - 1.0
+                    - 1.0
+                mean_function:
+                  class_name: Constant
+                  config:
+                    c:
+                    - 0.0
+                    - 0.0
+                inducing_variable:
+                  class_name: SharedIndependentInducingVariables
+                  config:
+                    inducing_variable:
+                      class_name: InducingPoints
+                      config:
+                        num_inducing: 90
+                        input_dim: 4
+                num_latent_gps: 2
+            gating_network:
+              class_name: SVGPGatingNetwork
+              config:
+                kernel:
+                  class_name: SquaredExponential
+                  config:
+                    lengthscales:
+                    - 1.0
+                    - 1.0
+                    variance: 1.0
+                    active_dims:
+                    - 0
+                    - 1
+                inducing_variable:
+                  class_name: InducingPoints
+                  config:
+                    num_inducing: 100
+                    input_dim: 2
+        predict_state_difference: true
+        state_dim: 2

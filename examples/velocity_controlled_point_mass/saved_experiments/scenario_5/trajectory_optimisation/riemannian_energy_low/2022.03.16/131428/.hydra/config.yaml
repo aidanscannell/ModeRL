@@ -1,0 +1,40 @@
+scenario: 5
+env_name: velocity-controlled-point-mass/scenario-${scenario}
+dynamics:
+  ckpt_dir: ../../../../../scenario_${scenario}/mode_opt_train_dynamics/2022.03.16/111750/ckpts/ModeOptDynamics
+  control_dim: 2
+  state_dim: 2
+  desired_mode: 1
+cost_fn:
+  riemannian_metric_cost_matrix:
+  - - 1.0
+    - 0.0
+  - - 0.0
+    - 1.0
+  riemannian_metric_covariance_weight: 0.01
+  terminal_state_cost_matrix:
+  - - 1000.0
+    - 0.0
+  - - 0.0
+    - 1000.0
+  control_cost_matrix:
+  - - 0.5
+    - 0.0
+  - - 0.0
+    - 0.5
+start_state:
+- 2.5
+- -1.85
+target_state:
+- -3.1
+- 2.8
+max_iterations: 1000
+horizon: 20
+control_constraints_lower:
+- -5
+- -5
+control_constraints_upper:
+- 4
+- 4
+method: SLSQP
+logging_freq: 10
