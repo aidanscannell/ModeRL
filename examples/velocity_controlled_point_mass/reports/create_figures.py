@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-import distutils
+# import distutils
+import shutil
 import logging
 import os
 from collections import OrderedDict
@@ -225,6 +226,26 @@ if __name__ == "__main__":
         "scenario_5/control-as-inference": "scenario_5/trajectory_optimisation/control_as_inference/2022.03.16/133955",
         "scenario_5/control-as-inference-deterministic": "scenario_5/trajectory_optimisation/control_as_inference_deterministic/2022.03.16/133940",
     }
+    experiment_dict = {
+        "scenario_5/riemannian-energy": "scenario_5/trajectory_optimisation/riemannian_energy/2022.03.16/130358",
+        # "scenario_5/riemannian-energy-low": "scenario_5/trajectory_optimisation/riemannian_energy_low/2022.03.16/131428",
+        "scenario_5/riemannian-energy-low-2": "scenario_5/trajectory_optimisation/riemannian_energy_low_2/2022.03.16/131442",
+        "scenario_5/riemannian-energy-high": "scenario_5/trajectory_optimisation/riemannian_energy_high/2022.03.16/130011",
+        "scenario_5/geodesic-collocation": "scenario_5/trajectory_optimisation/geodesic_collocation/2022.03.18/123518",
+        "scenario_5/geodesic-collocation-mid-point": "scenario_5/trajectory_optimisation/geodesic_collocation/2022.03.18/125548",
+        "scenario_5/geodesic-collocation-low": "scenario_5/trajectory_optimisation/geodesic_collocation_low/2022.03.18/154418",
+        "scenario_5/geodesic-collocation-high": "scenario_5/trajectory_optimisation/geodesic_collocation_high/2022.03.18/121855",
+        "scenario_7/riemannian-energy": "scenario_7/trajectory_optimisation/riemannian_energy/2022.04.22/163121/2022-04-22-16-31",
+        "scenario_7/riemannian-energy-low": "scenario_7/trajectory_optimisation/riemannian_energy_low/2022.04.22/162526/2022-04-22-16-25",
+        "scenario_7/riemannian-energy-high": "scenario_7/trajectory_optimisation/riemannian_energy_high/2022.04.22/162818/2022-04-22-16-28",
+        "scenario_7/geodesic-collocation": "scenario_7/trajectory_optimisation/geodesic_collocation/2022.03.08/174538",
+        "scenario_7/geodesic-collocation-low": "scenario_7/trajectory_optimisation/geodesic_collocation_low/2022.03.08/171012",
+        "scenario_7/geodesic-collocation-high": "scenario_7/trajectory_optimisation/geodesic_collocation_high/2022.04.22/172005/2022-04-22-17-20",
+        "scenario_5/control-as-inference": "scenario_5/trajectory_optimisation/control_as_inference/2022.03.16/133955",
+        "scenario_5/control-as-inference-deterministic": "scenario_5/trajectory_optimisation/control_as_inference_deterministic/2022.03.16/133940",
+        "scenario_7/control-as-inference": "scenario_7/trajectory_optimisation/control_as_inference/2022.03.14/161004",
+        "scenario_7/control-as-inference-deterministic": "scenario_7/trajectory_optimisation/control_as_inference_deterministic/2022.03.14/160121",
+    }
 
     trajectories = {}
     for key in experiment_dict.keys():
@@ -235,7 +256,8 @@ if __name__ == "__main__":
         logging.info(save_dir)
         ckpt_dir = os.path.join(path_to_experiments, experiment_dict[key])
         saved_exp_dir = os.path.join(path_to_saved_experiments, experiment_dict[key])
-        distutils.dir_util.copy_tree(ckpt_dir, saved_exp_dir)
+        # distutils.dir_util.copy_tree(ckpt_dir, saved_exp_dir)
+        shutil.copytree(ckpt_dir, saved_exp_dir, dirs_exist_ok=True)
 
         mode_optimiser = ModeOpt.load(os.path.join(saved_exp_dir, "ckpts"))
         trajectories.update(

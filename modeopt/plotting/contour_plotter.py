@@ -141,35 +141,36 @@ class ModeOptContourPlotter:
         self.plot_data_given_fig(fig)
         return fig
 
-    def plot_data_given_fig(self, fig):
+    def plot_data_given_fig(self, fig, plot_satisfaction_prob: bool = False):
         axs = fig.get_axes()
-        states = self.mode_optimiser.dataset[0]
         mixing_probs = (
             self.mode_optimiser.dynamics.mosvgpe.gating_network.predict_mixing_probs(
                 self.test_inputs
             )
         )
         for ax in axs:
-            # self.plot_start_end_pos_given_ax(ax)
-            # ax.set_xlabel("$x$")
-            # ax.set_ylabel("$y$")
-            ax.scatter(
-                states[:, 0],
-                states[:, 1],
-                marker="x",
-                color="b",
-                linewidth=0.5,
-                alpha=0.5,
-                label="Observations",
-            )
-            CS = ax.tricontour(
-                self.test_inputs[:, 0],
-                self.test_inputs[:, 1],
-                mixing_probs[:, self.mode_optimiser.desired_mode].numpy(),
-                [self.mode_optimiser.mode_satisfaction_probability],
-            )
-            ax.clabel(CS, inline=True, fontsize=10)
+            self.plot_data_given_ax(ax)
+            if plot_satisfaction_prob:
+                CS = ax.tricontour(
+                    self.test_inputs[:, 0],
+                    self.test_inputs[:, 1],
+                    mixing_probs[:, self.mode_optimiser.desired_mode].numpy(),
+                    [self.mode_optimiser.mode_satisfaction_probability],
+                )
+                ax.clabel(CS, inline=True, fontsize=10)
         self.plot_env_no_obs_start_end_given_fig(fig)
+
+    def plot_data_given_ax(self, ax):
+        states = self.mode_optimiser.dataset[0]
+        ax.scatter(
+            states[:, 0],
+            states[:, 1],
+            marker="x",
+            color="b",
+            linewidth=0.5,
+            alpha=0.5,
+            label="Observations",
+        )
 
     def plot_trajectories_given_fig(self, fig, plot_satisfaction_prob: bool = False):
         if not self.static_trajectories:
@@ -178,17 +179,9 @@ class ModeOptContourPlotter:
             self.plot_trajectory_given_fig(fig, self.trajectories[key], key)
         self.plot_env_no_obs_start_end_given_fig(fig)
         if plot_satisfaction_prob:
-            mixing_probs = self.mode_optimiser.dynamics.mosvgpe.gating_network.predict_mixing_probs(
-                self.test_inputs
-            )
             for ax in fig.get_axes():
-                CS = ax.tricontour(
-                    self.test_inputs[:, 0],
-                    self.test_inputs[:, 1],
-                    mixing_probs[:, self.mode_optimiser.desired_mode].numpy(),
-                    [self.mode_optimiser.mode_satisfaction_probability],
-                )
-                ax.clabel(CS, inline=True, fontsize=10)
+                self.plot_mode_satisfaction_probability_given_ax(ax)
+
         # fig.legend(loc="lower center", bbox_transform=fig.transFigure)
         # handles, labels = plt.gca().get_legend_handles_labels()
         # by_label = OrderedDict(zip(labels, handles))
@@ -245,6 +238,20 @@ class ModeOptContourPlotter:
         )
         self.plot_start_end_pos_given_ax(ax)
         # self.plot_no_observations_given_fig_ax(fig, ax)
+
+    def plot_mode_satisfaction_probability_given_ax(self, ax):
+        mixing_probs = (
+            self.mode_optimiser.dynamics.mosvgpe.gating_network.predict_mixing_probs(
+                self.test_inputs
+            )
+        )
+        CS = ax.tricontour(
+            self.test_inputs[:, 0],
+            self.test_inputs[:, 1],
+            mixing_probs[:, self.mode_optimiser.desired_mode].numpy(),
+            [self.mode_optimiser.mode_satisfaction_probability],
+        )
+        ax.clabel(CS, inline=True, fontsize=10)
 
     def plot_env(self):
         figsize = self.mosvgpe_plotter.figsize
@@ -363,6 +370,7 @@ class ModeOptContourPlotter:
                 # dynamics_trajectory = self.mode_optimiser.dynamics_rollout()[0]
                 # env_trajectory = self.mode_optimiser.env_rollout()
                 # trajectories = {"env": env_trajectory, "dynamics": dynamics_trajectory}
+        self.trajectories = trajectories
         return trajectories
 
     def plot_env_no_obs_start_end_given_fig(self, fig, trim_coords=None):
