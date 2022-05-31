@@ -81,10 +81,10 @@ labels_dict = {
     "scenario_7/geodesic-collocation": "IG $\lambda=1.0$",
     "scenario_7/geodesic-collocation-low": "IG $\lambda=1.0$",
     "scenario_7/geodesic-collocation-high": "IG $\lambda=1.0$",
-    "scenario_5/control-as-inference": "CaI (gauss)",
-    "scenario_5/control-as-inference-deterministic": "CaI (dirac)",
-    "scenario_7/control-as-inference": "CaI (gauss)",
-    "scenario_7/control-as-inference-deterministic": "CaI (dirac)",
+    "scenario_5/control-as-inference": "MRCaI (gauss)",
+    "scenario_5/control-as-inference-deterministic": "MRCaI (dirac)",
+    "scenario_7/control-as-inference": "MRCaI (gauss)",
+    "scenario_7/control-as-inference-deterministic": "MRCaI (dirac)",
 }
 
 

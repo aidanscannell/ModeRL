@@ -79,10 +79,10 @@ LABELS = {
     "scenario_7/geodesic-collocation": "IG $\lambda=1.0$",
     "scenario_7/geodesic-collocation-low": "IG $\lambda=0.5$",
     "scenario_7/geodesic-collocation-high": "IG $\lambda=20.0$",
-    "scenario_5/control-as-inference": "CaI (gauss)",
-    "scenario_5/control-as-inference-deterministic": "CaI (dirac)",
-    "scenario_7/control-as-inference": "CaI (gauss)",
-    "scenario_7/control-as-inference-deterministic": "CaI (dirac)",
+    "scenario_5/control-as-inference": "MRCaI (gauss)",
+    "scenario_5/control-as-inference-deterministic": "MRCaI (Dirac)",
+    "scenario_7/control-as-inference": "MRCaI (gauss)",
+    "scenario_7/control-as-inference-deterministic": "MRCaI (Dirac)",
 }
 
 energy_marker = "*"
@@ -191,7 +191,7 @@ if __name__ == "__main__":
             ax.set_xlabel("$x$")
         axs[0, 0].set_ylabel("$y \quad (\\text{IG})$")
         axs[1, 0].set_ylabel("$y \quad (\\text{DRE})$")
-        axs[2, 0].set_ylabel("$y \quad (\\text{CaI})$")
+        axs[2, 0].set_ylabel("$y \quad (\\text{MRCaI})$")
         return fig, axs
 
     def plot_contf(ax, z):
@@ -472,7 +472,7 @@ if __name__ == "__main__":
             ax.set_xlabel("$x$")
         axs[0, 0].set_ylabel("$y \quad (\\text{IG})$")
         axs[1, 0].set_ylabel("$y \quad (\\text{DRE})$")
-        axs[2, 0].set_ylabel("$y \quad (\\text{CaI})$")
+        axs[2, 0].set_ylabel("$y \quad (\\text{MRCaI})$")
         return fig, axs
 
     fig, axs = plot_prob_grid()
@@ -588,7 +588,7 @@ if __name__ == "__main__":
             ax.set_xlabel("$x$")
         axs[0, 0].set_ylabel("$y \quad (\\text{IG})$")
         axs[1, 0].set_ylabel("$y \quad (\\text{DRE})$")
-        axs[2, 0].set_ylabel("$y \quad (\\text{CaI})$")
+        axs[2, 0].set_ylabel("$y \quad (\\text{MRCaI})$")
         return fig, axs
 
     fig, axs = plot_variance_grid()
@@ -705,7 +705,7 @@ if __name__ == "__main__":
             ax.set_xlabel("$x$")
         axs[0, 0].set_ylabel("$y \quad (\\text{IG})$")
         axs[1, 0].set_ylabel("$y \quad (\\text{DRE})$")
-        axs[2, 0].set_ylabel("$y \quad (\\text{CaI})$")
+        axs[2, 0].set_ylabel("$y \quad (\\text{MRCaI})$")
         return fig, axs
 
     fig, axs = plot_mean_grid()
