@@ -1,38 +1,44 @@
-[tool.poetry]
-name = "ModeOpt"
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ModeRL"
 version = "0.1.0"
 description = "Mode remaining learning based control for multimodal dynamical systems in TensorFlow/GPflow."
-authors = ["Aidan Scannell <scannell.aidan@gmail.com>"]
+license = {text = "Apache-2.0"}
+keywords = ["model-based reinforcement learning","mixtures-of-gaussian-process-experts", "gaussian-processes", "machine-learning", "variational-inference"]
+readme = "README.md"
+requires-python = ">=3.7"
+dependencies = [
+    # "gpflow",
+    # "numpy",
+    # "matplotlib",
+    # "scikit-learn",  # for test_train_split
+    # 'dataclasses; python_version<"3.6"',
+    # "tensor_annotations",
+    # "tensor_annotations_tensorflow_stubs",
+    "mosvgpe @ git+https://github.com/aidanscannell/mosvgpe#egg=mosvgpe",
+    "geoflow @ git+https://github.com/aidanscannell/geoflow#egg=geoflow",
+    "wandb",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Scientific/Engineering :: Mathematics",
+]
 
-[tool.poetry.dependencies]
-python = "^3.8"
-# gpflow = "^2.2.1" # specified in mogpe so not needed here
-tensorflow = "^2.4.0"
-matplotlib = "^3.2.1"
-SciencePlots = "^1.0.8"
-gin = "^0.1.6"
-sklearn = "^0.0"
+[project.optional-dependencies]
+dev = ["black", "python-language-server[all]", "isort", "pyflakes", "pytest"]
+examples = ["pandas", "jupyter", "hydra-core", "simenvs @ git+https://github.com/aidanscannell/simenvs#egg=simenvs"]
 
-# My packages on GitHub
-# simenvs = { git = "https://github.com/aidanscannell/simenvs"}
-# mogpe = {git = "https://github.com/aidanscannell/mogpe", tag = "v0.2.0"}
-# geoflow = {git = "https://github.com/aidanscannell/geoflow.git", tag = "v0.1.1-alpha"}
-geoflow = {path = "../geoflow", develop=true}
-mogpe = {path = "../mogpe", develop=true}  # https://github.com/aidanscannell/mogpe
-simenvs = {path = "../sim-envs", develop=true}  # https://github.com/aidanscannell/mogpe
-mlflow = "^1.22.0"
-hydra-core = {path = "/Users/aidanscannell/Developer/forked-repos/hydra", develop=true}
-wandb = "^0.12.10"
-# geoflow = {path = "../geoflow", develop=true}  # https://github.com/aidanscannell/geoflow
-
-[tool.poetry.dev-dependencies]
-black = "^20.8b1"
-isort = "^5.6.4"
-pyflakes = "^2.2.0"
-pytest = "^6.2.2"
-pytest-cov = "^2.11.1"
-python-language-server = "^0.36.1"
-
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+[tool.setuptools]
+packages = ["moderl"]
