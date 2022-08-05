@@ -19,7 +19,7 @@ dependencies = [
     # "tensor_annotations",
     # "tensor_annotations_tensorflow_stubs",
     "mosvgpe @ git+https://github.com/aidanscannell/mosvgpe#egg=mosvgpe",
-    "geoflow @ git+https://github.com/aidanscannell/geoflow#egg=geoflow",
+    # "geoflow @ git+https://github.com/aidanscannell/geoflow#egg=geoflow",
     "wandb",
 ]
 classifiers = [
