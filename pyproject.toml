@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "ModeRL"
 version = "0.1.0"
-description = "Mode remaining learning based control for multimodal dynamical systems in TensorFlow/GPflow."
+description = "Mode remaining exploration for model-based-reinforcement learning in TensorFlow/GPflow."
 license = {text = "Apache-2.0"}
 keywords = ["model-based reinforcement learning","mixtures-of-gaussian-process-experts", "gaussian-processes", "machine-learning", "variational-inference"]
 readme = "README.md"
