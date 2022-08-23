@@ -24,7 +24,7 @@ bunch = "^1.0.1"
 jupyter = "^1.0.0"
 # gpjax = {path = "../GPJax", develop=true}
 # mogpjaxe = {path = "../MoGPJaxE", develop=true}
-tensorflow = "^2.0.0"
+# tensorflow = "^2.0.0"
 # tensorflow = "^2.5.0"
 # tf-agents = "^0.8.0"
 tf-agents = ">=0.8.0" # used to be "^0.8.0"
