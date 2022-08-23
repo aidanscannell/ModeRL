@@ -5,7 +5,9 @@ gating_bitmap = "./bitmaps/gating_mask.bmp"  # filename for gating bitmap
 # lists are converted to 1D np.arrays and floats/ints are broadcast
 # e.g min_state = [-3.0, -2.0] is converted with np.array(min_state) 
 # state constraints
-min_state = [-3.0, -2.0]
+min_state = [-3.1, -3.0]
+# min_state = [-3.0, -3.0]
+# min_state = [-3.0, -2.0]
 max_state = [3.0, 3.0]
 
 # control constraints
