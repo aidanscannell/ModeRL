@@ -1,0 +1,37 @@
+gating_bitmap = "./bitmaps/gating_mask.bmp"  # filename for gating bitmap
+# gating_bitmap = "./scenario-1/bitmaps/gating_mask.bmp"  # filename for gating bitmap
+# gating_bitmap = "../scenario-1/gating_mask.bmp"  # filename for gating bitmap
+
+# lists are converted to 1D np.arrays and floats/ints are broadcast
+# e.g min_state = [-3.0, -2.0] is converted with np.array(min_state) 
+# state constraints
+min_state = [-3.0, -3.0]
+max_state = [3.0, 3.0]
+
+# control constraints
+# min_velocity = [-0.05, -0.05]
+# max_velocity = [0.05, 0.05]
+min_velocity = [-5.0, -5.0]
+max_velocity = [5.0, 5.0]
+min_acceleration = [-10.0, -10.0]
+max_acceleration = [10.0, 10.0]
+
+# environment parameters
+low_process_noise_var = [0.0002, 0.0001]
+high_process_noise_var = [0.2, 0.05]
+low_process_noise_mean = [0.02, -0.4]
+# low_process_noise_mean = [0.2, -0.4]
+high_process_noise_mean = [-2.0, -0.4]
+# high_process_noise_mean = [-2.0, -0.4]
+# low_process_noise_var = [0.0, 0.0]
+# high_process_noise_var = [0.01, 0.04]
+# low_process_noise_mean = [0.1, 0.05]
+# high_process_noise_mean = [0.1, -0.4]
+
+# simulator parameters
+delta_time = 0.25
+# delta_time = 1.0
+# delta_time = 0.5
+# velocity_init = 0.0
+# constant_error = [0.5, 0.1]
+# constant_error = [0.5, 0.1]
