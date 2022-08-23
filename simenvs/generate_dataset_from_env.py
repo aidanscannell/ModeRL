@@ -201,8 +201,12 @@ def generate_transitions_dataset_const_action(
               delta_state_outputs [num_states, state_dim]
     """
     # generate states
-    state_dim = env.observation_spec().shape[1]
+    # state_dim = env.observation_spec().shape[1]
     # state_dim = env.observation_spec().shape[0]
+    if len(env.observation_spec().shape) == 2:
+        state_dim = env.observation_spec().shape[1]
+    elif len(env.observation_spec().shape) == 1:
+        state_dim = env.observation_spec().shape[0]
     min_state = env.observation_spec().minimum
     max_state = env.observation_spec().maximum
     states = generate_random_states(
