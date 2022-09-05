@@ -21,10 +21,10 @@ dependencies = [
     "gpflow @ git+https://github.com/GPflow/GPflow@develop#egg=gpflow",
     "numpy",
     "matplotlib",
-    "scikit-learn",  # for test_train_split
+    # "scikit-learn",  # for test_train_split
     'dataclasses; python_version<"3.6"',
     "tensor_annotations",
-    "tensor_annotations_tensorflow_stubs",
+    # "tensor_annotations_tensorflow_stubs",
 ]
 classifiers = [
     "Programming Language :: Python :: 3",
