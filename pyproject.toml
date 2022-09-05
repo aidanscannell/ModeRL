@@ -41,8 +41,9 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-examples = ["pandas", "jupyter", "hydra-core"]
 dev = ["black", "pyright", "isort", "pyflakes", "pytest"]
+# examples = ["pandas", "jupyter", "hydra-core"]
+examples = ["wandb"]
 
 [tool.setuptools]
 packages = ["mosvgpe"]
