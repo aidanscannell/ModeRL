@@ -1,19 +1,18 @@
 #!/usr/bin/env python3
 from typing import Optional
 
+import gpflow as gpf
 import tensorflow as tf
 import tensorflow_probability as tfp
 from gpflow.conditionals import conditional
 from gpflow.config import default_float
-from gpflow.models import SVGP
-from mogpe.custom_types import InputData
 
-tfd = tfp.distributions
+from .custom_types import InputData
 
 
 def predict_f_given_inducing_samples(
     Xnew: InputData,
-    svgp: SVGP,
+    svgp: gpf.models.SVGP,
     num_inducing_samples: int = 1,
     full_cov: Optional[bool] = False,
 ):
