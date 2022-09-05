@@ -41,8 +41,8 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-dev = ["black", "python-language-server[all]", "isort", "pyflakes", "pytest", "Sphinx", "sphinx-rtd-theme", "recommonmark", "nbsphinx", "nbsphinx-link", "sphinx-autodoc-typehints"]
 examples = ["pandas", "jupyter", "hydra-core"]
+dev = ["black", "pyright", "isort", "pyflakes", "pytest"]
 
 [tool.setuptools]
 packages = ["mosvgpe"]
