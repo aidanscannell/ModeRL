@@ -1,7 +1,7 @@
 from typing import NewType, Tuple
 
-import tensorflow_probability as tfp
 import tensor_annotations.tensorflow as ttf
+import tensorflow_probability as tfp
 from tensor_annotations import axes
 from tensor_annotations.axes import Batch
 
