@@ -6,24 +6,22 @@ import gpflow as gpf
 import tensor_annotations.tensorflow as ttf
 import tensorflow as tf
 import tensorflow_probability as tfp
-from gpflow.inducing_variables import INDUCING_VARIABLE_OBJECTS, InducingVariables
-from gpflow.kernels import KERNEL_OBJECTS, Kernel
-from gpflow.likelihoods import LIKELIHOOD_OBJECTS, Likelihood
-from gpflow.mean_functions import MEAN_FUNCTION_OBJECTS, MeanFunction
-from gpflow.models import SVGP
-from gpflow.utilities.keras import try_array_except_none, try_val_except_none
-from gpflow.models.model import MeanAndVariance
-from mogpe.custom_types import InputData, NumExperts
+from gpflow.functions import MeanFunction
+from gpflow.inducing_variables import InducingVariables
+from gpflow.kernels import Kernel
+from gpflow.likelihoods import Likelihood
 
-from .gpflow.svgp import predict_f_given_inducing_samples
+from mosvgpe.custom_types import InputData, MeanAndVariance, NumExperts
+
+from .gp import predict_f_given_inducing_samples
 
 tfd = tfp.distributions
 
 ExpertDist = Union[tfd.MultivariateNormalFullCovariance, tfd.MultivariateNormalDiag]
 
 
-# class ExpertBase(gpf.Module, tf.keras.layers.Layer):
-class ExpertBase(gpf.Module):
+# class ExpertBase(gpf.Module):
+class ExpertBase(gpf.Module, tf.keras.layers.Layer):
     """Interface for individual expert."""
 
     @abc.abstractmethod
@@ -52,7 +50,7 @@ class SVGPExpert(ExpertBase):
         whiten: bool = True,
         name: Optional[str] = "SVGPExpert",
     ):
-        svgp = SVGP(
+        svgp = gpf.models.SVGP(
             kernel=kernel,
             likelihood=likelihood,
             inducing_variable=inducing_variable,
@@ -118,7 +116,7 @@ class SVGPExpert(ExpertBase):
             full_cov=full_cov,
         )
         # y_mean, y_var = self.gp.likelihood((f_mean, f_var))
-        y_mean, y_var = self.gp.likelihood.predict_mean_and_var(f_mean, f_var)
+        y_mean, y_var = self.gp.likelihood.predict_mean_and_var(Xnew, f_mean, f_var)
         return self.predict_dist_given_y(y_mean, y_var)
 
     def predict_dist_given_f_samples(
@@ -141,7 +139,7 @@ class SVGPExpert(ExpertBase):
             full_cov=full_cov,
         )
         # TODO not working for multioutput Gaussian likelihood
-        y_var = self.gp.likelihood.conditional_variance(f_samples)
+        y_var = self.gp.likelihood.conditional_variance(Xnew, f_samples)
         return self.predict_dist_given_y(f_samples, y_var)
 
     def predict_y(
@@ -156,7 +154,7 @@ class SVGPExpert(ExpertBase):
             num_inducing_samples=num_inducing_samples,
             full_cov=full_cov,
         )
-        return self.gp.likelihood.predict_mean_and_var(f_mean, f_var)
+        return self.gp.likelihood.predict_mean_and_var(Xnew, f_mean, f_var)
 
     def predict_dist_given_y(self, y_mean, y_var) -> ExpertDist:
         """Returns the mean and (co)variance of the expert's prediction at Xnew.
@@ -210,42 +208,3 @@ class SVGPExpert(ExpertBase):
     @property
     def gp(self):
         return self._gp
-
-    # def get_config(self):
-    #     return {
-    #         "kernel": tf.keras.layers.serialize(self.gp.kernel),
-    #         "likelihood": tf.keras.layers.serialize(self.gp.likelihood),
-    #         "inducing_variable": tf.keras.layers.serialize(self.gp.inducing_variable),
-    #         "mean_function": tf.keras.layers.serialize(self.gp.mean_function),
-    #         "num_latent_gps": self.gp.num_latent_gps,
-    #         "q_diag": self.gp.q_diag,
-    #         "q_mu": self.gp.q_mu.numpy(),
-    #         "q_sqrt": self.gp.q_sqrt.numpy(),
-    #         "whiten": self.gp.whiten,
-    #     }
-
-    # @classmethod
-    # def from_config(cls, cfg: dict):
-    #     kernel = tf.keras.layers.deserialize(
-    #         cfg["kernel"], custom_objects=KERNEL_OBJECTS
-    #     )
-    #     likelihood = tf.keras.layers.deserialize(
-    #         cfg["likelihood"], custom_objects=LIKELIHOOD_OBJECTS
-    #     )
-    #     inducing_variable = tf.keras.layers.deserialize(
-    #         cfg["inducing_variable"], custom_objects=INDUCING_VARIABLE_OBJECTS
-    #     )
-    #     mean_function = tf.keras.layers.deserialize(
-    #         cfg["mean_function"], custom_objects=MEAN_FUNCTION_OBJECTS
-    #     )
-    #     return cls(
-    #         kernel=kernel,
-    #         likelihood=likelihood,
-    #         inducing_variable=inducing_variable,
-    #         mean_function=mean_function,
-    #         num_latent_gps=try_val_except_none(cfg, "num_latent_gps"),
-    #         q_diag=try_val_except_none(cfg, "q_diag"),
-    #         q_mu=try_array_except_none(cfg, "q_mu"),
-    #         q_sqrt=try_array_except_none(cfg, "q_sqrt"),
-    #         whiten=try_val_except_none(cfg, "whiten"),
-    #     )
