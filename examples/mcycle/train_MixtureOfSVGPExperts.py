@@ -182,6 +182,35 @@ def plot_mixing_probs():
     return fig
 
 
+def plot_posterior_samples():
+    fig = plt.figure()
+    gs = fig.add_gridspec(1, 1)
+    ax = gs.subplots()
+    ax.scatter(X, Y, marker="x", color="k", alpha=0.4)
+    num_samples = 30
+    test_inputs_broadcast = np.broadcast_to(
+        test_inputs, (num_samples, *test_inputs.shape)
+    )
+    alpha_samples = model.gating_network.predict_categorical_dist(test_inputs).sample(
+        num_samples
+    )  # [S, N]
+    alpha_samples = tf.expand_dims(alpha_samples, -1)  # [S, N, 1]
+    experts_dists = model.predict_experts_dists(test_inputs)
+    for k in range(model.num_experts):
+        y_samples = experts_dists[k].sample(num_samples)
+        ax.scatter(
+            test_inputs_broadcast[alpha_samples == k],
+            y_samples[alpha_samples == k],
+            c=colors[k],
+            s=3,
+            # cmap=cmap,
+            alpha=0.8,
+            label="k=" + str(k + 1) + " samples",
+        )
+    ax.legend()
+    return fig
+
+
 def plot_gp(ax, mean, var, label="", color="C0", alpha=0.4):
     ax.scatter(X, Y, marker="x", color="k", alpha=alpha)
     ax.plot(test_inputs, mean, color=color, lw=2, label=label)
@@ -270,6 +299,11 @@ if __name__ == "__main__":
             plot_mixing_probs,
             logging_epoch_freq=logging_epoch_freq,
             name="Mixing Probs",
+        ),
+        PlottingCallback(
+            plot_posterior_samples,
+            logging_epoch_freq=logging_epoch_freq,
+            name="Posterior Samples",
         ),
     ]
 
