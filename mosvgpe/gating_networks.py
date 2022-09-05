@@ -123,17 +123,16 @@ class SVGPGatingNetwork(GPGatingNetworkBase):
     def call(
         self,
         Xnew: InputData,
-        num_samples: Optional[int] = None,
+        num_samples: Optional[int] = 1,
         training: Optional[bool] = False,
     ) -> Union[MixingProbSamples, ExpertIndicatorCategoricalDist]:
         # TODO move this to training
-        return self.predict_categorical_dist(Xnew, num_samples=num_samples)  # [S, N, K]
-        # if training:
-        #     return self.predict_categorical_dist(
-        #         Xnew, num_samples=num_samples
-        #     )  # [S, N, K]
-        # else:
-        #     return self.predict_categorical_dist(Xnew)
+        if training:
+            return self.predict_categorical_dist(
+                Xnew, num_samples=num_samples
+            )  # [S, N, K]
+        else:
+            return self.predict_categorical_dist(Xnew)
 
     def predict_categorical_dist(
         self, Xnew: InputData, num_samples: Optional[int] = None
