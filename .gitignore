@@ -86,7 +86,10 @@ target/
 .mypy_cache/
 
 examples/logs
+examples/mcycle/wandb
 
 *~
 .envrc
 superseded
+
+.direnv
