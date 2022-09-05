@@ -121,8 +121,8 @@ def load_mcycle_data(filename: str = "./mcycle.csv") -> Dataset:
     print("Output data shape: ", Y.shape)
 
     # standardise input
-    # X = (X - X.mean()) / X.std()
-    # Y = (Y - Y.mean()) / Y.std()
+    X = (X - X.mean()) / X.std()
+    Y = (Y - Y.mean()) / Y.std()
 
     X = tf.convert_to_tensor(X, dtype=default_float())
     Y = tf.convert_to_tensor(Y, dtype=default_float())
