@@ -186,7 +186,7 @@ def plot_posterior_samples():
     fig = plt.figure()
     gs = fig.add_gridspec(1, 1)
     ax = gs.subplots()
-    ax.scatter(X, Y, marker="x", color="k", alpha=0.4)
+    ax.scatter(X, Y, marker="x", color="k")
     num_samples = 30
     test_inputs_broadcast = np.broadcast_to(
         test_inputs, (num_samples, *test_inputs.shape)
