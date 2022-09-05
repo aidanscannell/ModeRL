@@ -4,10 +4,10 @@ This package implements a Mixtures of Gaussian Process
 Experts (MoGPE) model with a GP-based gating network. 
 Inference exploits factorisation through sparse GPs and trains a variational lower bound stochastically.
 It also provides the building blocks for implementing other Mixtures of Gaussian Process Experts models.
-=mogpe= uses [[https://github.com/GPflow/GPflow.git][GPflow 2.2]]/[[https://github.com/tensorflow/tensorflow.git][TensorFlow 2.4+]] for running computations, which allows fast execution on GPUs, and uses Python ≥ 3.8.
+=mosvgpe= uses [[https://github.com/GPflow/GPflow.git][GPflow 2.5]]/[[https://github.com/tensorflow/tensorflow.git][TensorFlow 2.4+]] for running computations, which allows fast execution on GPUs, and uses Python ≥ 3.8.
 It was originally created by [[https://www.aidanscannell.com/][Aidan Scannell]].
 
-** Install mogpe
+** Install
 This is a Python package that should be installed into a virtual environment.
 Start by cloning the repo from Github:
 #+begin_src shell
@@ -18,13 +18,13 @@ The package can then be installed into a virtual environment by adding it as a l
 Create a new virtualenv and activate it, for example,
 #+BEGIN_SRC shell
 python -m venv mosvgpe-env
-source venv-test/bin/activate
+source mosvgpe-env/bin/activate
 #+END_SRC
 cd into the root of this package and install it and its dependencies with,
 #+BEGIN_SRC shell
 pip install .
 #+END_SRC
-If you want to develop the =mogpe= codebase then install it in "editable" or "develop" mode with:
+If you want to develop the =mosvgpe= codebase then install it in "editable" or "develop" mode with:
 #+BEGIN_SRC shell
 pip install -e .
 #+END_SRC
