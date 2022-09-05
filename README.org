@@ -1,7 +1,6 @@
 * =mosvgpe= - Mixtures of Sparse Variational Gaussian Process Experts in TensorFlow/GPflow
 
-This package implements a Mixtures of Gaussian Process
-Experts (MoGPE) model with a GP-based gating network. 
+This package implements a Mixtures of Gaussian Process Experts model with a GP-based gating network.
 Inference exploits factorisation through sparse GPs and trains a variational lower bound stochastically.
 It also provides the building blocks for implementing other Mixtures of Gaussian Process Experts models.
 =mosvgpe= uses [[https://github.com/GPflow/GPflow.git][GPflow 2.5]]/[[https://github.com/tensorflow/tensorflow.git][TensorFlow 2.4+]] for running computations, which allows fast execution on GPUs, and uses Python ≥ 3.8.
@@ -28,3 +27,6 @@ If you want to develop the =mosvgpe= codebase then install it in "editable" or "
 #+BEGIN_SRC shell
 pip install -e .
 #+END_SRC
+
+** Useage
+See [[./examples]].
