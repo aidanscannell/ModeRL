@@ -118,7 +118,7 @@ class SVGPGatingNetwork(GPGatingNetworkBase):
             num_data=None,
         )
 
-        super().__init__(gp=svgp, num_experts=num_experts)
+        super().__init__(gp=svgp, num_experts=num_experts, name=name)
 
     def call(
         self,
