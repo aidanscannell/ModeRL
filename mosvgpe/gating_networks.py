@@ -161,9 +161,12 @@ class SVGPGatingNetwork(GPGatingNetworkBase):
             probs = self.gp.likelihood.conditional_mean(Xnew, h_samples)  # [S, N, K]
         else:
             h_mean, h_var = self.predict_h(Xnew, full_cov=full_cov)
-            probs = self.gp.likelihood.predict_mean_and_var(Xnew, h_mean, h_var)[
-                0
-            ]  # [N, K]
+            probs, _ = self.gp.likelihood.predict_mean_and_var(
+                Xnew, h_mean, h_var
+            )  # [N, K]
+            probs = tf.reshape(
+                probs, [-1, self.num_experts]
+            )  # Added this to enforce shape to stop Categorical dist raising error inferring num_classes
         return probs
 
     def predict_h(
