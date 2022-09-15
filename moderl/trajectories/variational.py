@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import abc
 from dataclasses import dataclass
 from typing import Optional, Union
 
@@ -7,41 +6,16 @@ import numpy as np
 import tensor_annotations.tensorflow as ttf
 import tensorflow as tf
 import tensorflow_probability as tfp
-from gpflow import Parameter, default_float
+from gpflow import default_float, Parameter
 from gpflow.utilities.bijectors import positive
-from moderl.custom_types import ControlTrajectory, ControlTrajectoryMean, Horizon
+from modeopt.custom_types import ControlTrajectory, ControlTrajectoryMean, Horizon
 
+from .base import BaseTrajectory
 
 tfd = tfp.distributions
 
 SingleMeanAndVariance = None
 TrajectoryMeanAndVariance = None
-
-
-class BaseTrajectory(tf.Module, abc.ABC):
-    def __call__(
-        self, timestep: Optional[int] = None, variance: Optional[bool] = False
-    ) -> Union[ControlTrajectory, ControlTrajectoryMean]:
-        if variance:
-            return self.controls, None
-        else:
-            return self.controls
-
-    @property
-    def controls(self) -> ControlTrajectoryMean:
-        raise NotImplementedError
-
-    @property
-    def horizon(self) -> int:
-        return self.controls.shape[0]
-
-    @property
-    def control_dim(self) -> int:
-        return self.controls.shape[1]
-
-    @abc.abstractmethod
-    def copy(self):
-        raise NotImplementedError
 
 
 @dataclass

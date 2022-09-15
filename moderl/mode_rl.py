@@ -29,25 +29,39 @@ from moderl.rollouts import (
 Callback = Callable
 Controller = Union[FeedbackController, NonFeedbackController]
 
+DEFAULT_DYNAMICS_FIT_KWARGS = {
+    "batch_size": 16,
+    "epochs": 1000,
+    "verbose": True,
+    "validation_split": 0.2,
+}
 
-def mode_rl_loop(
+
+def mode_rl(
     start_state: ttf.Tensor2[Batch, StateDim],
+    target_state: ttf.Tensor2[Batch, StateDim],
     dynamics: ModeRLDynamics,
-    # mode_controller: Controller,
+    mode_controller: Controller,
     env: py_environment.PyEnvironment,
     explorative_controller: Controller = None,
+    initial_dataset: Dataset = None,
     desired_mode: int = 1,
     mode_satisfaction_probability: float = 0.7,  # Mode satisfaction probability (0, 1]
-    # save_freq: Optional[Union[str, int]] = None,
-    # log_dir: str = "./",
-    # max_to_keep: int = None,
+    learning_rate: float = 0.01,
+    epsilon: float = 1e-8,
+    save_freq: Optional[Union[str, int]] = None,
+    log_dir: str = "./",
+    dynamics_fit_kwargs: dict = DEFAULT_DYNAMICS_FIT_KWARGS,
+    max_to_keep: int = None,
     num_explorative_trajectories: int = 6,
+    dynamics_callbacks=None,
+    explorative_controller_callback=None,
+    mode_controller_callback=None,
 ):
-    converged = False
-    while not converged:
+    at_target_state = False
+    while not at_target_state:
 
-        opt_result = explorative_controller.optimise()
-
+        opt_result = explorative_controller.optimise(explorative_controller_callback)
         X, Y = [], []
         for i in range(num_explorative_trajectories):
             if isinstance(start_state, tf.Tensor):
@@ -61,20 +75,27 @@ def mode_rl_loop(
             Y.append(Y_)
         X = np.concatenate(X, 0)
         Y = np.concatenate(Y, 0)
-        new_dataset = (X, Y)
 
         # new_data = self.explore_env()
-        dynamics.update_dataset(new_dataset)
-        dynamics.optimise()
+        update_dataset(new_data=new_data)
 
-        # (trajectory, converged) = .find_trajectory_to_target()
-        # if converged:
-        #     in_desired_mode = .check_mode_remaining(trajectory)
-        #     if in_desired_mode:
-        #         print("Found delta mode remaining trajectory that's converged")
-        #         return True
-        #     else:
-        #         converged = False
+        # Optimise Dynamics
+        dynamics.mosvgpe._num_data = dataset[0].shape[0]
+        dynamics(dataset[0])  # Needs to be called to build shapes
+        dynamics.mosvgpe(dataset[0])  # Needs to be called to build shapes
+        # TODO: if callbacks in self.dynamics_fit_kwargs extract and append them
+        dynamics.fit(
+            dataset[0], dataset[1], callbacks=dynamics_callbacks, **dynamics_fit_kwargs
+        )
+
+        (trajectory, at_target_state) = self.find_trajectory_to_target()
+        if at_target_state:
+            in_desired_mode = self.check_mode_remaining(trajectory)
+            if in_desired_mode:
+                print("Found delta mode remaining trajectory to target state")
+                return True
+            else:
+                at_target_state = False
 
     print("opt_result['success']")
     print(opt_result["success"])
@@ -82,3 +103,15 @@ def mode_rl_loop(
         raise NotImplementedError
         # explorative_controller.reset()
         # return explore_env()
+
+
+def update_dataset(new_dataset: Dataset, dataset: Dataset = None):
+    if dataset is not None:
+        Xold, Yold = dataset
+        Xnew, Ynew = new_dataset
+        X = np.concatenate([Xold, Xnew], 0)
+        Y = np.concatenate([Yold, Ynew], 0)
+        dataset = (X, Y)
+    else:
+        dataset = new_data
+    return dataset
