@@ -7,10 +7,9 @@ import tensor_annotations.tensorflow as ttf
 import tensorflow as tf
 import tensorflow_probability as tfp
 from gpflow.optimizers.scipy import NonlinearConstraintClosure
-from gpflow.utilities.keras import try_val_except_none
 from moderl.constraints import build_linear_control_constraints
 from moderl.custom_types import ControlMeanAndVariance
-from moderl.trajectories import TRAJECTORY_OBJECTS, BaseTrajectory
+from moderl.trajectories import BaseTrajectory
 from scipy.optimize import LinearConstraint, NonlinearConstraint
 
 from ..base import NonFeedbackController
@@ -20,7 +19,7 @@ tfd = tfp.distributions
 ObjectiveFn = Callable[[BaseTrajectory], ttf.Tensor0]
 
 
-class TrajectoryOptimisationController(NonFeedbackController):
+class TrajectoryOptimizer:
     """
     Non-feedback controller that optimises a trajectory given an objective function
     """
@@ -139,37 +138,3 @@ class TrajectoryOptimisationController(NonFeedbackController):
     @property
     def control_dim(self) -> int:
         return self.previous_solution.control_dim
-
-    def get_config(self) -> dict:
-        return {
-            "max_iterations": self.max_iterations,
-            "initial_solution": tf.keras.utils.serialize_keras_object(
-                self.initial_solution
-            ),
-            "objective_fn": self.objective_fn,
-            "constraints_lower_bound": self.constraints_lower_bound,
-            "constraints_upper_bound": self.constraints_upper_bound,
-            "nonlinear_constraint_closure": self.nonlinear_constraint_closure,
-            "nonlinear_constraint_kwargs": self.nonlinear_constraint_kwargs,
-            "keep_last_solution": self.keep_last_solution,
-            "method": self.method,
-        }
-
-    @classmethod
-    def from_config(cls, cfg: dict):
-        initial_solution = tf.keras.layers.deserialize(
-            cfg["initial_solution"], custom_objects=TRAJECTORY_OBJECTS
-        )
-        return cls(
-            max_iterations=try_val_except_none(cfg, "max_iterations"),
-            initial_solution=initial_solution,
-            objective_fn=cfg["objective_fn"],
-            # objective_fn=None,
-            constraints_lower_bound=cfg["constraints_lower_bound"],
-            constraints_upper_bound=cfg["constraints_upper_bound"],
-            constraints=[],
-            nonlinear_constraint_closure=cfg["nonlinear_constraint_closure"],
-            nonlinear_constraint_kwargs=cfg["nonlinear_constraint_kwargs"],
-            keep_last_solution=cfg["keep_last_solution"],
-            method=cfg["method"],
-        )

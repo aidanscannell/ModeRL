@@ -4,6 +4,7 @@ import omegaconf
 import wandb
 import tensorflow as tf
 from simenvs.core import make
+from gpflow import default_float
 
 
 @hydra.main(config_path="configs", config_name="main")

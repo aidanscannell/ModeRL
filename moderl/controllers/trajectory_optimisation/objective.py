@@ -1,6 +1,85 @@
-from typing import Optional
+#!/usr/bin/env python3
+from typing import Callable, Optional
 
+import tensor_annotations.tensorflow as ttf
 import tensorflow as tf
+import tensorflow_probability as tfp
+from gpflow import default_float, default_jitter
+from gpflow.conditionals import base_conditional
+
+from moderl.cost_functions import CostFunction
+from moderl.custom_types import State
+from moderl.dynamics import SVGPDynamicsWrapper
+
+# from moderl.dynamics.conditionals import svgp_covariance_conditional
+from moderl.rollouts import rollout_controls_in_dynamics
+from moderl.utils import combine_state_controls_to_input
+
+from .trajectories import BaseTrajectory, ControlTrajectoryDist
+
+tfd = tfp.distributions
+
+ObjectiveFn = Callable[[BaseTrajectory], ttf.Tensor0]
+
+
+def build_explorative_objective(
+    dynamics: SVGPDynamicsWrapper, cost_fn: CostFunction, start_state: State
+) -> ObjectiveFn:
+    def explorative_objective(
+        initial_solution: ControlTrajectoryDist,
+    ) -> ttf.Tensor0:
+        # Rollout controls in dynamics
+        control_means, control_vars = initial_solution(variance=True)
+        state_means, state_vars = rollout_controls_in_dynamics(
+            dynamics=dynamics,
+            start_state=start_state,
+            control_means=control_means,
+            #         control_vars=control_vars,
+        )
+
+        h_means_prior, h_vars_prior = dynamics.uncertain_predict_gating(
+            state_means[1:, :], control_means
+        )
+        gating_gp = dynamics.desired_mode_gating_gp
+
+        input_means, input_vars = combine_state_controls_to_input(
+            state_means[1:, :],
+            control_means,
+            state_vars[1:, :],
+            control_vars,
+        )
+
+        h_means, h_vars = h_means_prior[0:1, :], h_vars_prior[0:1, :]
+        for t in range(1, initial_solution.horizon):
+            Xnew = input_means[t : t + 1, :]
+            Xobs = input_means[0:t, :]
+            f = h_means_prior[0:t, :]
+
+            Knn = svgp_covariance_conditional(X1=Xnew, X2=Xnew, svgp=gating_gp)[0, 0, :]
+            Kmm = svgp_covariance_conditional(X1=Xobs, X2=Xobs, svgp=gating_gp)[0, :, :]
+            Kmn = svgp_covariance_conditional(X1=Xobs, X2=Xnew, svgp=gating_gp)[0, :, :]
+            Kmm += tf.eye(Kmm.shape[0], dtype=default_float()) * default_jitter()
+            # Lm = tf.linalg.cholesky(Kmm)
+            # A = tf.linalg.triangular_solve(Lm, Kmn, lower=True)  # [..., M, N]
+            h_mean, h_var = base_conditional(
+                Kmn=Kmn,
+                Kmm=Kmm,
+                Knn=Knn,
+                f=f,
+                full_cov=False,
+                q_sqrt=None,
+                white=False,
+            )
+            h_means = tf.concat([h_means, h_mean], 0)
+            h_vars = tf.concat([h_vars, h_var], 0)
+        h_dist = tfd.MultivariateNormalDiag(h_means, h_vars)
+        gating_entropy = h_dist.entropy()
+
+        return -tf.reduce_sum(gating_entropy) + cost_fn(
+            state_means, control_means, state_vars, control_vars
+        )
+
+    return explorative_objective
 
 
 def svgp_covariance_conditional(X1, X2, svgp):
@@ -177,38 +256,3 @@ def base_covariance_conditional(
 
     # return fmean, fvar
     return fcov
-
-
-# def base_svgp_conditional(X1, X2, kernel, inducing_variable, q_mu, q_sqrt):
-#     K12 = kernel(X1, X2)
-#     # print("K12")
-#     # print(K12.shape)
-#     Kzz = kernel(inducing_variable.Z, inducing_variable.Z)
-#     # jitter=1e-6
-#     jitter = 1e-4
-#     Kzz += jitter * tf.eye(inducing_variable.num_inducing, dtype=Kzz.dtype)
-#     # print("Kzz")
-#     # print(Kzz.shape)
-#     Lz = tf.linalg.cholesky(Kzz)
-#     # print("Lz")
-#     # print(Lz.shape)
-
-#     K1z = kernel(X1, inducing_variable.Z)
-#     # Kz2 = kernel(X2, inducing_variable.Z)
-#     Kz2 = kernel(inducing_variable.Z, X2)
-#     # print("K1z.shape")
-#     # print(K1z.shape)
-#     # print(Kz2.shape)
-
-#     S = q_sqrt @ tf.transpose(q_sqrt, [0, 2, 1])
-#     A = Kzz - S[0, :, :]
-#     # print("A.shape")
-#     # print(A.shape)
-#     # B = Kz1 @ A @ tf.transpose(Kz2)
-#     B = K1z @ A @ Kz2
-#     # print("B.shape")
-#     # print(B.shape)
-#     K = K12 - B
-#     # print("K.shape")
-#     # print(K.shape)
-#     return K

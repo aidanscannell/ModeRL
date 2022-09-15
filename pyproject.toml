@@ -12,7 +12,10 @@ readme = "README.md"
 requires-python = ">=3.7"
 dependencies = [
     # "gpflow",
-    # "numpy",
+    "numpy",
+    "tensorflow",
+    "tensorflow-probability",
+    # "gpflow",
     # "matplotlib",
     # "scikit-learn",  # for test_train_split
     # 'dataclasses; python_version<"3.6"',
