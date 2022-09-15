@@ -17,7 +17,6 @@ dependencies = [
     "tensorflow>=2.4.0; platform_system!='Darwin' or platform_machine!='arm64'",
     # NOTE: Support of Apple Silicon MacOS platforms is in an experimental mode
     "tensorflow-macos>=2.4.0; platform_system=='Darwin' and platform_machine=='arm64'",
-
     # "matplotlib",
     "tensor_annotations",
     # "mosvgpe @ git+https://github.com/aidanscannell/mosvgpe#egg=mosvgpe",
