@@ -8,9 +8,9 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 from gpflow.optimizers.scipy import NonlinearConstraintClosure
 from gpflow.utilities.keras import try_val_except_none
-from modeopt.constraints import build_linear_control_constraints
-from modeopt.custom_types import ControlMeanAndVariance
-from modeopt.trajectories import TRAJECTORY_OBJECTS, BaseTrajectory
+from moderl.constraints import build_linear_control_constraints
+from moderl.custom_types import ControlMeanAndVariance
+from moderl.trajectories import TRAJECTORY_OBJECTS, BaseTrajectory
 from scipy.optimize import LinearConstraint, NonlinearConstraint
 
 from ..base import NonFeedbackController

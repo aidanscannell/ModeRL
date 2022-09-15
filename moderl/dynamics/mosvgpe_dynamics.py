@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from typing import Optional
+from dataclasses import dataclass
 
 import gpflow as gpf
 import tensor_annotations.tensorflow as ttf
@@ -9,7 +10,7 @@ from gpflow import default_float
 from gpflow.conditionals import uncertain_conditional
 from gpflow.models import SVGP
 from gpflow.quadrature import NDiagGHQuadrature
-from modeopt.custom_types import (
+from moderl.custom_types import (
     ControlDim,
     ControlTrajectoryMean,
     ControlTrajectoryVariance,
@@ -18,7 +19,7 @@ from modeopt.custom_types import (
     StateTrajectoryMean,
     StateTrajectoryVariance,
 )
-from modeopt.utils import combine_state_controls_to_input
+from moderl.utils import combine_state_controls_to_input
 from mogpe.custom_types import DatasetBatch
 from mogpe.keras.mixture_of_experts import MixtureOfSVGPExperts
 from tensor_annotations.axes import Batch
@@ -31,27 +32,16 @@ DEFAULT_NUM_GAUSS_HERMITE_POINTS = 20  # Uses too much memory!
 DEFAULT_NUM_GAUSS_HERMITE_POINTS = 4
 
 
-class ModeOptDynamics(tf.keras.Model):
-    def __init__(
-        self,
-        mosvgpe: MixtureOfSVGPExperts,
-        state_dim: int,
-        desired_mode: int = 1,
-        name: str = "ModeOptDynamics",
-    ):
-        super().__init__(name=name)
-        self.mosvgpe = mosvgpe
-        self.state_dim = state_dim
-        self.desired_mode = desired_mode
+@dataclass
+class ModeRLDynamics(tf.keras.Model):
+    mosvgpe: MixtureOfSVGPExperts
+    state_dim: int
+    desired_mode: int = 1
+    name: str = "ModeRLDynamics"
 
     def call(
         self,
-        # state_control: BatchedGaussianStateControl,
         state_control,
-        # state_mean: StateTrajectoryMean,
-        # control_mean: ControlTrajectoryMean,
-        # state_var: StateTrajectoryVariance = None,
-        # control_var: ControlTrajectoryVariance = None,
         training: Optional[bool] = False,
         predict_state_difference: Optional[bool] = False,
     ):
@@ -263,25 +253,25 @@ class ModeOptDynamics(tf.keras.Model):
     #         # TODO build a single output gp from a multi output gp
     #         raise NotImplementedError("How to convert multi output gp to single dim")
 
-    def get_config(self):
-        return {
-            "mosvgpe": tf.keras.layers.serialize(self.mosvgpe),
-            "state_dim": self.state_dim,
-            "desired_mode": self.desired_mode,
-        }
+    # def get_config(self):
+    #     return {
+    #         "mosvgpe": tf.keras.layers.serialize(self.mosvgpe),
+    #         "state_dim": self.state_dim,
+    #         "desired_mode": self.desired_mode,
+    #     }
 
-    @classmethod
-    def from_config(cls, cfg: dict):
-        mosvgpe = tf.keras.layers.deserialize(
-            cfg["mosvgpe"],
-            custom_objects={"MixtureOfSVGPExperts": MixtureOfSVGPExperts},
-        )
-        try:
-            desired_mode = cfg["desired_mode"]
-        except KeyError:
-            desired_mode = 1
-        return cls(
-            mosvgpe=mosvgpe,
-            state_dim=cfg["state_dim"],
-            desired_mode=desired_mode,
-        )
+    # @classmethod
+    # def from_config(cls, cfg: dict):
+    #     mosvgpe = tf.keras.layers.deserialize(
+    #         cfg["mosvgpe"],
+    #         custom_objects={"MixtureOfSVGPExperts": MixtureOfSVGPExperts},
+    #     )
+    #     try:
+    #         desired_mode = cfg["desired_mode"]
+    #     except KeyError:
+    #         desired_mode = 1
+    #     return cls(
+    #         mosvgpe=mosvgpe,
+    #         state_dim=cfg["state_dim"],
+    #         desired_mode=desired_mode,
+    #     )

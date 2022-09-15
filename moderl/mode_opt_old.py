@@ -18,7 +18,7 @@ from modeopt.controllers import (
     NonFeedbackController,
 )
 from modeopt.custom_types import Dataset, StateDim
-from modeopt.dynamics import ModeOptDynamics
+from modeopt.dynamics import ModeRLDynamics
 from modeopt.rollouts import (
     collect_data_from_env,
     rollout_controller_in_dynamics,
@@ -37,12 +37,12 @@ DEFAULT_DYNAMICS_FIT_KWARGS = {
 }
 
 
-class ModeOpt(tf.Module):
+class ModeRL(tf.Module):
     def __init__(
         self,
         start_state: ttf.Tensor2[Batch, StateDim],
         target_state: ttf.Tensor2[Batch, StateDim],
-        dynamics: ModeOptDynamics,
+        dynamics: ModeRLDynamics,
         mode_controller: Controller,
         env_name: Optional[str] = None,
         explorative_controller: Controller = None,
@@ -56,7 +56,7 @@ class ModeOpt(tf.Module):
         dynamics_fit_kwargs: dict = DEFAULT_DYNAMICS_FIT_KWARGS,
         max_to_keep: int = None,
         num_explorative_trajectories: int = 6,
-        name: str = "ModeOpt",
+        name: str = "ModeRL",
     ):
         super().__init__(name=name)
         # TODO how to handle increasing number of inducing points?
@@ -182,7 +182,7 @@ class ModeOpt(tf.Module):
     def optimise_mode_controller(self):
         # self.save()
         self.mode_controller.optimise(self.mode_controller_callback)
-        # print("SAVING ModeOpt")
+        # print("SAVING ModeRL")
         # self.save()
         # print("SAVED")
 
@@ -283,7 +283,7 @@ class ModeOpt(tf.Module):
         if self.save_freq is not None:
             self.dynamics_callbacks.append(
                 tf.keras.callbacks.ModelCheckpoint(
-                    filepath=os.path.join(self._log_dir, "ckpts/ModeOptDynamics"),
+                    filepath=os.path.join(self._log_dir, "ckpts/ModeRLDynamics"),
                     monitor="loss",
                     save_format="tf",
                     save_best_only=True,
@@ -327,13 +327,13 @@ class ModeOpt(tf.Module):
     def load(
         cls, ckpt_dir: str, json_config_filename: Optional[str] = None
     ) -> tf.Module:
-        """Load ModeOptimiser from json config and restore variables from checkpoint"""
+        """Load ModeRL from json config and restore variables from checkpoint"""
         if json_config_filename is None:
             json_config_filename = os.path.join(ckpt_dir, JSON_CONFIG_FILENAME)
         with open(json_config_filename, "r") as read_file:
             json_cfg = read_file.read()
         mode_optimiser = tf.keras.models.model_from_json(
-            json_cfg, custom_objects={"ModeOpt": ModeOpt}
+            json_cfg, custom_objects={"ModeRL": ModeRL}
         )
         checkpoint = mode_optimiser.create_checkpoint()
         # ckpt = tf.train.Checkpoint(
@@ -384,7 +384,7 @@ class ModeOpt(tf.Module):
     @classmethod
     def from_config(cls, cfg: dict):
         dynamics = tf.keras.layers.deserialize(
-            cfg["dynamics"], custom_objects={"ModeOptDynamics": ModeOptDynamics}
+            cfg["dynamics"], custom_objects={"ModeRLDynamics": ModeRLDynamics}
         )
         try:
             mode_controller = tf.keras.layers.deserialize(

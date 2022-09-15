@@ -8,7 +8,7 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 from keras import backend
 from keras.saving.saved_model import json_utils
-from modeopt.custom_types import State
+from moderl.custom_types import State
 from mogpe.keras.utils import save_json_config
 from scipy.optimize import LinearConstraint, NonlinearConstraint
 

@@ -7,18 +7,18 @@ import tensorflow_probability as tfp
 from gpflow import default_float, default_jitter
 from gpflow.conditionals import base_conditional, uncertain_conditional
 
-from modeopt.cost_functions import (
+from moderl.cost_functions import (
     ControlQuadraticCostFunction,
     CostFunction,
     RiemannianEnergyCostFunction,
     TargetStateCostFunction,
 )
-from modeopt.custom_types import State, StateDim
-from modeopt.dynamics import ModeOptDynamics, SVGPDynamicsWrapper
-from modeopt.dynamics.conditionals import svgp_covariance_conditional
-from modeopt.mode_opt import ModeOpt
-from modeopt.rollouts import rollout_controls_in_dynamics
-from modeopt.utils import combine_state_controls_to_input
+from moderl.custom_types import State, StateDim
+from moderl.dynamics import ModeRLDynamics, SVGPDynamicsWrapper
+from moderl.dynamics.conditionals import svgp_covariance_conditional
+from moderl.mode_opt import ModeRL
+from moderl.rollouts import rollout_controls_in_dynamics
+from moderl.utils import combine_state_controls_to_input
 
 from .trajectories import BaseTrajectory, ControlTrajectoryDist
 
@@ -31,7 +31,7 @@ def build_riemannian_energy_objective(
     start_state,
     target_state,
     initial_solution,
-    dynamics: ModeOptDynamics,
+    dynamics: ModeRLDynamics,
     riemannian_metric_cost_matrix: ttf.Tensor2[StateDim, StateDim],
     riemannian_metric_covariance_weight: float,
     terminal_state_cost_matrix: ttf.Tensor2[StateDim, StateDim],

@@ -8,7 +8,7 @@ from gpflow import default_float
 from gpflow.models import GPModel
 from tensor_annotations.axes import Batch
 
-from modeopt.custom_types import (
+from moderl.custom_types import (
     ControlDim,
     Horizon,
     HorizonPlusOne,
@@ -16,7 +16,7 @@ from modeopt.custom_types import (
     One,
     StateDim,
 )
-from modeopt.utils import append_zero_control, combine_state_controls_to_input
+from moderl.utils import append_zero_control, combine_state_controls_to_input
 
 
 class CostFunction:
@@ -380,7 +380,7 @@ class ModeProbCostFunction(CostFunction):
 
     def __init__(
         self,
-        prob_fn: Callable,  # ModeOptDynamics.predict_mode_probability
+        prob_fn: Callable,  # ModeRLDynamics.predict_mode_probability
         weight: default_float() = 1.0,
     ):
         self.prob_fn = prob_fn

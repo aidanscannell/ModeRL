@@ -3,18 +3,18 @@ from typing import List, Optional, Union
 
 import tensor_annotations.tensorflow as ttf
 import tensorflow_probability as tfp
-from modeopt.cost_functions import (
+from moderl.cost_functions import (
     ControlQuadraticCostFunction,
     RiemannianEnergyCostFunction,
     TargetStateCostFunction,
 )
-from modeopt.custom_types import ControlDim, StateDim
-from modeopt.dynamics import ModeOptDynamics
-from modeopt.objectives import (
+from moderl.custom_types import ControlDim, StateDim
+from moderl.dynamics import ModeRLDynamics
+from moderl.objectives import (
     build_variational_objective,
     build_mode_variational_objective,
 )
-from modeopt.trajectories import (
+from moderl.trajectories import (
     initialise_deterministic_trajectory,
     initialise_gaussian_trajectory,
 )
@@ -28,7 +28,7 @@ tfd = tfp.distributions
 def build_riemannian_energy_controller(
     start_state,
     target_state,
-    dynamics: ModeOptDynamics,
+    dynamics: ModeRLDynamics,
     desired_mode: int,
     horizon: int,
     control_dim: int,
@@ -75,7 +75,7 @@ def build_riemannian_energy_controller(
 def build_control_as_inference_controller(
     start_state,
     target_state,
-    dynamics: ModeOptDynamics,
+    dynamics: ModeRLDynamics,
     desired_mode: int,
     horizon: int,
     control_dim: int,
@@ -121,7 +121,7 @@ def build_control_as_inference_controller(
 #         self,
 #         # start_state: ttf.Tensor1[StateDim],
 #         target_state: ttf.Tensor1[StateDim],
-#         dynamics: ModeOptDynamics,
+#         dynamics: ModeRLDynamics,
 #         # Collocation args
 #         horizon: int = 10,
 #         t_init: float = -1.0,
@@ -215,7 +215,7 @@ def build_control_as_inference_controller(
 #         #     cfg["previous_solution"], custom_objects=TRAJECTORY_OBJECTS
 #         # )
 #         dynamics = tf.keras.layers.deserialize(
-#             cfg["dynamics"], custom_objects={"ModeOptDynamics": ModeOptDynamics}
+#             cfg["dynamics"], custom_objects={"ModeRLDynamics": ModeRLDynamics}
 #         )
 #         return cls(
 #             start_state=tf.constant(cfg["start_state"]),

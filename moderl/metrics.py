@@ -2,10 +2,10 @@
 import tensorflow as tf
 from geoflow.manifolds import GPManifold
 
-from modeopt.cost_functions import RiemannianEnergyCostFunction
-from modeopt.mode_opt import ModeOpt
-from modeopt.rollouts import rollout_controller_in_dynamics
-from modeopt.utils import (
+from moderl.cost_functions import RiemannianEnergyCostFunction
+from moderl.mode_opt import ModeRL
+from moderl.rollouts import rollout_controller_in_dynamics
+from moderl.utils import (
     append_zero_control,
     weight_to_matrix,
     combine_state_controls_to_input,
@@ -13,7 +13,7 @@ from modeopt.utils import (
 
 
 def mode_probability(
-    mode_optimiser: ModeOpt,
+    mode_optimiser: ModeRL,
     marginalise_state: bool = True,
     marginalise_gating_func: bool = True,
     sum: bool = False,
@@ -65,7 +65,7 @@ def mode_probability(
 
 
 # def mode_probability(
-#     mode_optimiser: ModeOpt,
+#     mode_optimiser: ModeRL,
 #     marginalise_state: bool = True,
 #     marginalise_gating_func: bool = True,
 #     sum: bool = False,
@@ -116,7 +116,7 @@ def mode_probability(
 
 
 def gating_function_variance(
-    mode_optimiser: ModeOpt, marginalise_state: bool = True, sum: bool = False
+    mode_optimiser: ModeRL, marginalise_state: bool = True, sum: bool = False
 ):
     state_means, state_vars = rollout_controller_in_dynamics(
         dynamics=mode_optimiser.dynamics,
@@ -149,7 +149,7 @@ def gating_function_variance(
         return h_vars
 
 
-def state_variance(mode_optimiser: ModeOpt, sum: bool = False):
+def state_variance(mode_optimiser: ModeRL, sum: bool = False):
     state_means, state_vars = rollout_controller_in_dynamics(
         dynamics=mode_optimiser.dynamics,
         controller=mode_optimiser.mode_controller,
@@ -163,7 +163,7 @@ def state_variance(mode_optimiser: ModeOpt, sum: bool = False):
 
 
 def approximate_riemannian_energy(
-    mode_optimiser: ModeOpt, covariance_weight: float = 1.0, sum: bool = False
+    mode_optimiser: ModeRL, covariance_weight: float = 1.0, sum: bool = False
 ):
     riemannian_metric_weight_matrix = weight_to_matrix(
         1.0, dim=mode_optimiser.dynamics.state_dim
@@ -193,7 +193,7 @@ def approximate_riemannian_energy(
         return energy
 
 
-def riemannian_length(mode_optimiser: ModeOpt, covariance_weight: float = 1.0):
+def riemannian_length(mode_optimiser: ModeRL, covariance_weight: float = 1.0):
     state_means, state_vars = rollout_controller_in_dynamics(
         dynamics=mode_optimiser.dynamics,
         controller=mode_optimiser.mode_controller,
@@ -225,7 +225,7 @@ def riemannian_length(mode_optimiser: ModeOpt, covariance_weight: float = 1.0):
         return h_vars
 
 
-def euclidean_length(mode_optimiser: ModeOpt):
+def euclidean_length(mode_optimiser: ModeRL):
     state_means, state_vars = rollout_controller_in_dynamics(
         dynamics=mode_optimiser.dynamics,
         controller=mode_optimiser.mode_controller,

@@ -3,7 +3,7 @@ from typing import Callable
 
 import tensor_annotations.tensorflow as ttf
 import tensorflow as tf
-from modeopt.custom_types import Horizon, TwoStateDim, Times, StateDim
+from moderl.custom_types import Horizon, TwoStateDim, Times, StateDim
 
 # def build_geodesic_collocation_constraints_closure(
 #     gp: GPModel,

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from modeopt.cost_functions import quadratic_cost_fn
+from moderl.cost_functions import quadratic_cost_fn
 from functools import partial
 from typing import Callable, Optional
 
@@ -8,9 +8,9 @@ import tensor_annotations.tensorflow as ttf
 import tensorflow as tf
 import tensorflow_probability as tfp
 from gpflow import default_float
-from modeopt.custom_types import ControlMeanAndVariance, StateDim
-from modeopt.dynamics import ModeOptDynamics
-from modeopt.trajectories import GeodesicTrajectory, TRAJECTORY_OBJECTS
+from moderl.custom_types import ControlMeanAndVariance, StateDim
+from moderl.dynamics import ModeRLDynamics
+from moderl.trajectories import GeodesicTrajectory, TRAJECTORY_OBJECTS
 
 from ..base import NonFeedbackController
 from .trajectory_optimisation import TrajectoryOptimisationController
@@ -23,7 +23,7 @@ class GeodesicController(NonFeedbackController):
         self,
         start_state: ttf.Tensor1[StateDim],
         target_state: ttf.Tensor1[StateDim],
-        dynamics: ModeOptDynamics,
+        dynamics: ModeRLDynamics,
         # Collocation args
         horizon: int = 10,
         t_init: float = -1.0,
@@ -252,7 +252,7 @@ class GeodesicController(NonFeedbackController):
     @classmethod
     def from_config(cls, cfg: dict):
         dynamics = tf.keras.layers.deserialize(
-            cfg["dynamics"], custom_objects={"ModeOptDynamics": ModeOptDynamics}
+            cfg["dynamics"], custom_objects={"ModeRLDynamics": ModeRLDynamics}
         )
         controller = cls(
             start_state=tf.constant(cfg["start_state"], dtype=default_float()),

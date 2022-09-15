@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import abc
 
-from modeopt.custom_types import State
+from moderl.custom_types import State
 
 from .base import FeedbackController
 

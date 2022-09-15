@@ -10,17 +10,17 @@ from tensor_annotations import axes
 from tensor_annotations.axes import Batch
 from tf_agents.environments import py_environment
 
-from modeopt.dynamics import SVGPDynamicsWrapper, ModeOptDynamics
-from modeopt.controllers import NonFeedbackController, FeedbackController
+from moderl.dynamics import SVGPDynamicsWrapper, ModeRLDynamics
+from moderl.controllers import NonFeedbackController, FeedbackController
 
-from modeopt.custom_types import StateDim, ControlDim, Horizon, One, Dataset
+from moderl.custom_types import StateDim, ControlDim, Horizon, One, Dataset
 
 HorizonPlusOne = typing.NewType("HorizonPlusOne", axes.Axis)
 Controller = Union[FeedbackController, NonFeedbackController]
 
 
 def rollout_policy_controller_in_dynamics(
-    dynamics: Union[SVGPDynamicsWrapper, ModeOptDynamics],
+    dynamics: Union[SVGPDynamicsWrapper, ModeRLDynamics],
     controller: Controller,
     start_state: ttf.Tensor2[One, StateDim],
     start_state_var=None,
@@ -58,7 +58,7 @@ def rollout_policy_controller_in_dynamics(
 
 
 def rollout_controller_in_dynamics(
-    dynamics: Union[SVGPDynamicsWrapper, ModeOptDynamics],
+    dynamics: Union[SVGPDynamicsWrapper, ModeRLDynamics],
     controller: Controller,
     start_state: ttf.Tensor2[One, StateDim],
     variance: bool = True,
@@ -132,7 +132,7 @@ def rollout_controller_in_env(
 
 
 def rollout_controls_in_dynamics(
-    dynamics: Union[SVGPDynamicsWrapper, ModeOptDynamics],
+    dynamics: Union[SVGPDynamicsWrapper, ModeRLDynamics],
     start_state: ttf.Tensor2[One, StateDim],
     control_means: ttf.Tensor2[Horizon, ControlDim],
     start_state_var: ttf.Tensor2[One, StateDim] = None,

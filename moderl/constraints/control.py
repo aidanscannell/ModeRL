@@ -3,7 +3,7 @@ from typing import Optional
 
 import numpy as np
 import tensorflow_probability as tfp
-from modeopt.trajectories import ControlTrajectoryDist
+from moderl.trajectories import ControlTrajectoryDist
 from scipy.optimize import LinearConstraint
 
 tfd = tfp.distributions

@@ -1,0 +1,7 @@
+dynamics:
+  class_name: ModeOptDynamics
+  config:
+    desired_mode: 1
+    mosvgpe: two_experts
+    predict_state_difference: true
+    state_dim: 2

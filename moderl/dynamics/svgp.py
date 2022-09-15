@@ -6,14 +6,14 @@ import tensorflow_probability as tfp
 from gpflow import posteriors
 from gpflow.conditionals import uncertain_conditional
 from gpflow.models import SVGP
-from modeopt.custom_types import (
+from moderl.custom_types import (
     ControlMean,
     ControlVariance,
     StateMean,
     StateMeanAndVariance,
     StateVariance,
 )
-from modeopt.utils import combine_state_controls_to_input
+from moderl.utils import combine_state_controls_to_input
 
 tfd = tfp.distributions
 

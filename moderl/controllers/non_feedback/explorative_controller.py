@@ -5,20 +5,20 @@ import tensor_annotations.tensorflow as ttf
 import tensorflow as tf
 import tensorflow_probability as tfp
 from gpflow import default_float
-from modeopt.constraints import build_mode_chance_constraints_scipy
-from modeopt.controllers.utils import (
+from moderl.constraints import build_mode_chance_constraints_scipy
+from moderl.controllers.utils import (
     build_mode_variational_objective,
     initialise_deterministic_trajectory,
 )
-from modeopt.cost_functions import (
+from moderl.cost_functions import (
     ControlQuadraticCostFunction,
     StateDiffCostFunction,
     TargetStateCostFunction,
 )
-from modeopt.custom_types import StateDim
-from modeopt.dynamics import ModeOptDynamics
-from modeopt.objectives import build_explorative_objective
-from modeopt.trajectories import ControlTrajectoryDist
+from moderl.custom_types import StateDim
+from moderl.dynamics import ModeRLDynamics
+from moderl.objectives import build_explorative_objective
+from moderl.trajectories import ControlTrajectoryDist
 
 from ..base import NonFeedbackController
 from .trajectory_optimisation import TrajectoryOptimisationController
@@ -27,7 +27,7 @@ tfd = tfp.distributions
 
 
 def find_initial_solution_in_desired_mode(
-    dynamics: ModeOptDynamics,
+    dynamics: ModeRLDynamics,
     start_state,
     horizon: int,
     control_dim: int,
@@ -63,7 +63,7 @@ class ExplorativeController(NonFeedbackController):
         self,
         start_state: ttf.Tensor1[StateDim],
         target_state: ttf.Tensor1[StateDim],
-        dynamics: ModeOptDynamics,
+        dynamics: ModeRLDynamics,
         horizon: int = 10,
         max_iterations: int = 100,
         mode_satisfaction_prob: float = 0.8,
@@ -163,7 +163,7 @@ class ExplorativeController(NonFeedbackController):
     @classmethod
     def from_config(cls, cfg: dict):
         dynamics = tf.keras.layers.deserialize(
-            cfg["dynamics"], custom_objects={"ModeOptDynamics": ModeOptDynamics}
+            cfg["dynamics"], custom_objects={"ModeRLDynamics": ModeRLDynamics}
         )
         controller = cls(
             start_state=tf.constant(cfg["start_state"], dtype=default_float()),

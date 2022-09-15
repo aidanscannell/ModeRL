@@ -4,15 +4,15 @@ from typing import Callable
 import tensor_annotations.tensorflow as ttf
 import tensorflow as tf
 from gpflow import default_float
-from modeopt.dynamics import ModeOptDynamics
-from modeopt.rollouts import rollout_controls_in_dynamics
-from modeopt.custom_types import StateDim
+from moderl.dynamics import ModeRLDynamics
+from moderl.rollouts import rollout_controls_in_dynamics
+from moderl.custom_types import StateDim
 from scipy.optimize import NonlinearConstraint
 from tensor_annotations.axes import Batch
 
 
 def build_mode_chance_constraints_fn(
-    mode_opt_dynamics: ModeOptDynamics,
+    mode_opt_dynamics: ModeRLDynamics,
     start_state: ttf.Tensor2[Batch, StateDim],
     horizon: int = 10,
     control_dim: int = 1,
@@ -62,7 +62,7 @@ def build_mode_chance_constraints_fn(
 
 
 def build_mode_chance_constraints_scipy(
-    mode_opt_dynamics: ModeOptDynamics,
+    mode_opt_dynamics: ModeRLDynamics,
     start_state: ttf.Tensor2[Batch, StateDim],
     horizon: int = 10,
     control_dim: int = 1,
