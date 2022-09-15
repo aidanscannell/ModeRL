@@ -11,17 +11,20 @@ keywords = ["model-based reinforcement learning","mixtures-of-gaussian-process-e
 readme = "README.md"
 requires-python = ">=3.7"
 dependencies = [
-    # "gpflow",
+    "gpflow",
     "numpy",
-    "tensorflow",
     "tensorflow-probability",
-    # "gpflow",
+    "tensorflow>=2.4.0; platform_system!='Darwin' or platform_machine!='arm64'",
+    # NOTE: Support of Apple Silicon MacOS platforms is in an experimental mode
+    "tensorflow-macos>=2.4.0; platform_system=='Darwin' and platform_machine=='arm64'",
+
     # "matplotlib",
-    # "scikit-learn",  # for test_train_split
-    # 'dataclasses; python_version<"3.6"',
-    # "tensor_annotations",
-    # "tensor_annotations_tensorflow_stubs",
-    "mosvgpe @ git+https://github.com/aidanscannell/mosvgpe#egg=mosvgpe",
+    "tensor_annotations",
+    # "mosvgpe @ git+https://github.com/aidanscannell/mosvgpe#egg=mosvgpe",
+    # TODO make this agnostic of my file path...
+    "mosvgpe @ file:///Users/scannea1/python-projects/ModeRL/subtrees/mosvgpe",
+    # "mosvgpe @ file://./mosvgpe",
+    # "mosvgpe @ git+https://github.com/aidanscannell/mosvgpe#egg=mosvgpe",
     # "geoflow @ git+https://github.com/aidanscannell/geoflow#egg=geoflow",
     "wandb",
 ]
