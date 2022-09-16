@@ -43,7 +43,14 @@ classifiers = [
 [project.optional-dependencies]
 dev = ["black", "pyright", "isort", "pyflakes", "pytest"]
 # examples = ["pandas", "jupyter", "hydra-core"]
-examples = ["wandb"]
+examples = ["wandb", "hydra-core"]
+# examples = ["examples @ ./examples"]
+# experiments = ["wandb", "hydra-core"]
 
-[tool.setuptools]
-packages = ["mosvgpe"]
+# [tool.setuptools]
+# packages = ["mosvgpe"]
+
+[tool.setuptools.packages.find]
+# where = ["ex"]
+include = ["examples*", "mosvgpe"]  # alternatively: `exclude = ["additional*"]`
+# namespaces = false
