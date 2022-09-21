@@ -1,0 +1,56 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+
+[project]
+name = "mosvgpe"
+version = "0.1.0"
+description = "GPflow/Tensorflow implementation of mixture of Gaussian process experts - uses sparse GPs and stochastic variational inference"
+# author = "Aidan Scannell"
+# author_email = "scannell.aidan@gmail.com"
+license = {text = "Apache-2.0"}
+keywords = ["mixtures-of-gaussian-process-experts", "gaussian-processes", "machine-learning", "variational-inference", "mixture-models"]
+# repository = "https://github.com/aidanscannell/mogpe"
+readme = "README.md"
+requires-python = ">=3.7"
+dependencies = [
+    # "gpflow>=2.0.0",
+    # "gpflow",
+    # TODO update gpflow dependency once a release supports Apple silicon
+    "gpflow @ git+https://github.com/GPflow/GPflow@develop#egg=gpflow",
+    "numpy",
+    "matplotlib",
+    # "scikit-learn",  # for test_train_split
+    'dataclasses; python_version<"3.6"',
+    "tensor_annotations",
+    # "tensor_annotations_tensorflow_stubs",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Scientific/Engineering :: Mathematics",
+]
+
+[project.optional-dependencies]
+dev = ["black", "pyright", "isort", "pyflakes", "pytest"]
+# examples = ["pandas", "jupyter", "hydra-core"]
+examples = ["wandb", "hydra-core"]
+# examples = ["examples @ ./examples"]
+# experiments = ["wandb", "hydra-core"]
+
+# [tool.setuptools]
+# packages = ["mosvgpe"]
+
+[tool.setuptools.packages.find]
+# where = ["ex"]
+include = ["examples*", "mosvgpe"]  # alternatively: `exclude = ["additional*"]`
+# namespaces = false
