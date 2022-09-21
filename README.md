@@ -9,14 +9,14 @@ It then make decisions under the uncertainty of the learned dynamics model.
 ## Using git subtrees
 If I make changes to [https://github.com/aidanscannell/mosvgpe](https://github.com/aidanscannell/mosvgpe) I can pull them using,
 ```
-git subtree pull --prefix=mosvgpe mosvgpe-subtree master
+git subtree pull --prefix=subtrees/mosvgpe mosvgpe-subtree master
 ```
 And when I make changes to =mosvgpe= in =moderl= I can push the changes back
 to [https://github.com/aidanscannell/mosvgpe](https://github.com/aidanscannell/mosvgpe) using,
 ```
-git subtree push --prefix=mosvgpe mosvgpe-subtree /branch/to/push/to
+git subtree push --prefix=subtrees/mosvgpe mosvgpe-subtree /branch/to/push/to
 ```
 For example,
 ```
-git subtree push --prefix=mosvgpe mosvgpe-subtree aidanscannell/push-from-moderl
+git subtree push --prefix=subtrees/mosvgpe mosvgpe-subtree aidanscannell/push-from-moderl
 ```
