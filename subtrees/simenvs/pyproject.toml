@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "simenvs"
+version = "0.1.0"
+description = "A collection of (simple) multimodal simulation environments for reinforcement learning in TensorFlow."
+license = {text = "Apache-2.0"}
+readme = "README.md"
+requires-python = ">=3.7"
+dependencies = [
+    "numpy>=1.19.2",
+    # "matplotlib",
+    "jax>=0.2.11",
+    "jaxlib>=0.1.57",
+    "tf-agents>=0.8.0",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+]
+
+[project.optional-dependencies]
+dev = ["black", "pyright", "isort", "pyflakes"]
+
+[tool.setuptools]
+packages = ["simenvs"]
