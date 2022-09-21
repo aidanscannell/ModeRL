@@ -1,14 +1,22 @@
 # ModeRL - Mode Remaining Exploration for Model-Based Reinforcement Learning
 
-`ModeRL` is a package for learning and controlling unknown, or partially unknown, multimodal dynamical systems.
-In particular, it is concerned with methods for learning and control that attempt to remain in a given desired dynamics
-mode. For example, if some of the dynamics modes are believed to be inoperable.
-`ModeRL` learns representations of multimodal dynamical systems using the Mixture of Gaussian Process Experts model from [mogpe](https://github.com/aidanscannell/mogpe).
-It then deploys multiple control strategies (trajectory optimisation algorithms) that make decisions
-under the uncertainty of the learned dynamics model.
+`ModeRL` is a model-based reinforcement learning method for exploring environments with multimodal transition dynamics.
+In particular, it provides probabilistic guarantees on remaining in a desired dynamics mode. 
+For example, this may be desirable behaviour if some of the dynamics modes are believed to be inoperable.
+`ModeRL` learns representations of multimodal dynamical systems using the Mixture of Sparse Variational Gaussian Process Experts model from [mosvgpe](https://github.com/aidanscannell/mosvgpe).
+It then make decisions under the uncertainty of the learned dynamics model.
 
-`ModeRL` consists of trajectory optimisers with two main goals:
-
-1.  Find trajectories between a start and end state that remain in a given dynamics mode and attempt to avoid regions of the dynamics with high epistemic uncertainty.
-2.  Find trajectories that guide exploration of the state-control space whilst remaining in a given desired dynamics mode.
-
+## Using git subtrees
+If I make changes to [https://github.com/aidanscannell/mosvgpe](https://github.com/aidanscannell/mosvgpe) I can pull them using,
+```
+git subtree pull --prefix=mosvgpe mosvgpe-subtree master
+```
+And when I make changes to =mosvgpe= in =moderl= I can push the changes back
+to [https://github.com/aidanscannell/mosvgpe](https://github.com/aidanscannell/mosvgpe) using,
+```
+git subtree push --prefix=mosvgpe mosvgpe-subtree /branch/to/push/to
+```
+For example,
+```
+git subtree push --prefix=mosvgpe mosvgpe-subtree aidanscannell/push-from-moderl
+```
