@@ -23,6 +23,8 @@ from .custom_types import (
     NumSamples,
 )
 from .gp import predict_f_given_inducing_samples
+from .keras import INDUCING_VARIABLE_OBJECTS, KERNEL_OBJECTS, MEAN_FUNCTION_OBJECTS
+from .keras.utils import try_array_except_none, try_val_except_none
 
 tfd = tfp.distributions
 
@@ -119,6 +121,7 @@ class SVGPGatingNetwork(GPGatingNetworkBase):
         )
 
         super().__init__(gp=svgp, num_experts=num_experts, name=name)
+        self.q_diag = q_diag  # need to do this for keras serialization
 
     def call(
         self,
@@ -201,3 +204,38 @@ class SVGPGatingNetwork(GPGatingNetworkBase):
     @property
     def gp(self):
         return self._gp
+
+    def get_config(self):
+        return {
+            "kernel": tf.keras.layers.serialize(self.gp.kernel),
+            "inducing_variable": tf.keras.layers.serialize(self.gp.inducing_variable),
+            "mean_function": tf.keras.layers.serialize(self.gp.mean_function),
+            "q_diag": self.q_diag,
+            "q_mu": self.gp.q_mu.numpy(),
+            "q_sqrt": self.gp.q_sqrt.numpy(),
+            "whiten": self.gp.whiten,
+        }
+
+    @classmethod
+    def from_config(cls, cfg: dict):
+        kernel = tf.keras.layers.deserialize(
+            cfg["kernel"], custom_objects=KERNEL_OBJECTS
+        )
+        inducing_variable = tf.keras.layers.deserialize(
+            cfg["inducing_variable"], custom_objects=INDUCING_VARIABLE_OBJECTS
+        )
+        mean_function = tf.keras.layers.deserialize(
+            cfg["mean_function"], custom_objects=MEAN_FUNCTION_OBJECTS
+        )
+        return cls(
+            kernel=kernel,
+            inducing_variable=inducing_variable,
+            mean_function=mean_function,
+            q_diag=try_val_except_none(cfg, "q_diag"),
+            q_mu=try_array_except_none(cfg, "q_mu"),
+            q_sqrt=try_array_except_none(cfg, "q_sqrt"),
+            whiten=try_val_except_none(cfg, "whiten"),
+        )
+
+
+GATING_NETWORK_OBJECTS = [SVGPGatingNetwork]

@@ -15,6 +15,13 @@ from mosvgpe.custom_types import InputData, MeanAndVariance, NumExperts
 
 from .gp import predict_f_given_inducing_samples
 
+from .keras import (
+    MEAN_FUNCTION_OBJECTS,
+    INDUCING_VARIABLE_OBJECTS,
+    KERNEL_OBJECTS,
+    LIKELIHOOD_OBJECTS,
+)
+
 tfd = tfp.distributions
 
 ExpertDist = Union[tfd.MultivariateNormalFullCovariance, tfd.MultivariateNormalDiag]
@@ -64,6 +71,7 @@ class SVGPExpert(ExpertBase):
         )
         super().__init__(name=name)
         self._gp = svgp
+        self.q_diag = q_diag  # need to do this for keras serialization
 
     def call(
         self,
@@ -208,3 +216,45 @@ class SVGPExpert(ExpertBase):
     @property
     def gp(self):
         return self._gp
+
+    def get_config(self):
+        return {
+            "kernel": tf.keras.layers.serialize(self.gp.kernel),
+            "likelihood": tf.keras.layers.serialize(self.gp.likelihood),
+            "inducing_variable": tf.keras.layers.serialize(self.gp.inducing_variable),
+            "mean_function": tf.keras.layers.serialize(self.gp.mean_function),
+            "num_latent_gps": self.gp.num_latent_gps,
+            "q_diag": self.q_diag,
+            "q_mu": self.gp.q_mu.numpy(),
+            "q_sqrt": self.gp.q_sqrt.numpy(),
+            "whiten": self.gp.whiten,
+        }
+
+    @classmethod
+    def from_config(cls, cfg: dict):
+        kernel = tf.keras.layers.deserialize(
+            cfg["kernel"], custom_objects=KERNEL_OBJECTS
+        )
+        likelihood = tf.keras.layers.deserialize(
+            cfg["likelihood"], custom_objects=LIKELIHOOD_OBJECTS
+        )
+        inducing_variable = tf.keras.layers.deserialize(
+            cfg["inducing_variable"], custom_objects=INDUCING_VARIABLE_OBJECTS
+        )
+        mean_function = tf.keras.layers.deserialize(
+            cfg["mean_function"], custom_objects=MEAN_FUNCTION_OBJECTS
+        )
+        return cls(
+            kernel=kernel,
+            likelihood=likelihood,
+            inducing_variable=inducing_variable,
+            mean_function=mean_function,
+            num_latent_gps=try_val_except_none(cfg, "num_latent_gps"),
+            q_diag=try_val_except_none(cfg, "q_diag"),
+            q_mu=try_array_except_none(cfg, "q_mu"),
+            q_sqrt=try_array_except_none(cfg, "q_sqrt"),
+            whiten=try_val_except_none(cfg, "whiten"),
+        )
+
+
+EXPERT_OBJECTS = [SVGPExpert]

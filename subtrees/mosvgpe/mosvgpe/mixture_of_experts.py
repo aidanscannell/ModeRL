@@ -5,12 +5,16 @@ from typing import List, Optional
 import tensor_annotations.tensorflow as ttf
 import tensorflow as tf
 import tensorflow_probability as tfp
-from gpflow.models import BayesianModel
 from gpflow import default_float
+from gpflow.models import BayesianModel
 
 from .custom_types import Dataset, DatasetBatch, InputData
-from .gating_networks import GatingNetworkBase, SVGPGatingNetwork
-from .experts import ExpertBase, SVGPExpert
+from .experts import EXPERT_OBJECTS, ExpertBase, SVGPExpert
+from .gating_networks import (
+    GATING_NETWORK_OBJECTS,
+    GatingNetworkBase,
+    SVGPGatingNetwork,
+)
 
 tf.keras.backend.set_floatx("float64")
 tfd = tfp.distributions
@@ -98,6 +102,27 @@ class MixtureOfExpertsBase(tf.keras.Model, BayesianModel, abc.ABC):
     @property
     def num_experts(self) -> int:
         return len(self.experts_list)
+
+    def get_config(self):
+        experts_list = []
+        for expert in self.experts_list:
+            experts_list.append(tf.keras.layers.serialize(expert))
+        return {
+            "experts_list": experts_list,
+            "gating_network": tf.keras.layers.serialize(self.gating_network),
+        }
+
+    @classmethod
+    def from_config(cls, cfg: dict):
+        expert_list = []
+        for expert_cfg in cfg["experts_list"]:
+            expert_list.append(
+                tf.keras.layers.deserialize(expert_cfg, custom_objects=EXPERT_OBJECTS)
+            )
+        gating_network = tf.keras.layers.deserialize(
+            cfg["gating_network"], custom_objects=GATING_NETWORK_OBJECTS
+        )
+        return cls(experts_list=expert_list, gating_network=gating_network)
 
 
 class MixtureOfSVGPExperts(MixtureOfExpertsBase):
