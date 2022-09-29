@@ -1,0 +1,38 @@
+defaults:
+  - model: two_experts
+  - dataset: mcycle
+  - override hydra/job_logging: none
+  - override hydra/hydra_logging: none
+  - _self_
+
+random_seed: 42
+
+# General model config
+input_dim: 1
+num_inducing_experts: 15
+num_inducing_gating: 32
+
+# Monitoring config
+logging_epoch_freq: 100
+# build_plotting_callbacks:
+#   _target_: examples.mcycle.plot.build_plotting_callbacks
+#   model: ${model}
+#   logging_epoch_freq: 100
+
+# Training config
+train:
+  learning_rate: 1e-2
+  batch_size: 64
+  epochs: 10000
+  verbose: True
+  validation_split: 0.2
+
+wandb:
+  entity: "aidanscannell"
+  project: "mosvgpe"
+
+hydra:
+  job:
+    chdir: False
+  run:
+    dir: ""

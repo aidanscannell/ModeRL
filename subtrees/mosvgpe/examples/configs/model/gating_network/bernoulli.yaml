@@ -1,0 +1,7 @@
+defaults:
+  - kernel: rbf
+  - inducing_variable: ones
+  - mean_function: zero
+
+_target_: mosvgpe.gating_networks.SVGPGatingNetwork
+whiten: True

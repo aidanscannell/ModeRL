@@ -1,0 +1,2 @@
+_target_: examples.mcycle.utils.load_mcycle_data
+filename: "./mcycle/mcycle.csv"

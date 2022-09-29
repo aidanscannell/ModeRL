@@ -1,0 +1,6 @@
+_target_: gpflow.inducing_variables.InducingPoints
+Z:
+  _target_: numpy.ones
+  shape:
+    - ${num_inducing_experts}
+    - ${input_dim}
