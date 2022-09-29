@@ -52,5 +52,6 @@ examples = ["wandb", "hydra-core"]
 
 [tool.setuptools.packages.find]
 # where = ["ex"]
-include = ["examples*", "mosvgpe"]  # alternatively: `exclude = ["additional*"]`
+# include = ["examples*", "mosvgpe"]  # alternatively: `exclude = ["additional*"]`
+include = ["examples", "mosvgpe"]  # alternatively: `exclude = ["additional*"]`
 # namespaces = false
