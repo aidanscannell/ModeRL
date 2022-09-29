@@ -13,3 +13,6 @@ superseded
 .direnv
 .envrc
 *.egg-info
+
+images
+wandb
