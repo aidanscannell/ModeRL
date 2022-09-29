@@ -1,0 +1,15 @@
+cost_fn:
+  _target_: moderl.cost_functions.Additive
+  first_part:
+    _target_: moderl.cost_functions.ControlQuadraticCostFunction
+    weight_matrix:
+      _target_: tensorflow.constant
+      value: [[1.0, 0.0], [0.0, 1.0]]
+      dtype: "float64"
+  second_part:
+    _target_: moderl.cost_functions.TargetStateCostFunction
+    weight_matrix:
+      _target_: tensorflow.constant
+      value: [[1.0, 0.0], [0.0, 1.0]]
+      dtype: "float64"
+    target_state: ${target_state}

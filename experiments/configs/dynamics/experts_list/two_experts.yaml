@@ -1,0 +1,5 @@
+defaults:
+  - expert_one: default
+  - expert_two: default
+
+_target_: examples.utils.TwoExpertsList

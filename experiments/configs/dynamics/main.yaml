@@ -1,0 +1,6 @@
+defaults:
+  - gating_network: bernoulli
+  - experts_list: two_experts
+
+_target_: mosvgpe.mixture_of_experts.MixtureOfSVGPExperts
+num_samples: 1 # num samples to draw from variational posterior

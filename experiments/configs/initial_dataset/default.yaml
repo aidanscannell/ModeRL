@@ -1,0 +1,4 @@
+width: 1.0
+horizon: 15
+num_trajectories: 50
+random_seed: 42

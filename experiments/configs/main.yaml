@@ -1,0 +1,297 @@
+defaults:
+  - initial_dataset: default
+  - cost_fn: target_control
+  # disable logging by Hydra
+  - override hydra/job_logging: none
+  - override hydra/hydra_logging: none
+  - _self_
+
+random_seed: 42
+
+env:
+  name: "velocity-controlled-point-mass/scenario-7"
+  seed: 42
+
+# General model config
+state_dim: 2
+control_dim: 2
+state_control_input_dim: 4
+# num_inducing: 32
+# num_inducing_gating: 32
+# num_inducing_experts: 32
+
+# Monitoring config
+logging_epoch_freq: 100
+
+# Training config
+train:
+  learning_rate: 1e-3
+  batch_size: 64
+  epochs: 10000
+  verbose: True
+  validation_split: 0.2
+  num_initial_epochs: 20000
+
+# Traj opt config
+start_state:
+  _target_: tensorflow.constant
+  value: [[-1.0, -2.0]]
+  dtype: "float64"
+target_state:
+  _target_: tensorflow.constant
+  value: [[1.7, 3.0]]
+  dtype: "float64"
+
+num_explorative_trajectories: 6
+
+explorative_controller:
+  horizon: 10
+  max_iterations: 100
+  mode_satisfaction_prob: 0.8
+  keep_last_solution: true
+  method: "SLSQP"
+
+dynamics:
+  class_name: ModeRLDynamics
+  config:
+    state_dim: 2
+    desired_mode: 0
+    learning_rate: 0.01
+    epsilon: 1.0e-08
+    dynamics_fit_kwargs:
+      batch_size: 118
+      epochs: 20000
+      verbose: true
+      validation_split: 0.2
+    mosvgpe:
+      class_name: MixtureOfSVGPExperts
+      config:
+        experts_list:
+          - class_name: SVGPExpert
+            config:
+              kernel:
+                class_name: SeparateIndependentSerializable
+                config:
+                  kernels:
+                    - class_name: Matern52Serializable
+                      config:
+                        active_dims:
+                        lengthscales: [1.0, 1.0, 1.0, 1.0]
+                        variance: 1.0
+                    - class_name: Matern52Serializable
+                      config:
+                        active_dims:
+                        lengthscales: [1.0, 1.0, 1.0, 1.0]
+                        variance: 1.0
+              likelihood:
+                class_name: GaussianSerializable
+                config:
+                  variance: [1.0, 1.0]
+              inducing_variable:
+                class_name: SharedIndependentInducingVariablesSerializable
+                config:
+                  inducing_variable:
+                    class_name: InducingPointsSerializable
+                    config:
+                      num_inducing: 90
+                      input_dim: 4
+              mean_function:
+                class_name: ConstantSerializable
+                config:
+                  c: [0.0, 0.0]
+              num_latent_gps: 2
+              q_diag: false
+              whiten: true
+          - class_name: SVGPExpert
+            config:
+              kernel:
+                class_name: SeparateIndependentSerializable
+                config:
+                  kernels:
+                    # - class_name: Matern52Serializable
+                    - class_name: RBFSerializable
+                      config:
+                        active_dims:
+                        lengthscales: [1.0, 1.0, 1.0, 1.0]
+                        variance: 1.0
+                    # - class_name: Matern52Serializable
+                    - class_name: RBFSerializable
+                      config:
+                        active_dims:
+                        lengthscales: [1.0, 1.0, 1.0, 1.0]
+                        variance: 1.0
+              likelihood:
+                class_name: GaussianSerializable
+                config:
+                  variance: [1.0, 1.0]
+              inducing_variable:
+                class_name: SharedIndependentInducingVariablesSerializable
+                config:
+                  inducing_variable:
+                    class_name: InducingPointsSerializable
+                    config:
+                      num_inducing: 90
+                      input_dim: 4
+              mean_function:
+                class_name: ConstantSerializable
+                config:
+                  c: [0.0, 0.0]
+              num_latent_gps: 2
+              q_diag: false
+              whiten: true
+
+        gating_network:
+          class_name: SVGPGatingNetwork
+          config:
+            kernel:
+              # class_name: Matern52Serializable
+              class_name: RBFSerializable
+              config:
+                active_dims: [0, 1]
+                lengthscales: [1.0, 1.0]
+                variance: 1.0
+            inducing_variable:
+              class_name: InducingPointsSerializable
+              config:
+                num_inducing: 90
+                input_dim: 4
+            mean_function:
+              class_name: ZeroSerializable
+              config:
+                output_dim: 1
+            q_diag: false
+            whiten: true
+
+wandb:
+  entity: "aidanscannell"
+  project: "mode_remaining_exploration_for_mbrl"
+  # log_artifacts: True
+  # notes: ${run.comment}
+  # name: fold_${run.fold}
+
+hydra:
+  job:
+    chdir: False
+  run:
+    dir: ""
+# dynamics:
+#   _target_: moderl.dynamics.ModeRLDynamics
+#   state_dim: 2
+#   desired_mode: 1
+#   # dataset: null
+#   learning_rate: 0.01
+#   epsilon: 1e-8
+#   # dynamics_fit_kwargs:
+#   #   batch_size:
+#   #   epochs: 20000
+#   #   verbose: true
+#   #   validation_split: 0.2
+#   mosvgpe:
+#     _target_: mosvgpe.mixture_of_experts.MixtureOfSVGPExperts
+#     gating_network:
+#       _target_: mosvgpe.gating_networks.SVGPGatingNetwork
+#       kernel:
+#         _target_: mosvgpe.keras.kernels.Matern52Serializable
+#         active_dims:
+#           - 0
+#           - 1
+#         lengthscales:
+#           _target_: numpy.ones
+#           shape:
+#             - ${state_dim}
+#             # - ${state_control_input_dim}
+#         variance: 1.0
+#       inducing_variable:
+#         _target_: mosvgpe.keras.inducing_variables.InducingPointsSerializable
+#         Z:
+#           _target_: numpy.ones
+#           shape:
+#             - ${num_inducing_gating}
+#             # - ${state_dim}
+#             - ${state_control_input_dim}
+#       mean_function:
+#         _target_: mosvgpe.keras.functions.ZeroSerializable
+#         # output_dim: ${state_dim}
+#       whiten: True
+#     experts_list:
+#       _target_: experiments.utils.TwoExpertsList
+#       expert_one:
+#         _target_: mosvgpe.experts.SVGPExpert
+#         kernel:
+#           _target_: mosvgpe.keras.kernels.SeparateIndependentSerializable
+#           kernels:
+#             - _target_: mosvgpe.keras.kernels.Matern52Serializable
+#               lengthscales:
+#                 _target_: numpy.ones
+#                 shape:
+#                   - ${state_control_input_dim}
+#               variance: 1.0
+#             - _target_: mosvgpe.keras.kernels.Matern52Serializable
+#               lengthscales:
+#                 _target_: numpy.ones
+#                 shape:
+#                   - ${state_control_input_dim}
+#               variance: 1.0
+#         likelihood:
+#           _target_: mosvgpe.keras.likelihoods.GaussianSerializable
+#           variance:
+#             _target_: numpy.ones
+#             shape:
+#               - ${state_dim}
+#         inducing_variable:
+#           _target_: mosvgpe.keras.inducing_variables.SharedIndependentInducingVariablesSerializable
+#           inducing_variable:
+#             _target_: mosvgpe.keras.inducing_variables.InducingPointsSerializable
+#             Z:
+#               _target_: numpy.ones
+#               shape:
+#                 - ${num_inducing_experts}
+#                 - ${state_control_input_dim}
+#         mean_function:
+#           _target_: mosvgpe.keras.functions.ConstantSerializable
+#           c:
+#             _target_: numpy.zeros
+#             shape:
+#               - ${state_dim}
+#         num_latent_gps: ${state_dim}
+#         whiten: True
+#       expert_two:
+#         _target_: mosvgpe.experts.SVGPExpert
+#         kernel:
+#           _target_: mosvgpe.keras.kernels.SeparateIndependentSerializable
+#           kernels:
+#             - _target_: mosvgpe.keras.kernels.Matern52Serializable
+#               lengthscales:
+#                 _target_: numpy.ones
+#                 shape:
+#                   - ${state_control_input_dim}
+#               variance: 1.0
+#             - _target_: mosvgpe.keras.kernels.Matern52Serializable
+#               lengthscales:
+#                 _target_: numpy.ones
+#                 shape:
+#                   - ${state_control_input_dim}
+#               variance: 1.0
+#         likelihood:
+#           _target_: mosvgpe.keras.likelihoods.GaussianSerializable
+#           variance:
+#             _target_: numpy.ones
+#             shape:
+#               - ${state_dim}
+#         inducing_variable:
+#           _target_: mosvgpe.keras.inducing_variables.SharedIndependentInducingVariablesSerializable
+#           inducing_variable:
+#             _target_: mosvgpe.keras.inducing_variables.InducingPointsSerializable
+#             Z:
+#               _target_: numpy.ones
+#               shape:
+#                 - ${num_inducing_experts}
+#                 - ${state_control_input_dim}
+#         mean_function:
+#           _target_: mosvgpe.keras.functions.ConstantSerializable
+#           c:
+#             _target_: numpy.zeros
+#             shape:
+#               - ${state_dim}
+#         num_latent_gps: ${state_dim}
+#         whiten: True

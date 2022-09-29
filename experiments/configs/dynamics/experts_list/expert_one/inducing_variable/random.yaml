@@ -1,0 +1,5 @@
+_target_: gpflow.inducing_variables.InducingPoints
+Z:
+  _target_: np.random.rand
+  d0: 3
+  d1: 2
