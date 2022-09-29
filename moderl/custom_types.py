@@ -1,29 +1,31 @@
 #!/usr/bin/env python3
-from typing import NewType, Tuple, Callable, NamedTuple, Optional
 from dataclasses import dataclass
-import tensorflow as tf
-from gpflow import default_float
+from typing import Callable, List, NamedTuple, NewType, Optional, Tuple, Union
+
 import tensor_annotations.tensorflow as ttf
+import tensorflow as tf
+import tensorflow_probability as tfp
 from tensor_annotations import axes
 from tensor_annotations.axes import Batch
 
-Dim = NewType("Dim", axes.Axis)
+tfd = tfp.distributions
+
+
+# Dim = NewType("Dim", axes.Axis)
 StateDim = NewType("StateDim", axes.Axis)
 ControlDim = NewType("ControlDim", axes.Axis)
 StateControlDim = NewType("StateControlDim", axes.Axis)
 One = NewType("One", axes.Axis)
-FlatOutputDim = NewType("FlatOutputDim", axes.Axis)
 Horizon = NewType("Horizon", axes.Axis)
-BatchTimesHorizon = NewType("BatchTimesHorizon", axes.Axis)
+# BatchTimesHorizon = NewType("BatchTimesHorizon", axes.Axis)
 NumData = NewType("NumData", axes.Axis)
 InputDim = NewType("InputDim", axes.Axis)
 OutputDim = NewType("OutputDim", axes.Axis)
-TwoStateDim = NewType("StateDim", axes.Axis)
+# TwoStateDim = NewType("StateDim", axes.Axis)
 HorizonPlusOne = NewType("HorizonPlusOne", axes.Axis)
 
 Times = None
 
-FlatOutput = ttf.Tensor1[FlatOutputDim]
 
 InputData = ttf.Tensor2[NumData, InputDim]
 OutputData = ttf.Tensor2[NumData, OutputDim]
@@ -35,17 +37,48 @@ NextState = ttf.Tensor1[StateDim]
 
 ControlTrajectoryMean = ttf.Tensor2[Horizon, ControlDim]
 ControlTrajectoryVariance = ttf.Tensor2[Horizon, ControlDim]
-ControlTrajectory = Tuple[ControlTrajectoryMean, ControlTrajectoryVariance]
+# ControlTrajectory = Tuple[ControlTrajectoryMean, ControlTrajectoryVariance]
 
 StateTrajectoryMean = ttf.Tensor2[Horizon, StateDim]
 StateTrajectoryVariance = ttf.Tensor2[Horizon, StateDim]
 StateTrajectory = Tuple[StateTrajectoryMean, StateTrajectoryVariance]
 
 
+@dataclass
+class ControlTrajectory(tf.Module):
+    # dist: Union[tfd.MultivariateNormalDiag, tfd.Deterministic]  # [horizon, control_dim]
+    dist: tfd.Distribution  # [horizon, control_dim]
+
+    def __call__(
+        self, timestep: Optional[int] = None
+    ) -> Union[ttf.Tensor2[One, ControlDim], ttf.Tensor2[Horizon, ControlDim]]:
+        if timestep is not None:
+            return self.controls[timestep : timestep + 1]
+        else:
+            return self.controls
+
+    @property
+    # def controls(self) -> ControlTrajectoryMean:
+    def controls(self) -> tfd.Distribution:
+        return self.dist
+
+    @property
+    def horizon(self) -> int:
+        return self.controls.mean().shape[0]
+
+    @property
+    def control_dim(self) -> int:
+        return self.controls.mean().shape[1]
+
+    def copy(self):
+        return ControlTrajectory(self.dist.copy())
+
+
 class Transition(NamedTuple):
     state: ttf.Tensor1[StateDim]
     control: ttf.Tensor1[ControlDim]
     next_state: ttf.Tensor1[StateDim]
+    timestep: int
 
 
 @dataclass
@@ -53,13 +86,17 @@ class TransitionBatch:
     states: ttf.Tensor2[Batch, StateDim]
     controls: ttf.Tensor2[Batch, ControlDim]
     next_states: ttf.Tensor2[Batch, StateDim]
+    times: List[int]
 
     def __len__(self):
         self.state.shape[0]
 
     def as_tuple(self) -> Transition:
         return Transition(
-            states=self.states, controls=self.controls, next_states=self.next_states
+            states=self.states,
+            controls=self.controls,
+            next_states=self.next_states,
+            times=self.times,
         )
 
     def as_dataset(self, predict_state_differences: Optional[bool] = True) -> Dataset:
@@ -89,41 +126,43 @@ class TransitionBatch:
         return self.states.shape[0]
 
 
-StateMean = ttf.Tensor2[Batch, StateDim]
-StateVariance = ttf.Tensor2[Batch, StateDim]
-StateMeanAndVariance = Tuple[StateMean, StateVariance]
+ObjectiveFn = Callable[[ControlTrajectory], ttf.Tensor0]
+
+# StateMean = ttf.Tensor2[Batch, StateDim]
+# StateVariance = ttf.Tensor2[Batch, StateDim]
+# StateMeanAndVariance = Tuple[StateMean, StateVariance]
 
 
-ControlMean = ttf.Tensor2[Batch, ControlDim]
-ControlVariance = ttf.Tensor2[Batch, ControlDim]
-ControlMeanAndVariance = Tuple[ControlMean, ControlVariance]
+# ControlMean = ttf.Tensor2[Batch, ControlDim]
+# ControlVariance = ttf.Tensor2[Batch, ControlDim]
+# ControlMeanAndVariance = Tuple[ControlMean, ControlVariance]
 
-SingleStateMean = ttf.Tensor1[StateDim]
-SingleStateVariance = ttf.Tensor1[StateDim]
-SingleStateMeanAndVariance = Tuple[SingleStateMean, SingleStateVariance]
+# SingleStateMean = ttf.Tensor1[StateDim]
+# SingleStateVariance = ttf.Tensor1[StateDim]
+# SingleStateMeanAndVariance = Tuple[SingleStateMean, SingleStateVariance]
 
-SingleControlMean = ttf.Tensor1[ControlDim]
-SingleControlVariance = ttf.Tensor1[ControlDim]
-SingleControlMeanAndVariance = Tuple[SingleControlMean, SingleControlVariance]
+# SingleControlMean = ttf.Tensor1[ControlDim]
+# SingleControlVariance = ttf.Tensor1[ControlDim]
+# SingleControlMeanAndVariance = Tuple[SingleControlMean, SingleControlVariance]
 
-SingleStateControlMean = ttf.Tensor1[StateControlDim]
-SingleStateControlVariance = ttf.Tensor1[StateControlDim]
-SingleStateControlMeanAndVariance = Tuple[
-    SingleStateControlMean, SingleStateControlVariance
-]
+# SingleStateControlMean = ttf.Tensor1[StateControlDim]
+# SingleStateControlVariance = ttf.Tensor1[StateControlDim]
+# SingleStateControlMeanAndVariance = Tuple[
+#     SingleStateControlMean, SingleStateControlVariance
+# ]
 
-StateControlMean = ttf.Tensor2[Batch, StateControlDim]
-StateControlVariance = ttf.Tensor2[Batch, StateControlDim]
-StateControlMeanAndVariance = Tuple[StateControlMean, StateControlVariance]
+# StateControlMean = ttf.Tensor2[Batch, StateControlDim]
+# StateControlVariance = ttf.Tensor2[Batch, StateControlDim]
+# StateControlMeanAndVariance = Tuple[StateControlMean, StateControlVariance]
 
-ControlMean = ttf.Tensor2[Batch, ControlDim]
-ControlVariance = ttf.Tensor2[Batch, ControlDim]
+# ControlMean = ttf.Tensor2[Batch, ControlDim]
+# ControlVariance = ttf.Tensor2[Batch, ControlDim]
 
-ODEFunction = Callable[[State], State]
+# ODEFunction = Callable[[State], State]
 
 
-BatchedState = ttf.Tensor2[Batch, StateDim]
-BatchedControl = ttf.Tensor2[Batch, ControlDim]
+# BatchedState = ttf.Tensor2[Batch, StateDim]
+# BatchedControl = ttf.Tensor2[Batch, ControlDim]
 
 
 # @dataclass

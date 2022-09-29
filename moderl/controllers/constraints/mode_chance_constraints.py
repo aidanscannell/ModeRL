@@ -12,7 +12,7 @@ from tensor_annotations.axes import Batch
 
 
 def build_mode_chance_constraints_fn(
-    mode_opt_dynamics: ModeRLDynamics,
+    dynamics: ModeRLDynamics,
     start_state: ttf.Tensor2[Batch, StateDim],
     horizon: int = 10,
     control_dim: int = 1,
@@ -32,12 +32,12 @@ def build_mode_chance_constraints_fn(
         else:
             raise NotImplementedError("Wrong shape for controls")
         state_means, state_vars = rollout_controls_in_dynamics(
-            dynamics=mode_opt_dynamics,
+            dynamics=dynamics,
             start_state=start_state,
             control_means=control_means,
             control_vars=control_vars,
         )
-        mode_prob = mode_opt_dynamics.predict_mode_probability(
+        mode_prob = dynamics.predict_mode_probability(
             # state_means[:-1, :],
             state_means[1:, :],
             control_means,
@@ -62,7 +62,7 @@ def build_mode_chance_constraints_fn(
 
 
 def build_mode_chance_constraints_scipy(
-    mode_opt_dynamics: ModeRLDynamics,
+    dynamics: ModeRLDynamics,
     start_state: ttf.Tensor2[Batch, StateDim],
     horizon: int = 10,
     control_dim: int = 1,
@@ -71,6 +71,10 @@ def build_mode_chance_constraints_scipy(
     compile: bool = True,
 ) -> NonlinearConstraint:
     constraints_fn = build_mode_chance_constraints_fn(
-        mode_opt_dynamics, start_state=start_state, horizon=horizon, control_dim=control_dim, compile=compile
+        dynamics,
+        start_state=start_state,
+        horizon=horizon,
+        control_dim=control_dim,
+        compile=compile,
     )
     return NonlinearConstraint(constraints_fn, lower_bound, upper_bound)

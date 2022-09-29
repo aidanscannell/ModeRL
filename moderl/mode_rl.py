@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from builtins import NotImplementedError
 import datetime
 import os
 from typing import Callable, List, Optional, Union
@@ -13,21 +14,12 @@ from gpflow import default_float
 # from gpflow.utilities.keras import try_array_except_none, try_val_except_none
 from tensor_annotations.axes import Batch
 
-from moderl.controllers import (
-    CONTROLLER_OBJECTS,
-    FeedbackController,
-    NonFeedbackController,
-)
+from moderl.controllers import ControllerInterface, ExplorativeController
 from moderl.custom_types import Dataset, StateDim
 from moderl.dynamics import ModeRLDynamics
-from moderl.rollouts import (
-    collect_data_from_env,
-    rollout_controller_in_dynamics,
-    rollout_controller_in_env,
-)
+from moderl.rollouts import collect_data_from_env
 
 Callback = Callable
-Controller = Union[FeedbackController, NonFeedbackController]
 
 
 def mode_rl_loop(
@@ -35,7 +27,7 @@ def mode_rl_loop(
     dynamics: ModeRLDynamics,
     # mode_controller: Controller,
     env: py_environment.PyEnvironment,
-    explorative_controller: Controller = None,
+    explorative_controller: ControllerInterface = None,
     desired_mode: int = 1,
     mode_satisfaction_probability: float = 0.7,  # Mode satisfaction probability (0, 1]
     # save_freq: Optional[Union[str, int]] = None,

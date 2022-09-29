@@ -3,7 +3,6 @@ from typing import Callable, List, Optional, Union
 
 import tensor_annotations.tensorflow as ttf
 import tensorflow as tf
-from geoflow.manifolds import GPManifold
 from gpflow import default_float
 from gpflow.models import GPModel
 from tensor_annotations.axes import Batch
@@ -16,7 +15,6 @@ from moderl.custom_types import (
     One,
     StateDim,
 )
-from moderl.utils import append_zero_control, combine_state_controls_to_input
 
 
 class CostFunction:
@@ -470,56 +468,56 @@ def terminal_state_cost_fn(
 #     )
 
 
-def riemannian_energy_cost_fn(
-    state_trajectory: ttf.Tensor2[HorizonPlusOne, StateDim],
-    control_trajectory: ttf.Tensor2[HorizonPlusOne, ControlDim],
-    manifold: GPManifold,
-    riemannian_metric_weight_matrix: float = 1.0,
-    state_trajectory_var: Optional[ttf.Tensor2[HorizonPlusOne, StateDim]] = None,
-    control_trajectory_var: Optional[ttf.Tensor2[HorizonPlusOne, ControlDim]] = None,
-    active_dims: Optional[List[int]] = None,
-):
-    # Append zeros to control trajectory
-    control_trajectory, control_trajectory_var = append_zero_control(
-        control_trajectory, control_trajectory_var
-    )
+# def riemannian_energy_cost_fn(
+#     state_trajectory: ttf.Tensor2[HorizonPlusOne, StateDim],
+#     control_trajectory: ttf.Tensor2[HorizonPlusOne, ControlDim],
+#     manifold: GPManifold,
+#     riemannian_metric_weight_matrix: float = 1.0,
+#     state_trajectory_var: Optional[ttf.Tensor2[HorizonPlusOne, StateDim]] = None,
+#     control_trajectory_var: Optional[ttf.Tensor2[HorizonPlusOne, ControlDim]] = None,
+#     active_dims: Optional[List[int]] = None,
+# ):
+#     # Append zeros to control trajectory
+#     control_trajectory, control_trajectory_var = append_zero_control(
+#         control_trajectory, control_trajectory_var
+#     )
 
-    # Calcualted the expeted metric at each point along trajectory
-    input_mean, input_var = combine_state_controls_to_input(
-        state_trajectory,
-        control_trajectory,
-        state_trajectory_var,
-        control_trajectory_var,
-    )
+#     # Calcualted the expeted metric at each point along trajectory
+#     input_mean, input_var = combine_state_controls_to_input(
+#         state_trajectory,
+#         control_trajectory,
+#         state_trajectory_var,
+#         control_trajectory_var,
+#     )
 
-    if isinstance(active_dims, slice):
-        input_mean = input_mean[..., active_dims]
-        input_var = input_var[..., active_dims]
-    elif active_dims is not None:
-        input_mean = tf.gather(input_mean, active_dims, axis=-1)
-        input_var = tf.gather(input_var, active_dims, axis=-1)
-    # print(manifold.metric(state_trajectory[:-1, :]))
-    # print(riemannian_metric_weight_matrix)
-    # input_mean = tf.concat([state_trajectory, control_trajectory], -1)
-    expected_riemannian_metric = (
-        manifold.metric(input_mean[:-1, :]) @ riemannian_metric_weight_matrix
-    )
+#     if isinstance(active_dims, slice):
+#         input_mean = input_mean[..., active_dims]
+#         input_var = input_var[..., active_dims]
+#     elif active_dims is not None:
+#         input_mean = tf.gather(input_mean, active_dims, axis=-1)
+#         input_var = tf.gather(input_var, active_dims, axis=-1)
+#     # print(manifold.metric(state_trajectory[:-1, :]))
+#     # print(riemannian_metric_weight_matrix)
+#     # input_mean = tf.concat([state_trajectory, control_trajectory], -1)
+#     expected_riemannian_metric = (
+#         manifold.metric(input_mean[:-1, :]) @ riemannian_metric_weight_matrix
+#     )
 
-    velocities = input_mean[1:, :] - input_mean[:-1, :]
-    if input_var is None:
-        velocities_var = None
-    else:
-        velocities_var = input_var[:-1, :]
-    # velocities_var = None
-    # if state_trajectory_var is not None and control_trajectory_var is not None:
-    #     input_var = tf.concat([state_trajectory_var, control_trajectory_var], -1)
-    #     # velocities_var = input_var[1:, :]
-    #     velocities_var = input_var[:-1, :]
+#     velocities = input_mean[1:, :] - input_mean[:-1, :]
+#     if input_var is None:
+#         velocities_var = None
+#     else:
+#         velocities_var = input_var[:-1, :]
+#     # velocities_var = None
+#     # if state_trajectory_var is not None and control_trajectory_var is not None:
+#     #     input_var = tf.concat([state_trajectory_var, control_trajectory_var], -1)
+#     #     # velocities_var = input_var[1:, :]
+#     #     velocities_var = input_var[:-1, :]
 
-    riemannian_energy = quadratic_cost_fn(
-        vector=velocities,
-        weight_matrix=expected_riemannian_metric,
-        vector_var=velocities_var,
-    )
-    riemannian_energy_sum = tf.reduce_sum(riemannian_energy)
-    return riemannian_energy_sum
+#     riemannian_energy = quadratic_cost_fn(
+#         vector=velocities,
+#         weight_matrix=expected_riemannian_metric,
+#         vector_var=velocities_var,
+#     )
+#     riemannian_energy_sum = tf.reduce_sum(riemannian_energy)
+#     return riemannian_energy_sum
