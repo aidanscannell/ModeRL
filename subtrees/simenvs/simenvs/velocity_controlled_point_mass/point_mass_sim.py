@@ -232,7 +232,7 @@ class VelocityControlledPointMass2DEnv(py_environment.PyEnvironment):
         else:
             var = self.high_process_noise_var
         cov = np.diag(var)
-        noise = sp.random.multivariate_normal(mean, cov)
+        noise = np.random.multivariate_normal(mean, cov)
         if gating_value == 1.0:
             noise += self.low_process_noise_mean
         else:

@@ -10,11 +10,15 @@ license = {text = "Apache-2.0"}
 readme = "README.md"
 requires-python = ">=3.7"
 dependencies = [
-    "numpy>=1.19.2",
+    "numpy",
     # "matplotlib",
-    "jax>=0.2.11",
-    "jaxlib>=0.1.57",
-    "tf-agents>=0.8.0",
+    "jax",
+    "jaxlib",
+    "tf-agents",
+    "toml",
+    "bunch",
+    "opencv-python",
+    "imageio",
 ]
 classifiers = [
     "Programming Language :: Python :: 3",
