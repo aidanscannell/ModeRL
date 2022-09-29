@@ -11,6 +11,8 @@ from gpflow.kernels import Kernel, MultioutputKernel
 from gpflow.mean_functions import MeanFunction
 from gpflow.models.model import GPModel
 
+from mosvgpe.keras.utils import try_array_except_none, try_val_except_none
+
 from .custom_types import (
     ExpertIndicatorCategoricalDist,
     GatingFunctionSamples,
@@ -236,6 +238,3 @@ class SVGPGatingNetwork(GPGatingNetworkBase):
             q_sqrt=try_array_except_none(cfg, "q_sqrt"),
             whiten=try_val_except_none(cfg, "whiten"),
         )
-
-
-GATING_NETWORK_OBJECTS = [SVGPGatingNetwork]

@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 from gpflow.kernels import RBF, Matern52, Matern32, Matern12
+import tensorflow as tf
 
 
-# class RBFSerializable(RBF, tf.keras.layers.Layer):
-class RBFSerializable(RBF):
+class RBFSerializable(RBF, tf.keras.layers.Layer):
+    # class RBFSerializable(RBF):
     def get_config(self):
         if isinstance(self.active_dims, slice):
             # TODO how to serialise slice?
@@ -18,12 +19,12 @@ class RBFSerializable(RBF):
         )
         return cfg
 
-    @classmethod
-    def from_config(cls, cfg: dict):
-        return cls(**cfg)
+    # @classmethod
+    # def from_config(cls, cfg: dict):
+    #     return cls(**cfg)
 
 
-class Matern52Serializable(Matern52):
+class Matern52Serializable(Matern52, tf.keras.layers.Layer):
     def get_config(self):
         if isinstance(self.active_dims, slice):
             # TODO how to serialise slice?
@@ -38,12 +39,12 @@ class Matern52Serializable(Matern52):
         )
         return cfg
 
-    @classmethod
-    def from_config(cls, cfg: dict):
-        return cls(**cfg)
+    # @classmethod
+    # def from_config(cls, cfg: dict):
+    #     return cls(**cfg)
 
 
-class Matern32Serializable(Matern52):
+class Matern32Serializable(Matern32, tf.keras.layers.Layer):
     def get_config(self):
         if isinstance(self.active_dims, slice):
             # TODO how to serialise slice?
@@ -58,12 +59,12 @@ class Matern32Serializable(Matern52):
         )
         return cfg
 
-    @classmethod
-    def from_config(cls, cfg: dict):
-        return cls(**cfg)
+    # @classmethod
+    # def from_config(cls, cfg: dict):
+    #     return cls(**cfg)
 
 
-class Matern12Serializable(Matern52):
+class Matern12Serializable(Matern12, tf.keras.layers.Layer):
     def get_config(self):
         if isinstance(self.active_dims, slice):
             # TODO how to serialise slice?
@@ -78,6 +79,6 @@ class Matern12Serializable(Matern52):
         )
         return cfg
 
-    @classmethod
-    def from_config(cls, cfg: dict):
-        return cls(**cfg)
+    # @classmethod
+    # def from_config(cls, cfg: dict):
+    #     return cls(**cfg)

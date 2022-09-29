@@ -3,6 +3,7 @@ import abc
 from typing import Optional, Union
 
 import gpflow as gpf
+from mosvgpe.keras.utils import try_array_except_none, try_val_except_none
 import tensor_annotations.tensorflow as ttf
 import tensorflow as tf
 import tensorflow_probability as tfp
@@ -12,6 +13,7 @@ from gpflow.kernels import Kernel
 from gpflow.likelihoods import Likelihood
 
 from mosvgpe.custom_types import InputData, MeanAndVariance, NumExperts
+from mosvgpe.keras.utils import try_array_except_none, try_val_except_none
 
 from .gp import predict_f_given_inducing_samples
 
@@ -255,6 +257,3 @@ class SVGPExpert(ExpertBase):
             q_sqrt=try_array_except_none(cfg, "q_sqrt"),
             whiten=try_val_except_none(cfg, "whiten"),
         )
-
-
-EXPERT_OBJECTS = [SVGPExpert]

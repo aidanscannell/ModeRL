@@ -4,8 +4,7 @@ import tensorflow as tf
 from gpflow.inducing_variables import InducingPoints
 
 
-# class InducingPointsSerializable(InducingPoints, tf.keras.layers.Layer):
-class InducingPointsSerializable(InducingPoints):
+class InducingPointsSerializable(InducingPoints, tf.keras.layers.Layer):
     def get_config(self) -> dict:
         return {"Z": self.Z.numpy()}
 

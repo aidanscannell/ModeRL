@@ -9,12 +9,14 @@ from gpflow import default_float
 from gpflow.models import BayesianModel
 
 from .custom_types import Dataset, DatasetBatch, InputData
-from .experts import EXPERT_OBJECTS, ExpertBase, SVGPExpert
+from .experts import ExpertBase, SVGPExpert
 from .gating_networks import (
-    GATING_NETWORK_OBJECTS,
     GatingNetworkBase,
     SVGPGatingNetwork,
 )
+from mosvgpe import GATING_NETWORK_OBJECTS, EXPERT_OBJECTS
+
+EXPERT_OBJECTS = {"SVGPExpert": SVGPExpert}
 
 tf.keras.backend.set_floatx("float64")
 tfd = tfp.distributions

@@ -3,8 +3,8 @@ from gpflow.likelihoods import Gaussian
 import tensorflow as tf
 
 
-# class GaussianSerializable(Gaussian, tf.keras.layers.Layer):
-class GaussianSerializable(Gaussian):
+class GaussianSerializable(Gaussian, tf.keras.layers.Layer):
+    # class GaussianSerializable(Gaussian):
     def get_config(self) -> dict:
         return {
             "variance": self.variance.numpy(),
