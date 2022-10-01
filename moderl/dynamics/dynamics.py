@@ -1,19 +1,15 @@
 #!/usr/bin/env python3
-from moderl.utils import save_json_config
-from typing import Optional, Union, List, Callable
-import numpy as np
+from typing import Callable, List, Optional, Union
 
-import gpflow as gpf
+import numpy as np
 import tensor_annotations.tensorflow as ttf
 import tensorflow as tf
 import tensorflow_probability as tfp
-from gpflow.conditionals import uncertain_conditional
 from gpflow.models import SVGP
 from gpflow.quadrature import NDiagGHQuadrature
-from moderl.custom_types import ControlDim, Dataset, StateDim, ControlTrajectory, One
-from moderl.utils import combine_state_controls_to_input
+from moderl.custom_types import ControlDim, Dataset, Horizon, StateDim
+from moderl.utils import combine_state_controls_to_input, save_json_config
 from mosvgpe.mixture_of_experts import MixtureOfSVGPExperts
-from mosvgpe.experts import SVGPExpert
 from tensor_annotations.axes import Batch
 
 from .svgp import SVGPDynamicsWrapper
@@ -136,32 +132,25 @@ class ModeRLDynamics(DynamicsInterface):
 
     def predict_mode_probability(
         self,
-        state_mean: ttf.Tensor2[Batch, StateDim],
-        control_mean: ttf.Tensor2[Batch, ControlDim],
-        state_var: ttf.Tensor2[Batch, StateDim] = None,
-        control_var: ttf.Tensor2[Batch, ControlDim] = None,
-    ):
-        h_mean, h_var = self.uncertain_predict_gating(
-            state_mean=state_mean,
-            control_mean=control_mean,
-            state_var=state_var,
-            control_var=control_var,
-        )
-
-        probs = self.mosvgpe.gating_network.predict_mixing_probs_given_h(h_mean, h_var)
-        if probs.shape[-1] == 1:
-            return probs
-        else:
-            return probs[:, self.desired_mode]
+        state: Union[tfd.Normal, tfd.Deterministic],  # [horizon, control_dim]
+        control: Union[tfd.Normal, tfd.Deterministic],  # [horizon, control_dim]
+    ) -> ttf.Tensor1[Horizon]:
+        h_mean, h_var = self.uncertain_predict_gating(state=state, control=control)
+        input_dists = combine_state_controls_to_input(state=state, control=control)
+        probs, _ = self.desired_mode_gating_gp.likelihood.predict_mean_and_var(
+            input_dists.mean(), h_mean, h_var
+        )  # [N, K]
+        return probs[:, self.desired_mode]
+        # probs = self.mosvgpe.gating_network.predict_mixing_probs_given_h(h_mean, h_var)
+        # if probs.shape[-1] == 1:
+        #     return probs
+        # else:
+        #     return probs[:, self.desired_mode]
 
     def uncertain_predict_gating(
         self,
         state: Union[tfd.Normal, tfd.Deterministic],
         control: Union[tfd.Normal, tfd.Deterministic],
-        # state_mean: ttf.Tensor2[Batch, StateDim],
-        # control_mean: ttf.Tensor2[Batch, ControlDim],
-        # state_var: ttf.Tensor2[Batch, StateDim] = None,
-        # control_var: ttf.Tensor2[Batch, ControlDim] = None,
     ):
         # TODO make this handle softmax likelihood (k>2). Just need to map over gps
         input_dists = combine_state_controls_to_input(state=state, control=control)

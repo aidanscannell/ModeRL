@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-from builtins import NotImplementedError
 import datetime
 import os
+from builtins import NotImplementedError
 from typing import Callable, List, Optional, Union
 
-from tf_agents.environments import py_environment
 import numpy as np
 import simenvs
 import tensor_annotations.tensorflow as ttf
@@ -13,6 +12,7 @@ from gpflow import default_float
 
 # from gpflow.utilities.keras import try_array_except_none, try_val_except_none
 from tensor_annotations.axes import Batch
+from tf_agents.environments import py_environment
 
 from moderl.controllers import ControllerInterface, ExplorativeController
 from moderl.custom_types import Dataset, StateDim

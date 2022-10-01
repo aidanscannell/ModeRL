@@ -1,3 +1,3 @@
 #!/usr/bin/env python3
-from .controller import ControllerInterface
+from .base import ControllerInterface, TrajectoryOptimisationController
 from .explorative_controller import ExplorativeController

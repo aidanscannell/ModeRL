@@ -14,10 +14,6 @@ tfd = tfp.distributions
 def combine_state_controls_to_input(
     state: tfd.Normal, control: tfd.Normal
 ) -> Union[tfd.Deterministic, tfd.Normal]:
-    print("state")
-    print(state)
-    print("control")
-    print(control)
     assert len(state.mean().shape) == 2
     assert len(control.mean().shape) == 2
     input_mean = tf.concat([state.mean(), control.mean()], -1)

@@ -10,7 +10,7 @@ from gpflow import default_float
 from tensor_annotations import axes
 from tensor_annotations.axes import Batch
 from moderl.controllers import ControllerInterface
-from moderl.controllers.explorative_controller import ExplorativeController
+from moderl.controllers.base import TrajectoryOptimisationController
 
 from tf_agents.environments import py_environment
 
@@ -33,37 +33,44 @@ tfd = tfp.distributions
 def rollout_trajectory_optimisation_controller_in_env(
     env: py_environment.PyEnvironment,
     start_state: ttf.Tensor2[Batch, StateDim],
-    controller: ExplorativeController,
-    # TODO change ExplorativeController to TrajectoryOptimisationController
+    controller: TrajectoryOptimisationController,
 ) -> ttf.Tensor2[HorizonPlusOne, StateDim]:
     """Rollout ExplorativeController in environment"""
     states = tf.identity(start_state)
-    controls = controller()
+    # controls = controller()
     env.state_init = states
     env.reset()
-    horizon = controls.shape[0]
 
-    for t in range(horizon):
-        next_time_step = env.step(controls[t])
+    for t in range(controller.horizon):
+        # next_time_step = env.step(controls[t])
+        next_time_step = env.step(controller(timestep=t))
         states = tf.concat([states, next_time_step.observation], axis=0)
     return tf.stack(states)
 
 
-def rollout_ExplorativeController_in_ModeRLDynamics(
+# def rollout_ExplorativeController_in_ModeRLDynamics(
+#     dynamics: ModeRLDynamics,
+#     controller: ExplorativeController,
+#     start_state: ttf.Tensor2[One, StateDim],  # [1, StateDim]
+# ) -> tfd.Distribution:  # [Horizon, StateDim]
+#     """Rollout a ControlTrajectory in dynamics"""
+#     # if not isinstance(control_trajectory, ControlTrajectory):
+#     if not isinstance(controller, ExplorativeController):
+#         raise NotImplementedError
+#     control_trajectory = controller()
+#     return rollout_ControlTrajectory_in_ModeRLDynamics(
+#         dynamics=dynamics,
+#         control_trajectory=control_trajectory,
+#         start_state=start_state,
+#     )
+
+
+def rollout_ControlTrajectory_in_ModeRLDynamics(
     dynamics: ModeRLDynamics,
-    controller: ExplorativeController,
+    control_trajectory: ControlTrajectory,
     start_state: ttf.Tensor2[One, StateDim],  # [1, StateDim]
 ) -> tfd.Distribution:  # [Horizon, StateDim]
     """Rollout a ControlTrajectory in dynamics"""
-    # if not isinstance(control_trajectory, ControlTrajectory):
-    if not isinstance(controller, ExplorativeController):
-        raise NotImplementedError
-    control_trajectory = controller()
-    # if not isinstance(start_state, tfd.Distribution):
-    #     raise NotImplementedError
-    # state_dists = [start_state]
-    # print("start_state.shape")
-    # print(start_state.shape)
     state_dist = tfd.Normal(loc=start_state, scale=0.0)
     state_means = state_dist.mean()
     state_vars = state_dist.variance()
