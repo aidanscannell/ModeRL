@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 import cv2
-
 import numpy as np
 import scipy as sp
+import tensorflow as tf
 from tf_agents.environments import (
     py_environment,
     tf_environment,
@@ -11,7 +11,6 @@ from tf_agents.environments import (
 )
 from tf_agents.specs import array_spec
 from tf_agents.trajectories import time_step as ts
-
 
 float_type = np.float64
 
@@ -201,7 +200,7 @@ class VelocityControlledPointMass2DEnv(py_environment.PyEnvironment):
         # print(delta_state.shape)
         # print(self._state.shape)
         self._state += delta_state
-        reward = 0
+        reward = tf.identity(0.0)
         # self._episode_ended = True  # remove this when term conds added
         if np.any(self._state > self.observation_spec().maximum):
             self._episode_ended = True
