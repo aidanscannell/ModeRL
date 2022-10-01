@@ -130,7 +130,7 @@ def run_experiment(cfg: omegaconf.DictConfig):
     ###### Instantiate dynamics model and sample inducing inputs data ######
     # dynamics = hydra.utils.instantiate(cfg.dynamics)
     load_dir = None
-    load_dir = "./wandb/run-20220930_175126-ypt87ynr/files/saved-models/dynamics-after-training-on-dataset-0-config.json"
+    load_dir = "./wandb/run-20221001_173609-bmsqn5dj/files/saved-models/dynamics-after-training-on-dataset-0-config.json"
     if load_dir is not None:
         ###### Try to load trained dynamics model  ######
         dynamics = ModeRLDynamics.load(load_dir)
@@ -184,6 +184,7 @@ def run_experiment(cfg: omegaconf.DictConfig):
         horizon=cfg.explorative_controller.horizon,
         max_iterations=cfg.explorative_controller.max_iterations,
         mode_satisfaction_prob=cfg.explorative_controller.mode_satisfaction_prob,
+        exploration_weight=cfg.explorative_controller.exploration_weight,
         keep_last_solution=cfg.explorative_controller.keep_last_solution,
         callback=None,
         method=cfg.explorative_controller.method,

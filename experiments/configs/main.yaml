@@ -48,6 +48,7 @@ explorative_controller:
   horizon: 10
   max_iterations: 100
   mode_satisfaction_prob: 0.8
+  exploration_weight: 10.0
   keep_last_solution: true
   method: "SLSQP"
 
