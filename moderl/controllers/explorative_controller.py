@@ -60,10 +60,8 @@ class ExplorativeController(TrajectoryOptimisationController):
             )
             return -exploration_cost + cost_fn(
                 # return cost_fn(
-                state_dists.mean(),
-                control_dists.mean(),
-                state_dists.variance(),
-                control_dists.variance(),
+                state=state_dists,
+                control=control_dists,
             )
 
         initial_solution = find_solution_in_desired_mode(

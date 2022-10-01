@@ -38,12 +38,7 @@ def find_solution_in_desired_mode(
             start_state=start_state,
         )
         control_dists = initial_solution()
-        return cost_fn(
-            state_dists.mean(),
-            control_dists.mean(),
-            state_dists.variance(),
-            control_dists.variance(),
-        )
+        return cost_fn(state=state_dists, control=control_dists)
 
     trajectory_optimiser = TrajectoryOptimiser(
         max_iterations=1000,

@@ -1,37 +1,27 @@
 #!/usr/bin/env python3
-from typing import Callable, List, Optional, Union
 import abc
+from typing import Callable, Optional, Union
 
 import tensor_annotations.tensorflow as ttf
 import tensorflow as tf
+import tensorflow_probability as tfp
 from gpflow import default_float
-from gpflow.models import GPModel
 from tensor_annotations.axes import Batch
 
-from moderl.custom_types import (
-    ControlDim,
-    Horizon,
-    HorizonPlusOne,
-    InputDim,
-    One,
-    StateDim,
-)
+from moderl.custom_types import Horizon, HorizonPlusOne, InputDim, One, StateDim
+
+tfd = tfp.distributions
 
 
 class CostFunction(abc.ABC):
-    """Base cost function class.
-
-    To implement a mean function, write the __call__ method.
-    """
+    """Base cost function class."""
 
     @abc.abstractmethod
     def __call__(
         self,
-        state: ttf.Tensor2[HorizonPlusOne, StateDim],
-        control: ttf.Tensor2[Horizon, ControlDim],
-        state_var: Optional[ttf.Tensor2[HorizonPlusOne, StateDim]] = None,
-        control_var: Optional[ttf.Tensor2[Horizon, ControlDim]] = None,
-    ):
+        state: Union[tfd.Normal, tfd.Deterministic],  # [Horizon, StateDim]
+        control: Union[tfd.Normal, tfd.Deterministic],  # [Horizon, ControlDim]
+    ) -> ttf.Tensor0:
         """Expected cost func under Normally distributed states and controls
 
         E[ c(x_T, u_T) ] = \mu_{e_T}^T H \mu_{e_T} + tr(H \Sigma_{e_T})
@@ -39,12 +29,6 @@ class CostFunction(abc.ABC):
             e = x_T - target_state ~ N(\mu_e, \Sigma_e)
             x ~ N(\mu_x, \Sigma_x)
             T is final time step
-
-        :param state: Tensor representing a state trajectory
-        :param control: Tensor representing control trajectory
-        :param state_var: Tensor representing the variance over state trajectory
-        :param control_var: Tensor representing control trajectory
-        :returns: scalar cost
         """
         raise NotImplementedError(
             "Implement the __call__ method for this cost function"
@@ -70,35 +54,21 @@ class Additive(CostFunction):
 
     def __call__(
         self,
-        state: ttf.Tensor2[HorizonPlusOne, StateDim],
-        control: ttf.Tensor2[Horizon, ControlDim],
-        state_var: Optional[ttf.Tensor2[HorizonPlusOne, StateDim]] = None,
-        control_var: Optional[ttf.Tensor2[Horizon, ControlDim]] = None,
-    ):
+        state: Union[tfd.Normal, tfd.Deterministic],  # [Horizon, StateDim]
+        control: Union[tfd.Normal, tfd.Deterministic],  # [Horizon, ControlDim]
+    ) -> ttf.Tensor0:
         return tf.add(
-            self.add_1(
-                state=state,
-                control=control,
-                state_var=state_var,
-                control_var=control_var,
-            ),
-            self.add_2(
-                state=state,
-                control=control,
-                state_var=state_var,
-                control_var=control_var,
-            ),
+            self.add_1(state=state, control=control),
+            self.add_2(state=state, control=control),
         )
 
 
 class ZeroCostFunction(CostFunction):
     def __call__(
         self,
-        state: ttf.Tensor2[HorizonPlusOne, StateDim],
-        control: ttf.Tensor2[Horizon, ControlDim],
-        state_var: Optional[ttf.Tensor2[HorizonPlusOne, StateDim]] = None,
-        control_var: Optional[ttf.Tensor2[Horizon, ControlDim]] = None,
-    ):
+        state: Union[tfd.Normal, tfd.Deterministic],  # [Horizon, StateDim]
+        control: Union[tfd.Normal, tfd.Deterministic],  # [Horizon, ControlDim]
+    ) -> ttf.Tensor0:
         return tf.constant(0.0, dtype=default_float())
 
 
@@ -114,34 +84,24 @@ class StateQuadraticCostFunction(CostFunction):
 
     def __call__(
         self,
-        state: ttf.Tensor2[HorizonPlusOne, StateDim],
-        control: ttf.Tensor2[Horizon, ControlDim],
-        state_var: Optional[ttf.Tensor2[HorizonPlusOne, StateDim]] = None,
-        control_var: Optional[ttf.Tensor2[Horizon, ControlDim]] = None,
-    ):
+        state: Union[tfd.Normal, tfd.Deterministic],  # [Horizon, StateDim]
+        control: Union[tfd.Normal, tfd.Deterministic],  # [Horizon, ControlDim]
+    ) -> ttf.Tensor0:
         """Expected quadratic integral state cost func
 
         E[ \Sum_{t=0}^{T-1} c(x_t, u_t) ] = \mu_{x_t}^T Q \mu_{x_t} + tr(Q \Sigma_{x_t})
 
         with:
             x ~ N(\mu_x, \Sigma_x)
-
-        :param state: Tensor representing a state trajectory
-        :param control: Tensor representing control trajectory
-        :param state_var: Tensor representing the variance over state trajectory
-        :param control_var: Tensor representing control trajectory
-        :returns: scalar cost
         """
-        if state_var is None:
+        if isinstance(state, tfd.Deterministic):
             vector_var = None
         else:
-            vector_var = state_var[:-1, :]
+            vector_var = state.variance()[:-1, :]
         state_costs = quadratic_cost_fn(
             vector=state[:-1, :],
-            # vector=state,
             weight_matrix=self.weight_matrix,
             vector_var=vector_var,
-            # vector_var=state_var,
         )
         return tf.reduce_sum(state_costs)
 
@@ -160,28 +120,20 @@ class ControlQuadraticCostFunction(CostFunction):
 
     def __call__(
         self,
-        state: ttf.Tensor2[HorizonPlusOne, StateDim],
-        control: ttf.Tensor2[Horizon, ControlDim],
-        state_var: Optional[ttf.Tensor2[HorizonPlusOne, StateDim]] = None,
-        control_var: Optional[ttf.Tensor2[Horizon, ControlDim]] = None,
-    ):
+        state: Union[tfd.Normal, tfd.Deterministic],  # [Horizon, StateDim]
+        control: Union[tfd.Normal, tfd.Deterministic],  # [Horizon, ControlDim]
+    ) -> ttf.Tensor0:
         """Expected quadratic integral control cost func
 
         E[ \Sum_{t=0}^{T-1} c(x_t, u_t) ] = \mu_{u_t}^T R \mu_{u_t} + tr(R \Sigma_{u_t})
 
         with:
             u ~ N(\mu_u, \Sigma_u)
-
-        :param state: Tensor representing a state trajectory
-        :param control: Tensor representing control trajectory
-        :param state_var: Tensor representing the variance over state trajectory
-        :param control_var: Tensor representing control trajectory
-        :returns: scalar cost
         """
         control_costs = quadratic_cost_fn(
-            vector=control,
+            vector=control.mean(),
             weight_matrix=self.weight_matrix,
-            vector_var=control_var,
+            vector_var=control.variance(),
         )
         return tf.reduce_sum(control_costs)
 
@@ -200,11 +152,9 @@ class TargetStateCostFunction(CostFunction):
 
     def __call__(
         self,
-        state: ttf.Tensor2[HorizonPlusOne, StateDim],
-        control: ttf.Tensor2[Horizon, ControlDim],
-        state_var: Optional[ttf.Tensor2[HorizonPlusOne, StateDim]] = None,
-        control_var: Optional[ttf.Tensor2[Horizon, ControlDim]] = None,
-    ):
+        state: Union[tfd.Normal, tfd.Deterministic],  # [Horizon, StateDim]
+        control: Union[tfd.Normal, tfd.Deterministic],  # [Horizon, ControlDim]
+    ) -> ttf.Tensor0:
         """Expected quadratic terminal state cost func
 
         E[ c(x_T, u_T) ] = \mu_{e_T}^T H \mu_{e_T} + tr(H \Sigma_{e_T})
@@ -213,27 +163,18 @@ class TargetStateCostFunction(CostFunction):
             e = x_T - target_state ~ N(\mu_e, \Sigma_e)
             x ~ N(\mu_x, \Sigma_x)
             T is final time step
-
-        :param state: Tensor representing a state trajectory
-        :param control: Tensor representing control trajectory
-        :param state_var: Tensor representing the variance over state trajectory
-        :param control_var: Tensor representing control trajectory
-        :returns: scalar cost
         """
-        error = state[-1:, :] - self.target_state
-        # error = state - self.target_state
-        if state_var is None:
+        error = state.mean()[-1:, :] - self.target_state
+        if isinstance(state, tfd.Deterministic):
             terminal_state_var = None
         else:
-            terminal_state_var = state_var[-1:, :]
+            terminal_state_var = state.variance()[-1:, :]
         terminal_cost = quadratic_cost_fn(
             vector=error,
             weight_matrix=self.weight_matrix,
             vector_var=terminal_state_var,
-            # vector_var=state_var,
         )
         return terminal_cost
-        # return terminal_cost[0]
 
     def get_config(self) -> dict:
         return {
@@ -253,25 +194,16 @@ class StateDiffCostFunction(CostFunction):
 
     def __call__(
         self,
-        state: ttf.Tensor2[HorizonPlusOne, StateDim],
-        control: ttf.Tensor2[Horizon, ControlDim],
-        state_var: Optional[ttf.Tensor2[HorizonPlusOne, StateDim]] = None,
-        control_var: Optional[ttf.Tensor2[Horizon, ControlDim]] = None,
-    ):
-        """Expected quadratic state diff cost func
-
-        :param state: Tensor representing a state trajectory
-        :param control: Tensor representing control trajectory
-        :param state_var: Tensor representing the variance over state trajectory
-        :param control_var: Tensor representing control trajectory
-        :returns: scalar cost
-        """
-        state_diffs = state[1:, :] - self.target_state
+        state: Union[tfd.Normal, tfd.Deterministic],  # [Horizon, StateDim]
+        control: Union[tfd.Normal, tfd.Deterministic],  # [Horizon, ControlDim]
+    ) -> ttf.Tensor0:
+        """Expected quadratic state diff cost func"""
+        state_diffs = state.mean()[1:, :] - self.target_state
         # state_diffs = state[1:-1, :] - self.target_state
         state_diffs_cost = quadratic_cost_fn(
             vector=state_diffs,
             weight_matrix=self.weight_matrix,
-            vector_var=state_var,
+            vector_var=state.variance(),
         )
         return tf.reduce_sum(state_diffs_cost)
 
@@ -295,21 +227,19 @@ class ModeProbCostFunction(CostFunction):
 
     def __call__(
         self,
-        state: ttf.Tensor2[HorizonPlusOne, StateDim],
-        control: ttf.Tensor2[Horizon, ControlDim],
-        state_var: Optional[ttf.Tensor2[HorizonPlusOne, StateDim]] = None,
-        control_var: Optional[ttf.Tensor2[Horizon, ControlDim]] = None,
-    ):
-        if state_var is None:
+        state: Union[tfd.Normal, tfd.Deterministic],  # [Horizon, StateDim]
+        control: Union[tfd.Normal, tfd.Deterministic],  # [Horizon, ControlDim]
+    ) -> ttf.Tensor0:
+        if isinstance(state, tfd.Deterministic):
             state_var = None
         else:
-            state_var = state_var[:-1, :]
+            state_var = state.variance()[:-1, :]
 
         probs = self.prob_fn(
             state_mean=state[:-1, :],
             control_mean=control,
             state_var=state_var,
-            control_var=control_var,
+            control_var=control.variance(),
         )
         negative_probs = -probs * self.weight
         return tf.reduce_sum(negative_probs)
