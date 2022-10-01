@@ -1,6 +1,6 @@
 defaults:
   - initial_dataset: default
-  - cost_fn: target_control
+  - cost_fn: state_diff_control
   # disable logging by Hydra
   - override hydra/job_logging: none
   - override hydra/hydra_logging: none
