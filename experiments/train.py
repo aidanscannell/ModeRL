@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import os
-
 from typing import Callable, List, Optional
 
 import gpflow as gpf
@@ -14,10 +13,12 @@ import simenvs
 # import tensor_annotations.tensorflow as ttf
 import tensorflow as tf
 from gpflow import default_float, inducing_variables
+from experiments.plot.controller import build_controller_plotting_callback
 from moderl import dynamics
 from moderl.controllers import ControllerInterface, ExplorativeController
 from moderl.custom_types import Batch, InputData, One, StateDim
 from moderl.dynamics import ModeRLDynamics
+from moderl.objectives import joint_gating_function_entropy
 from tf_agents.environments import py_environment
 from wandb.keras import WandbCallback
 
@@ -128,48 +129,56 @@ def run_experiment(cfg: omegaconf.DictConfig):
 
     ###### Instantiate dynamics model and sample inducing inputs data ######
     # dynamics = hydra.utils.instantiate(cfg.dynamics)
-    dynamics = model_from_DictConfig(
-        cfg.dynamics, custom_objects={"ModeRLDynamics": ModeRLDynamics}
-    )
-    print("dynamics")
-    print(dynamics)
-    # dynamics.dynamics_fit_kwargs.update({"epochs": initial_num_epochs, "batch_size": batch_size, "validation_split": 0.2})
-    sample_mosvgpe_inducing_inputs_from_data(
-        model=dynamics.mosvgpe, X=initial_dataset[0]
-    )
-    gpf.utilities.set_trainable(dynamics.mosvgpe.gating_network.gp.kernel, False)
-    # gpf.utilities.print_summary(dynamics)
-
-    ###### Build the dynamics model ######
-    dynamics.mosvgpe(initial_dataset[0])
-    dynamics.desired_mode = set_desired_mode(dynamics)
-    dynamics(initial_dataset[0])
-    dynamics.save(
-        os.path.join(log_dir, "saved-models/dynamics-before-training-config.json")
-    )
-
-    ###### Train dynamics on initial_dataset and update desired mode ######
-    dynamics.update_dataset(initial_dataset)
-    dynamics.callbacks = dynamics_callbacks(
-        dynamics, logging_epoch_freq=cfg.logging_epoch_freq
-    )
-    dynamics.optimise()
-
-    ###### Set the desired mode and save ######
-    dynamics.desired_mode = set_desired_mode(dynamics)
-    dynamics.save(
-        os.path.join(
-            log_dir, "saved-models/dynamics-after-training-on-dataset-0-config.json"
+    load_dir = None
+    load_dir = "./wandb/run-20220930_175126-ypt87ynr/files/saved-models/dynamics-after-training-on-dataset-0-config.json"
+    if load_dir is not None:
+        ###### Try to load trained dynamics model  ######
+        dynamics = ModeRLDynamics.load(load_dir)
+    else:
+        dynamics = model_from_DictConfig(
+            cfg.dynamics, custom_objects={"ModeRLDynamics": ModeRLDynamics}
         )
-    )
+        print("dynamics")
+        print(dynamics)
+        # dynamics.dynamics_fit_kwargs.update({"epochs": initial_num_epochs, "batch_size": batch_size, "validation_split": 0.2})
+        sample_mosvgpe_inducing_inputs_from_data(
+            model=dynamics.mosvgpe, X=initial_dataset[0]
+        )
+        gpf.utilities.set_trainable(dynamics.mosvgpe.gating_network.gp.kernel, False)
+        # gpf.utilities.print_summary(dynamics)
 
+        ###### Build the dynamics model ######
+        dynamics.mosvgpe(initial_dataset[0])
+        dynamics.desired_mode = set_desired_mode(dynamics)
+        dynamics(initial_dataset[0])
+        dynamics.save(
+            os.path.join(log_dir, "saved-models/dynamics-before-training-config.json")
+        )
+
+        ###### Train dynamics on initial_dataset and update desired mode ######
+        dynamics.update_dataset(initial_dataset)
+        dynamics.callbacks = dynamics_callbacks(
+            dynamics, logging_epoch_freq=cfg.logging_epoch_freq
+        )
+        dynamics.optimise()
+
+        # ###### Set the desired mode and save ######
+        dynamics.desired_mode = set_desired_mode(dynamics)
+        dynamics.save(
+            os.path.join(
+                log_dir, "saved-models/dynamics-after-training-on-dataset-0-config.json"
+            )
+        )
+
+    # dynamics.desired_mode = set_desired_mode(dynamics)
+    explorative_objective_fn = joint_gating_function_entropy
     ###### Build greedy cost function ######
     cost_fn = hydra.utils.instantiate(cfg.cost_fn)
     ###### Configure the explorative controller (wraps cost_fn in the explorative objective) ######
-    # explorative_controller_callback=None
     explorative_controller = ExplorativeController(
         start_state=start_state,
         dynamics=dynamics,
+        explorative_objective_fn=explorative_objective_fn,
         cost_fn=cost_fn,
         control_dim=env.action_spec().shape[0],
         horizon=cfg.explorative_controller.horizon,
@@ -179,8 +188,13 @@ def run_experiment(cfg: omegaconf.DictConfig):
         callback=None,
         method=cfg.explorative_controller.method,
     )
-    # print("explorative_controller")
-    # print(explorative_controller)
+    explorative_controller.callback = build_controller_plotting_callback(
+        env=env,
+        controller=explorative_controller,
+        target_state=target_state,
+        logging_epoch_freq=1,
+    )
+    explorative_controller.optimise()
 
     # # Run the mbrl loop
     # mode_rl_loop(
