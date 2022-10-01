@@ -23,7 +23,13 @@ from tf_agents.environments import py_environment
 from wandb.keras import WandbCallback
 
 import wandb
+from experiments.plot.utils import create_test_inputs
 from experiments.plot.dynamics import build_plotting_callbacks
+from experiments.plot.controller import (
+    plot_trajectories_over_desired_gating_gp,
+    plot_trajectories_over_desired_mixing_prob,
+)
+from moderl.rollouts import collect_data_from_env
 from experiments.utils import (
     model_from_DictConfig,
     sample_env_trajectories,
@@ -95,6 +101,46 @@ def sample_inducing_inputs_from_X(
     return X[idx, ...].reshape(-1, X.shape[1])
 
 
+def mode_rl_loop(
+    dynamics: ModeRLDynamics,
+    env: py_environment.PyEnvironment,
+    explorative_controller: ControllerInterface,
+    # save_freq: Optional[Union[str, int]] = None,
+    # log_dir: str = "./",
+    # max_to_keep: int = None,
+    callback: Callable[[], None],
+    num_explorative_trajectories: int = 6,
+    num_episodes: int = 30,
+):
+    # if isinstance(explorative_controller.start_state, tf.Tensor):
+    #     start_state = explorative_controller.start_state.numpy()
+    converged = False
+    for i in range(num_episodes):
+
+        opt_result = explorative_controller.optimise()
+        callback()
+        if converged:
+            # TODO implement check for convergence
+            break
+
+        X, Y = [], []
+        for _ in range(num_explorative_trajectories):
+            X_, Y_ = collect_data_from_env(
+                env=env,
+                start_state=explorative_controller.start_state,
+                controls=explorative_controller(),
+            )
+            X.append(X_)
+            Y.append(Y_)
+        X = np.concatenate(X, 0)
+        Y = np.concatenate(Y, 0)
+        new_dataset = (X, Y)
+
+        # new_data = self.explore_env()
+        dynamics.update_dataset(new_dataset)
+        dynamics.optimise()
+
+
 @hydra.main(config_path="configs", config_name="main")
 def run_experiment(cfg: omegaconf.DictConfig):
     tf.keras.utils.set_random_seed(cfg.random_seed)
@@ -130,10 +176,14 @@ def run_experiment(cfg: omegaconf.DictConfig):
     ###### Instantiate dynamics model and sample inducing inputs data ######
     # dynamics = hydra.utils.instantiate(cfg.dynamics)
     load_dir = None
-    load_dir = "./wandb/run-20221001_173609-bmsqn5dj/files/saved-models/dynamics-after-training-on-dataset-0-config.json"
+    # load_dir = "./wandb/run-20221001_173609-bmsqn5dj/files/saved-models/dynamics-after-training-on-dataset-0-config.json"
     if load_dir is not None:
         ###### Try to load trained dynamics model  ######
         dynamics = ModeRLDynamics.load(load_dir)
+        dynamics.callbacks = dynamics_callbacks(
+            dynamics, logging_epoch_freq=cfg.logging_epoch_freq
+        )
+        gpf.utilities.set_trainable(dynamics.mosvgpe.gating_network.gp.kernel, False)
     else:
         dynamics = model_from_DictConfig(
             cfg.dynamics, custom_objects={"ModeRLDynamics": ModeRLDynamics}
@@ -189,23 +239,54 @@ def run_experiment(cfg: omegaconf.DictConfig):
         callback=None,
         method=cfg.explorative_controller.method,
     )
-    explorative_controller.callback = build_controller_plotting_callback(
-        env=env,
-        controller=explorative_controller,
-        target_state=target_state,
-        logging_epoch_freq=1,
-    )
-    explorative_controller.optimise()
-
-    # # Run the mbrl loop
-    # mode_rl_loop(
-    #     start_state=start_state,
-    #     dynamics=dynamics,
+    # explorative_controller.callback = build_controller_plotting_callback(
     #     env=env,
-    #     explorative_controller=explorative_controller,
-    #     # mode_satisfaction_probability=cfg.mode_satisfaction_prob,
-    #     num_explorative_trajectories=cfg.num_explorative_trajectories,
+    #     controller=explorative_controller,
+    #     target_state=target_state,
+    #     logging_epoch_freq=10,
     # )
+    # explorative_controller.optimise()
+
+    # Plot final trajectory
+    test_inputs = create_test_inputs(40000)
+    # fig = plot_trajectories_over_desired_mixing_prob(
+    #     env,
+    #     controller=explorative_controller,
+    #     test_inputs=test_inputs,
+    #     target_state=target_state,
+    # )
+    # wandb.log({"Final traj over desired mixing prob": wandb.Image(fig)})
+    # fig = plot_trajectories_over_desired_gating_gp(
+    #     env,
+    #     controller=explorative_controller,
+    #     test_inputs=test_inputs,
+    #     target_state=target_state,
+    # )
+    # wandb.log({"Final traj over desired gating gp": wandb.Image(fig)})
+    def callback():
+        fig = plot_trajectories_over_desired_mixing_prob(
+            env,
+            controller=explorative_controller,
+            test_inputs=test_inputs,
+            target_state=target_state,
+        )
+        wandb.log({"Final traj over desired mixing prob": wandb.Image(fig)})
+        fig = plot_trajectories_over_desired_gating_gp(
+            env,
+            controller=explorative_controller,
+            test_inputs=test_inputs,
+            target_state=target_state,
+        )
+        wandb.log({"Final traj over desired gating gp": wandb.Image(fig)})
+
+    # Run the mbrl loop
+    mode_rl_loop(
+        dynamics=dynamics,
+        env=env,
+        explorative_controller=explorative_controller,
+        callback=callback,
+        num_explorative_trajectories=cfg.num_explorative_trajectories,
+    )
 
 
 if __name__ == "__main__":
