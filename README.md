@@ -7,6 +7,10 @@ For example, this may be desirable behaviour if some of the dynamics modes are b
 It then make decisions under the uncertainty of the learned dynamics model.
 
 ## Using git subtrees
+I use git subtrees to manage dependencies on my own packages. In particular, my Mixture of Sparse Variational Gaussian 
+Process Experts package [mosvgpe](https://github.com/aidanscannell/mosvgpe) and my simulation environments 
+package [simenvs](https://github.com/aidanscannell/simenvs).
+
 If I make changes to [https://github.com/aidanscannell/mosvgpe](https://github.com/aidanscannell/mosvgpe) I can pull them using,
 ```
 git subtree pull --prefix=subtrees/mosvgpe mosvgpe-subtree master
