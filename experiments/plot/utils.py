@@ -38,8 +38,8 @@ colors = ["m", "c", "y"]
 
 def create_test_inputs(num_test: int = 400):
     sqrtN = int(np.sqrt(num_test))
-    xx = np.linspace(-3, 3, sqrtN)
-    yy = np.linspace(-3, 3, sqrtN)
+    xx = np.linspace(-4, 4, sqrtN)
+    yy = np.linspace(-4, 4, sqrtN)
     xx, yy = np.meshgrid(xx, yy)
     test_inputs = np.column_stack([xx.reshape(-1), yy.reshape(-1)])
     zeros = np.zeros((num_test, 2))

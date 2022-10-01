@@ -56,6 +56,7 @@ def plot_gating_network_gps(dynamics: ModeRLDynamics, test_inputs: InputData):
         plot_contf(axs[k, 1], test_inputs, z=var[:, k])
         # plot_contf(axs[1], test_inputs, z=var[:, dynamics.desired_mode], label=label)
     # axs[-1].legend()
+    fig.tight_layout()
     return fig
 
 
@@ -66,6 +67,7 @@ def plot_mixing_probs(dynamics: ModeRLDynamics, test_inputs: InputData):
     probs = dynamics.mosvgpe.gating_network.predict_mixing_probs(test_inputs)
     for k in range(dynamics.mosvgpe.num_experts):
         plot_contf(axs[k], test_inputs, z=probs[:, k])
+    fig.tight_layout()
     return fig
 
 

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from collections import OrderedDict
 from typing import Callable, List, Optional
 
 import matplotlib
@@ -10,20 +11,13 @@ import simenvs
 import tensorflow as tf
 import tikzplotlib
 import wandb
-from experiments.plot.dynamics import plot_gating_network_gps
-from experiments.plot.utils import (
-    PlottingCallback,
-    create_test_inputs,
-    plot_contf,
-    plot_desired_mixing_prob,
-)
+from experiments.plot.utils import create_test_inputs, plot_contf
 from matplotlib import patches
 from moderl.controllers import ControllerInterface, ExplorativeController
 from moderl.custom_types import InputData, State
 from moderl.dynamics import ModeRLDynamics
 from moderl.dynamics.dynamics import ModeRLDynamics
 from moderl.rollouts import rollout_trajectory_optimisation_controller_in_env
-
 
 LABELS = {"env": "Environment", "dynamics": "Dynamics"}
 COLORS = {"env": "c", "dynamics": "m"}
@@ -57,6 +51,21 @@ def plot_trajectories_over_desired_mixing_prob(
     probs = controller.dynamics.mosvgpe.gating_network.predict_mixing_probs(test_inputs)
     plot_contf(ax, test_inputs, z=probs[:, controller.dynamics.desired_mode])
     plot_trajectories(ax, env, controller=controller, target_state=target_state)
+    plot_env(ax, env=env, test_inputs=test_inputs)
+    plot_mode_satisfaction_probability_given_ax(
+        ax, controller=controller, test_inputs=test_inputs
+    )
+    handles, labels = plt.gca().get_legend_handles_labels()
+    by_label = OrderedDict(zip(labels, handles))
+    fig.tight_layout()
+    fig.legend(
+        by_label.values(),
+        by_label.keys(),
+        bbox_to_anchor=(0.5, 0.05),
+        loc="upper center",
+        bbox_transform=fig.transFigure,
+        ncol=len(by_label),
+    )
     return fig
 
 
@@ -71,7 +80,22 @@ def plot_trajectories_over_desired_gating_gp(
     plot_contf(axs[1], test_inputs, z=var[:, controller.dynamics.desired_mode])
 
     for ax in axs:
-        plot_trajectories(ax, env, controller=controller, target_state=target_state)
+        plot_trajectories(ax, env=env, controller=controller, target_state=target_state)
+        plot_env(ax, env=env, test_inputs=test_inputs)
+        plot_mode_satisfaction_probability_given_ax(
+            ax, controller=controller, test_inputs=test_inputs
+        )
+    handles, labels = plt.gca().get_legend_handles_labels()
+    by_label = OrderedDict(zip(labels, handles))
+    fig.tight_layout()
+    fig.legend(
+        by_label.values(),
+        by_label.keys(),
+        bbox_to_anchor=(0.5, 0.05),
+        loc="upper center",
+        bbox_transform=fig.transFigure,
+        ncol=len(by_label),
+    )
     return fig
 
 
@@ -81,8 +105,8 @@ def plot_trajectories(ax, env, controller: ControllerInterface, target_state: St
     )
     dynamics_traj = controller.rollout_in_dynamics().mean()
 
-    # for traj, key in zip([env_traj, dynamics_traj], ["env", "dynamics"]):
-    for traj, key in zip([dynamics_traj], ["dynamics"]):
+    for traj, key in zip([env_traj, dynamics_traj], ["env", "dynamics"]):
+        # for traj, key in zip([dynamics_traj], ["dynamics"]):
         ax.plot(
             traj[:, 0],
             traj[:, 1],
@@ -95,6 +119,37 @@ def plot_trajectories(ax, env, controller: ControllerInterface, target_state: St
     plot_start_end_pos(
         ax, start_state=controller.start_state, target_state=target_state
     )
+
+
+def plot_mode_satisfaction_probability_given_ax(
+    ax, controller: ControllerInterface, test_inputs: InputData
+):
+    mixing_probs = controller.dynamics.mosvgpe.gating_network.predict_mixing_probs(
+        test_inputs
+    )
+    CS = ax.tricontour(
+        test_inputs[:, 0],
+        test_inputs[:, 1],
+        mixing_probs[:, controller.desired_mode].numpy(),
+        [controller.mode_satisfaction_probability],
+    )
+    ax.clabel(CS, inline=True, fontsize=10)
+
+
+def plot_env(ax, env, test_inputs: InputData):
+    test_states = test_inputs[:, 0:2]
+    mode_probs = []
+    for test_state in test_states:
+        pixel = env.state_to_pixel(test_state)
+        mode_probs.append(env.gating_bitmap[pixel[0], pixel[1]])
+    mode_probs = tf.stack(mode_probs, 0)
+    CS = ax.tricontour(test_states[:, 0], test_states[:, 1], mode_probs.numpy(), [0.5])
+    try:
+        # clabel = ax.clabel(CS, inline=True, fmt={0.5: "Mode boundary"})
+        clabel = ax.clabel(CS, inline=True, fontsize=8, fmt={0.5: "Mode boundary"})
+        clabel[0].set_bbox(dict(boxstyle="round,pad=0.1", fc="white", alpha=1.0))
+    except IndexError:
+        pass
 
 
 def plot_start_end_pos(ax, start_state, target_state):
