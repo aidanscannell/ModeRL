@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import tikzplotlib
 import os
 from functools import partial
 from typing import Callable, List
@@ -16,35 +15,20 @@ import omegaconf
 import palettable
 import simenvs
 import tensorflow as tf
+import tikzplotlib
+import wandb
+from experiments.plot.utils import PlottingCallback, create_test_inputs, plot_contf
 from matplotlib import patches
-from moderl.controllers.controller import ControllerInterface
+from moderl.controllers import ControllerInterface
 from moderl.controllers.explorative_controller import ExplorativeController
 from moderl.dynamics import ModeRLDynamics
 from moderl.dynamics.dynamics import ModeRLDynamics
-from mosvgpe.custom_types import InputData, Dataset
+from mosvgpe.custom_types import Dataset, InputData
 from mosvgpe.mixture_of_experts import MixtureOfSVGPExperts
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-import wandb
-
 plt.style.use("seaborn-paper")
 CMAP = palettable.scientific.sequential.Bilbao_15.mpl_colormap
-from experiments.plot.utils import plot_contf, PlottingCallback
-
-# SMALL_SIZE = 10
-# MEDIUM_SIZE = 12
-# BIGGER_SIZE = 14
-
-# plt.rc("font", size=SMALL_SIZE)  # controls default text sizes
-# plt.rc("axes", titlesize=SMALL_SIZE)  # fontsize of the axes title
-# plt.rc("axes", labelsize=MEDIUM_SIZE)  # fontsize of the x and y labels
-# plt.rc("xtick", labelsize=SMALL_SIZE)  # fontsize of the tick labels
-# plt.rc("ytick", labelsize=SMALL_SIZE)  # fontsize of the tick labels
-# plt.rc("legend", fontsize=MEDIUM_SIZE)  # legend fontsize
-# plt.rc("figure", titlesize=BIGGER_SIZE)  # fontsize of the figure title
-
-# tf.random.set_seed(42)
-# np.random.seed(42)
 
 
 def plot_gating_network_gps(dynamics: ModeRLDynamics, test_inputs: InputData):
@@ -101,21 +85,10 @@ def build_plotting_callbacks(
         PlottingCallback(
             partial(plot_mixing_probs, dynamics=dynamics, test_inputs=test_inputs),
             logging_epoch_freq=logging_epoch_freq,
-            name="Mixing Probs",
+            name="Mixing probs",
         ),
     ]
     return callbacks
-
-
-def create_test_inputs(num_test: int = 400):
-    sqrtN = int(np.sqrt(num_test))
-    xx = np.linspace(-3, 3, sqrtN)
-    yy = np.linspace(-3, 3, sqrtN)
-    xx, yy = np.meshgrid(xx, yy)
-    test_inputs = np.column_stack([xx.reshape(-1), yy.reshape(-1)])
-    zeros = np.zeros((num_test, 2))
-    test_inputs = np.concatenate([test_inputs, zeros], -1)
-    return test_inputs
 
 
 if __name__ == "__main__":

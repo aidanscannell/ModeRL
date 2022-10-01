@@ -1,40 +1,29 @@
 #!/usr/bin/env python3
-import tikzplotlib
-import os
-from functools import partial
-from typing import Callable, List
+from typing import Callable, List, Optional
 
-import gpflow as gpf
-import hydra
-import keras
 import matplotlib
 import matplotlib.pyplot as plt
-
-# import matplotlib.pyplot as plt
 import numpy as np
 import omegaconf
 import palettable
 import simenvs
 import tensorflow as tf
+import tikzplotlib
+import wandb
+from experiments.plot.dynamics import plot_gating_network_gps
+from experiments.plot.utils import (
+    PlottingCallback,
+    create_test_inputs,
+    plot_contf,
+    plot_desired_mixing_prob,
+)
 from matplotlib import patches
-from moderl.controllers import explorative_controller
-from moderl.controllers.controller import ControllerInterface
-from moderl.controllers.explorative_controller import ExplorativeController
+from moderl.controllers import ControllerInterface, ExplorativeController
+from moderl.custom_types import InputData, State
 from moderl.dynamics import ModeRLDynamics
 from moderl.dynamics.dynamics import ModeRLDynamics
-from mosvgpe.custom_types import InputData, Dataset
-from mosvgpe.mixture_of_experts import MixtureOfSVGPExperts
-from mpl_toolkits.axes_grid1 import make_axes_locatable
+from moderl.rollouts import rollout_trajectory_optimisation_controller_in_env
 
-import wandb
-
-plt.style.use("seaborn-paper")
-CMAP = palettable.scientific.sequential.Bilbao_15.mpl_colormap
-from experiments.plot.utils import plot_contf, PlottingCallback
-from moderl.rollouts import (
-    rollout_trajectory_optimisation_controller_in_env,
-    rollout_ExplorativeController_in_ModeRLDynamics,
-)
 
 LABELS = {"env": "Environment", "dynamics": "Dynamics"}
 COLORS = {"env": "c", "dynamics": "m"}
@@ -42,17 +31,58 @@ LINESTYLES = {"env": "-", "dynamics": "-"}
 MARKERS = {"env": "*", "dynamics": "."}
 
 
-def plot_trajectories(
-    ax, env, dynamics: ModeRLDynamics, controller: ControllerInterface
+PlotFn = Callable[[], matplotlib.figure.Figure]
+
+
+class WandBImageCallbackScipy:
+    def __init__(
+        self, plot_fn: PlotFn, logging_epoch_freq: int = 10, name: Optional[str] = ""
+    ):
+        self.plot_fn = plot_fn
+        self.logging_epoch_freq = logging_epoch_freq
+        self.name = name
+
+    def __call__(self, step, variables, value):
+        if step % self.logging_epoch_freq == 0:
+            fig = self.plot_fn()
+            wandb.log({self.name: wandb.Image(fig)})
+
+
+def plot_trajectories_over_desired_mixing_prob(
+    env, controller: ControllerInterface, test_inputs: InputData, target_state: State
 ):
+    fig = plt.figure()
+    gs = fig.add_gridspec(1, 1)
+    ax = gs.subplots()
+    probs = controller.dynamics.mosvgpe.gating_network.predict_mixing_probs(test_inputs)
+    plot_contf(ax, test_inputs, z=probs[:, controller.dynamics.desired_mode])
+    plot_trajectories(ax, env, controller=controller, target_state=target_state)
+    return fig
+
+
+def plot_trajectories_over_desired_gating_gp(
+    env, controller: ControllerInterface, test_inputs: InputData, target_state: State
+):
+    fig = plt.figure()
+    gs = fig.add_gridspec(1, 2)
+    axs = gs.subplots()
+    mean, var = controller.dynamics.mosvgpe.gating_network.predict_h(test_inputs)
+    plot_contf(axs[0], test_inputs, z=mean[:, controller.dynamics.desired_mode])
+    plot_contf(axs[1], test_inputs, z=var[:, controller.dynamics.desired_mode])
+
+    for ax in axs:
+        plot_trajectories(ax, env, controller=controller, target_state=target_state)
+    return fig
+
+
+def plot_trajectories(ax, env, controller: ControllerInterface, target_state: State):
     env_traj = rollout_trajectory_optimisation_controller_in_env(
         env=env, start_state=controller.start_state, controller=controller
     )
-    dynamics_traj = rollout_ExplorativeController_in_ModeRLDynamics(
-        dynamics=dynamics, controller=controller, start_state=controller.start_state
-    )
+    dynamics_traj = controller.rollout_in_dynamics().mean()
 
-    for traj, key in zip([env_traj, dynamics_traj], ["env", "dynamics"]):
+    # for traj, key in zip([env_traj, dynamics_traj], ["env", "dynamics"]):
+    for traj, key in zip([dynamics_traj], ["dynamics"]):
         ax.plot(
             traj[:, 0],
             traj[:, 1],
@@ -63,7 +93,7 @@ def plot_trajectories(
             marker=MARKERS[key],
         )
     plot_start_end_pos(
-        ax, start_state=controller.start_state, target_state=controller.target_state
+        ax, start_state=controller.start_state, target_state=target_state
     )
 
 
@@ -102,75 +132,33 @@ def plot_start_end_pos(ax, start_state, target_state):
     )
 
 
-def plot_gating_network_gps(dynamics: ModeRLDynamics, test_inputs: InputData):
-    fig = plt.figure()
-    gs = fig.add_gridspec(dynamics.mosvgpe.num_experts, 2)
-    axs = gs.subplots()
-    mean, var = dynamics.mosvgpe.gating_network.predict_h(test_inputs)
-    for k in range(dynamics.mosvgpe.num_experts):
-        label = (
-            "$\mathbb{E}[h_{"
-            + str(dynamics.desired_mode + 1)
-            + "}(\mathbf{x}) \mid \mathcal{D}_{0:"
-            # + str(iteration)
-            + "}]$"
-        )
-        plot_contf(axs[k, 0], test_inputs, z=mean[:, k])
-        # plot_contf(axs[0], test_inputs, z=mean[:, dynamics.desired_mode], label=label)
-        label = (
-            "$\mathbb{V}[h_{"
-            + str(dynamics.desired_mode + 1)
-            + "}(\mathbf{x}) \mid \mathcal{D}_{0:"
-            # + str(iteration)
-            + "}]$"
-        )
-        plot_contf(axs[k, 1], test_inputs, z=var[:, k])
-        # plot_contf(axs[1], test_inputs, z=var[:, dynamics.desired_mode], label=label)
-    # axs[-1].legend()
-    return fig
-
-
-def plot_mixing_probs(dynamics: ModeRLDynamics, test_inputs: InputData):
-    fig = plt.figure()
-    gs = fig.add_gridspec(1, dynamics.mosvgpe.num_experts)
-    axs = gs.subplots()
-    probs = dynamics.mosvgpe.gating_network.predict_mixing_probs(test_inputs)
-    for k in range(dynamics.mosvgpe.num_experts):
-        plot_contf(axs[k], test_inputs, z=probs[:, k])
-    return fig
-
-
-def build_plotting_callbacks(
-    dynamics: ModeRLDynamics, logging_epoch_freq: int = 100, num_test: int = 100
-) -> List[PlottingCallback]:
+def build_controller_plotting_callback(
+    env,
+    controller: ControllerInterface,
+    target_state: State,
+    logging_epoch_freq: int = 10,
+    num_test: int = 100,
+) -> Callable:
     test_inputs = create_test_inputs(num_test=num_test)
 
-    callbacks = [
-        PlottingCallback(
-            partial(
-                plot_gating_network_gps, dynamics=dynamics, test_inputs=test_inputs
-            ),
-            logging_epoch_freq=logging_epoch_freq,
-            name="Gating function posterior",
-        ),
-        PlottingCallback(
-            partial(plot_mixing_probs, dynamics=dynamics, test_inputs=test_inputs),
-            logging_epoch_freq=logging_epoch_freq,
-            name="Mixing Probs",
-        ),
-    ]
-    return callbacks
+    def plotting_callback(step, variables, value):
+        if step % logging_epoch_freq == 0:
+            fig = plot_trajectories_over_desired_gating_gp(
+                env=env,
+                controller=controller,
+                test_inputs=test_inputs,
+                target_state=target_state,
+            )
+            wandb.log({"Trajectories over desired gating GP": wandb.Image(fig)})
+            fig = plot_trajectories_over_desired_mixing_prob(
+                env=env,
+                controller=controller,
+                test_inputs=test_inputs,
+                target_state=target_state,
+            )
+            wandb.log({"Trajectories over desired mixing prob": wandb.Image(fig)})
 
-
-def create_test_inputs(num_test: int = 400):
-    sqrtN = int(np.sqrt(num_test))
-    xx = np.linspace(-3, 3, sqrtN)
-    yy = np.linspace(-3, 3, sqrtN)
-    xx, yy = np.meshgrid(xx, yy)
-    test_inputs = np.column_stack([xx.reshape(-1), yy.reshape(-1)])
-    zeros = np.zeros((num_test, 2))
-    test_inputs = np.concatenate([test_inputs, zeros], -1)
-    return test_inputs
+    return plotting_callback
 
 
 if __name__ == "__main__":

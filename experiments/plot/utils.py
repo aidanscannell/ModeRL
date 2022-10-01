@@ -17,7 +17,7 @@ import palettable
 import simenvs
 import tensorflow as tf
 from matplotlib import patches
-from moderl.controllers.controller import ControllerInterface
+from moderl.controllers import ControllerInterface
 from moderl.controllers.explorative_controller import ExplorativeController
 from moderl.dynamics import ModeRLDynamics
 from moderl.dynamics.dynamics import ModeRLDynamics
@@ -34,6 +34,17 @@ CMAP = palettable.scientific.sequential.Bilbao_15.mpl_colormap
 PlotFn = Callable[[], matplotlib.figure.Figure]
 
 colors = ["m", "c", "y"]
+
+
+def create_test_inputs(num_test: int = 400):
+    sqrtN = int(np.sqrt(num_test))
+    xx = np.linspace(-3, 3, sqrtN)
+    yy = np.linspace(-3, 3, sqrtN)
+    xx, yy = np.meshgrid(xx, yy)
+    test_inputs = np.column_stack([xx.reshape(-1), yy.reshape(-1)])
+    zeros = np.zeros((num_test, 2))
+    test_inputs = np.concatenate([test_inputs, zeros], -1)
+    return test_inputs
 
 
 class PlottingCallback(tf.keras.callbacks.Callback):
