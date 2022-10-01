@@ -331,6 +331,7 @@ class ModeRLDynamics(DynamicsInterface):
             "mosvgpe": tf.keras.layers.serialize(self.mosvgpe),
             "state_dim": self.state_dim,
             "desired_mode": self.desired_mode,
+            "dataset": dataset,
             "learning_rate": self.learning_rate,
             "epsilon": self.epsilon,
             "dynamics_fit_kwargs": self.dynamics_fit_kwargs,
