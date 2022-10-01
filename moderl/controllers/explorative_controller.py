@@ -32,6 +32,7 @@ class ExplorativeController(TrajectoryOptimisationController):
         horizon: int = 10,
         max_iterations: int = 100,
         mode_satisfaction_prob: float = 0.8,
+        exploration_weight: float = 1.0,
         keep_last_solution: bool = True,
         callback: Optional[Callable[[tf.Tensor, tf.Tensor, int], None]] = None,
         method: Optional[str] = "SLSQP",
@@ -58,7 +59,7 @@ class ExplorativeController(TrajectoryOptimisationController):
                 initial_solution=initial_solution,
                 start_state=self.start_state,
             )
-            return -exploration_cost + cost_fn(
+            return -exploration_cost * exploration_weight + cost_fn(
                 # return cost_fn(
                 state=state_dists,
                 control=control_dists,
