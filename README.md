@@ -15,7 +15,7 @@ If I make changes to [https://github.com/aidanscannell/mosvgpe](https://github.c
 ```
 git subtree pull --prefix=subtrees/mosvgpe mosvgpe-subtree master
 ```
-And when I make changes to =mosvgpe= in =moderl= I can push the changes back
+And when I make changes to `mosvgpe` in `moderl` I can push the changes back
 to [https://github.com/aidanscannell/mosvgpe](https://github.com/aidanscannell/mosvgpe) using,
 ```
 git subtree push --prefix=subtrees/mosvgpe mosvgpe-subtree /branch/to/push/to
