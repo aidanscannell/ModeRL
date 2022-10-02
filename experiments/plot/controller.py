@@ -130,8 +130,8 @@ def plot_mode_satisfaction_probability_given_ax(
     CS = ax.tricontour(
         test_inputs[:, 0],
         test_inputs[:, 1],
-        mixing_probs[:, controller.desired_mode].numpy(),
-        [controller.mode_satisfaction_probability],
+        mixing_probs[:, controller.dynamics.desired_mode].numpy(),
+        [controller.mode_satisfaction_prob],
     )
     ax.clabel(CS, inline=True, fontsize=10)
 
