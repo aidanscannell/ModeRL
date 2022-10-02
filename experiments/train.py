@@ -138,6 +138,9 @@ def mode_rl_loop(
 
         # new_data = self.explore_env()
         dynamics.update_dataset(new_dataset)
+        dynamics.dynamics_fit_kwargs.update(
+            {"batch_size": dynamics.dataset[0].shape[0]}
+        )
         dynamics.optimise()
 
 
