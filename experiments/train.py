@@ -14,7 +14,6 @@ import simenvs
 import tensorflow as tf
 from gpflow import default_float, inducing_variables
 from experiments.plot.controller import build_controller_plotting_callback
-from moderl import dynamics
 from moderl.controllers import ControllerInterface, ExplorativeController
 from moderl.custom_types import Batch, InputData, One, StateDim
 from moderl.dynamics import ModeRLDynamics
@@ -85,7 +84,148 @@ def dynamics_callbacks(
             # log_evaluation=True,
             # validation_steps=5,
         ),
+        DynamicsLoggingCallback(dynamics=dynamics),
     ]
+
+
+class DynamicsLoggingCallback(tf.keras.callbacks.Callback):
+    def __init__(
+        self, dynamics: ModeRLDynamics, logging_epoch_freq: int = 10, name: str = ""
+    ):
+        self.dynamics = dynamics
+        self.logging_epoch_freq = logging_epoch_freq
+        self.name = name
+
+    def on_epoch_end(self, epoch: int, logs=None):
+        if epoch % self.logging_epoch_freq == 0:
+            wandb.log(
+                {
+                    "expert_1_noise_var_1": self.dynamics.mosvgpe.experts_list[
+                        0
+                    ].gp.likelihood.variance[0]
+                }
+            )
+            wandb.log(
+                {
+                    "expert_1_noise_var_2": self.dynamics.mosvgpe.experts_list[
+                        0
+                    ].gp.likelihood.variance[1]
+                }
+            )
+            wandb.log(
+                {
+                    "expert_2_noise_var_1": self.dynamics.mosvgpe.experts_list[
+                        1
+                    ].gp.likelihood.variance[0]
+                }
+            )
+            wandb.log(
+                {
+                    "expert_2_noise_var_2": self.dynamics.mosvgpe.experts_list[
+                        1
+                    ].gp.likelihood.variance[1]
+                }
+            )
+            wandb.log(
+                {
+                    "expert_1_kernel_var_1": self.dynamics.mosvgpe.experts_list[0]
+                    .gp.kernel.kernels[0]
+                    .variance.numpy()
+                }
+            )
+            wandb.log(
+                {
+                    "expert_1_kernel_var_2": self.dynamics.mosvgpe.experts_list[0]
+                    .gp.kernel.kernels[1]
+                    .variance.numpy()
+                }
+            )
+            wandb.log(
+                {
+                    "expert_2_kernel_var_1": self.dynamics.mosvgpe.experts_list[1]
+                    .gp.kernel.kernels[0]
+                    .variance.numpy()
+                }
+            )
+            wandb.log(
+                {
+                    "expert_2_kernel_var_2": self.dynamics.mosvgpe.experts_list[1]
+                    .gp.kernel.kernels[1]
+                    .variance.numpy()
+                }
+            )
+            wandb.log(
+                {
+                    "expert_1_kernel_lengthscale_1": self.dynamics.mosvgpe.experts_list[
+                        0
+                    ]
+                    .gp.kernel.kernels[0]
+                    .lengthscales.numpy()[0]
+                }
+            )
+            wandb.log(
+                {
+                    "expert_1_kernel_lengthscale_2": self.dynamics.mosvgpe.experts_list[
+                        0
+                    ]
+                    .gp.kernel.kernels[0]
+                    .lengthscales.numpy()[1]
+                }
+            )
+            wandb.log(
+                {
+                    "expert_1_kernel_lengthscale_3": self.dynamics.mosvgpe.experts_list[
+                        0
+                    ]
+                    .gp.kernel.kernels[0]
+                    .lengthscales.numpy()[2]
+                }
+            )
+            wandb.log(
+                {
+                    "expert_1_kernel_lengthscale_4": self.dynamics.mosvgpe.experts_list[
+                        0
+                    ]
+                    .gp.kernel.kernels[0]
+                    .lengthscales.numpy()[3]
+                }
+            )
+            wandb.log(
+                {
+                    "expert_2_kernel_lengthscale_1": self.dynamics.mosvgpe.experts_list[
+                        1
+                    ]
+                    .gp.kernel.kernels[0]
+                    .lengthscales.numpy()[0]
+                }
+            )
+            wandb.log(
+                {
+                    "expert_2_kernel_lengthscale_2": self.dynamics.mosvgpe.experts_list[
+                        1
+                    ]
+                    .gp.kernel.kernels[0]
+                    .lengthscales.numpy()[1]
+                }
+            )
+            wandb.log(
+                {
+                    "expert_2_kernel_lengthscale_3": self.dynamics.mosvgpe.experts_list[
+                        1
+                    ]
+                    .gp.kernel.kernels[0]
+                    .lengthscales.numpy()[2]
+                }
+            )
+            wandb.log(
+                {
+                    "expert_2_kernel_lengthscale_4": self.dynamics.mosvgpe.experts_list[
+                        1
+                    ]
+                    .gp.kernel.kernels[0]
+                    .lengthscales.numpy()[3]
+                }
+            )
 
 
 def sample_inducing_inputs_from_X(
@@ -135,12 +275,11 @@ def mode_rl_loop(
         X = np.concatenate(X, 0)
         Y = np.concatenate(Y, 0)
         new_dataset = (X, Y)
+        # print("new_dataset")
+        # print(new_dataset)
 
         # new_data = self.explore_env()
         dynamics.update_dataset(new_dataset)
-        dynamics.dynamics_fit_kwargs.update(
-            {"batch_size": dynamics.dataset[0].shape[0]}
-        )
         dynamics.optimise()
 
 
@@ -227,6 +366,13 @@ def run_experiment(cfg: omegaconf.DictConfig):
     dynamics.mosvgpe.gating_network.gp.kernel.lengthscales = (
         dynamics.mosvgpe.gating_network.gp.kernel.lengthscales * 2
     )
+    dynamics.mosvgpe.num_data = None
+    # gpf.utilities.set_trainable(dynamics.mosvgpe.gating_network.gp.kernel, True)
+    gpf.utilities.set_trainable(
+        dynamics.mosvgpe.experts_list[1].gp.likelihood, False
+    )  # Needed to stop inf in bound due to expert 2 learning very low noise variance
+    # gpf.utilities.set_trainable(dynamics.mosvgpe.experts_list[1].gp.kernel, False)
+
     # dynamics.desired_mode = set_desired_mode(dynamics)
     # explorative_objective_fn = bald_objective
     explorative_objective_fn = joint_gating_function_entropy
@@ -245,6 +391,8 @@ def run_experiment(cfg: omegaconf.DictConfig):
         exploration_weight=cfg.explorative_controller.exploration_weight,
         keep_last_solution=cfg.explorative_controller.keep_last_solution,
         callback=None,
+        lower_bound=cfg.explorative_controller.control_lower_bound,
+        upper_bound=cfg.explorative_controller.control_upper_bound,
         method=cfg.explorative_controller.method,
     )
     # explorative_controller.callback = build_controller_plotting_callback(
@@ -272,6 +420,15 @@ def run_experiment(cfg: omegaconf.DictConfig):
     # )
     # wandb.log({"Final traj over desired gating gp": wandb.Image(fig)})
     def callback(iteration: int):
+        # print("before callback")
+        # gpf.utilities.print_summary(dynamics.mosvgpe)
+        print("initial solution")
+        gpf.utilities.print_summary(
+            explorative_controller.trajectory_optimiser.initial_solution
+        )
+        gpf.utilities.print_summary(
+            explorative_controller.trajectory_optimiser.previous_solution
+        )
         fig = plot_trajectories_over_desired_mixing_prob(
             env,
             controller=explorative_controller,

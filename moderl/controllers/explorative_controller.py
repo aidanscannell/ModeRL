@@ -12,6 +12,7 @@ from moderl.custom_types import ControlTrajectory, State, StateDim
 from moderl.dynamics import ModeRLDynamics
 from moderl.optimisers import TrajectoryOptimiser
 from moderl.rollouts import rollout_ControlTrajectory_in_ModeRLDynamics
+from scipy.optimize import LinearConstraint
 
 from .base import TrajectoryOptimisationController
 from .utils import find_solution_in_desired_mode
@@ -35,6 +36,8 @@ class ExplorativeController(TrajectoryOptimisationController):
         exploration_weight: float = 1.0,
         keep_last_solution: bool = True,
         callback: Optional[Callable[[tf.Tensor, tf.Tensor, int], None]] = None,
+        lower_bound: float = -np.inf,
+        upper_bound: float = np.inf,
         method: Optional[str] = "SLSQP",
         # name: str = "ExplorativeController",
     ):
@@ -80,12 +83,15 @@ class ExplorativeController(TrajectoryOptimisationController):
             # compile=False,
             compile=True,
         )
+        control_constraints = LinearConstraint(
+            np.eye(horizon * control_dim), lower_bound, upper_bound
+        )
         trajectory_optimiser = TrajectoryOptimiser(
             max_iterations=max_iterations,
             initial_solution=initial_solution,
             objective_fn=augmentd_objective_fn,
             keep_last_solution=keep_last_solution,
-            constraints=[mode_chance_constraints],
+            constraints=[mode_chance_constraints, control_constraints],
             method=method,
         )
 

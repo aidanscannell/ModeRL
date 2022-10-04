@@ -7,6 +7,7 @@ defaults:
   - _self_
 
 random_seed: 42
+# random_seed: 1
 
 env:
   name: "velocity-controlled-point-mass/scenario-7"
@@ -21,13 +22,14 @@ state_control_input_dim: 4
 logging_epoch_freq: 100
 
 # Training config
-train:
-  learning_rate: 1e-3
-  batch_size: 64
-  epochs: 10000
-  verbose: True
-  validation_split: 0.2
-  num_initial_epochs: 20000
+# train:
+#   learning_rate: 1e-3
+#   batch_size: 64
+#   epochs: 10000
+#   verbose: True
+#   validation_split: None
+#   # validation_split: 0.2
+#   num_initial_epochs: 20000
 
 # Traj opt config
 start_state:
@@ -46,9 +48,12 @@ explorative_controller:
   max_iterations: 100
   # mode_satisfaction_prob: 0.8
   mode_satisfaction_prob: 0.7
-  exploration_weight: 10.0
+  # exploration_weight: 10.0
+  exploration_weight: 1.0
   keep_last_solution: false
   # keep_last_solution: true
+  control_lower_bound: -4.0
+  control_upper_bound: 4.0
   method: "SLSQP"
 
 dynamics:
@@ -74,11 +79,13 @@ dynamics:
                 config:
                   kernels:
                     - class_name: Matern52Serializable
+                      # - class_name: RBFSerializable
                       config:
                         active_dims:
                         lengthscales: [1.0, 1.0, 1.0, 1.0]
                         variance: 1.0
                     - class_name: Matern52Serializable
+                      # - class_name: RBFSerializable
                       config:
                         active_dims:
                         lengthscales: [1.0, 1.0, 1.0, 1.0]
@@ -108,14 +115,14 @@ dynamics:
                 class_name: SeparateIndependentSerializable
                 config:
                   kernels:
-                    # - class_name: Matern52Serializable
-                    - class_name: RBFSerializable
+                    - class_name: Matern52Serializable
+                      # - class_name: RBFSerializable
                       config:
                         active_dims:
                         lengthscales: [1.0, 1.0, 1.0, 1.0]
                         variance: 1.0
-                    # - class_name: Matern52Serializable
-                    - class_name: RBFSerializable
+                    - class_name: Matern52Serializable
+                      # - class_name: RBFSerializable
                       config:
                         active_dims:
                         lengthscales: [1.0, 1.0, 1.0, 1.0]
@@ -144,8 +151,8 @@ dynamics:
           class_name: SVGPGatingNetwork
           config:
             kernel:
-              # class_name: Matern52Serializable
-              class_name: RBFSerializable
+              class_name: Matern52Serializable
+              # class_name: RBFSerializable
               config:
                 active_dims: [0, 1]
                 lengthscales: [0.5, 0.5]
