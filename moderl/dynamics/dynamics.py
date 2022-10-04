@@ -129,6 +129,8 @@ class ModeRLDynamics(DynamicsInterface):
         else:
             self.dataset = dataset
         self.mosvgpe.num_data = self.dataset[0].shape[0]
+        # TODO should I really be updating batch size here?
+        self.dynamics_fit_kwargs.update({"batch_size": self.dataset[0].shape[0]})
 
     def predict_mode_probability(
         self,
