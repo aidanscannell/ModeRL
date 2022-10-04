@@ -31,11 +31,10 @@ class TrajectoryOptimiser:
         self.method = method
 
         if initial_solution:
-            self.initial_solution = initial_solution
+            self.previous_solution = initial_solution
+            self.initial_solution = initial_solution.copy()
         else:
             raise NotImplementedError("Please provide initial_solution")
-        self.previous_solution = self.initial_solution
-        self.initial_solution = self.initial_solution.copy()
 
         self.optimiser = gpf.optimizers.Scipy()
 
