@@ -18,7 +18,7 @@ from moderl import dynamics
 from moderl.controllers import ControllerInterface, ExplorativeController
 from moderl.custom_types import Batch, InputData, One, StateDim
 from moderl.dynamics import ModeRLDynamics
-from moderl.objectives import joint_gating_function_entropy
+from moderl.objectives import bald_objective, joint_gating_function_entropy
 from tf_agents.environments import py_environment
 from wandb.keras import WandbCallback
 
@@ -115,10 +115,10 @@ def mode_rl_loop(
     # if isinstance(explorative_controller.start_state, tf.Tensor):
     #     start_state = explorative_controller.start_state.numpy()
     converged = False
-    for i in range(num_episodes):
+    for i in range(1, num_episodes):
 
         opt_result = explorative_controller.optimise()
-        callback()
+        callback(iteration=i)
         if converged:
             # TODO implement check for convergence
             break
@@ -178,8 +178,8 @@ def run_experiment(cfg: omegaconf.DictConfig):
 
     ###### Instantiate dynamics model and sample inducing inputs data ######
     # dynamics = hydra.utils.instantiate(cfg.dynamics)
-    load_dir = None
-    # load_dir = "./wandb/run-20221001_173609-bmsqn5dj/files/saved-models/dynamics-after-training-on-dataset-0-config.json"
+    # load_dir = None
+    load_dir = "./wandb/run-20221001_195555-2k2vmkt2/files/saved-models/dynamics-after-training-on-dataset-0-config.json"
     if load_dir is not None:
         ###### Try to load trained dynamics model  ######
         dynamics = ModeRLDynamics.load(load_dir)
@@ -223,7 +223,12 @@ def run_experiment(cfg: omegaconf.DictConfig):
             )
         )
 
+    gpf.utilities.print_summary(dynamics.mosvgpe.gating_network.gp.kernel)
+    dynamics.mosvgpe.gating_network.gp.kernel.lengthscales = (
+        dynamics.mosvgpe.gating_network.gp.kernel.lengthscales * 2
+    )
     # dynamics.desired_mode = set_desired_mode(dynamics)
+    # explorative_objective_fn = bald_objective
     explorative_objective_fn = joint_gating_function_entropy
     ###### Build greedy cost function ######
     cost_fn = hydra.utils.instantiate(cfg.cost_fn)
@@ -266,7 +271,7 @@ def run_experiment(cfg: omegaconf.DictConfig):
     #     target_state=target_state,
     # )
     # wandb.log({"Final traj over desired gating gp": wandb.Image(fig)})
-    def callback():
+    def callback(iteration: int):
         fig = plot_trajectories_over_desired_mixing_prob(
             env,
             controller=explorative_controller,
@@ -281,6 +286,14 @@ def run_experiment(cfg: omegaconf.DictConfig):
             target_state=target_state,
         )
         wandb.log({"Final traj over desired gating gp": wandb.Image(fig)})
+        dynamics.save(
+            os.path.join(
+                log_dir,
+                "saved-models/dynamics-after-training-on-dataset-{}-config.json".format(
+                    iteration
+                ),
+            )
+        )
 
     # Run the mbrl loop
     mode_rl_loop(

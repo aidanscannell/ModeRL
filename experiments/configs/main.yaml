@@ -44,9 +44,11 @@ num_explorative_trajectories: 6
 explorative_controller:
   horizon: 10
   max_iterations: 100
-  mode_satisfaction_prob: 0.8
+  # mode_satisfaction_prob: 0.8
+  mode_satisfaction_prob: 0.7
   exploration_weight: 10.0
-  keep_last_solution: true
+  keep_last_solution: false
+  # keep_last_solution: true
   method: "SLSQP"
 
 dynamics:

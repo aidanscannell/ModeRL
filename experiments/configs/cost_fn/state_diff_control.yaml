@@ -10,6 +10,6 @@ second_part:
   _target_: moderl.cost_functions.ControlQuadraticCostFunction
   weight_matrix:
     _target_: tensorflow.constant
-    value: [[0.5, 0.0], [0.0, 0.5]]
-    # value: [[1.0, 0.0], [0.0, 1.0]]
+    # value: [[0.5, 0.0], [0.0, 0.5]]
+    value: [[1.0, 0.0], [0.0, 1.0]]
     dtype: "float64"

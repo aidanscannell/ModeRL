@@ -38,7 +38,7 @@ colors = ["m", "c", "y"]
 
 def create_test_inputs(num_test: int = 400):
     sqrtN = int(np.sqrt(num_test))
-    xx = np.linspace(-4, 4, sqrtN)
+    xx = np.linspace(-4, 3, sqrtN)
     yy = np.linspace(-4, 4, sqrtN)
     xx, yy = np.meshgrid(xx, yy)
     test_inputs = np.column_stack([xx.reshape(-1), yy.reshape(-1)])
@@ -106,16 +106,25 @@ def plot_mode_satisfaction_prob(
 
 
 def plot_contf(ax, test_inputs, z, levels=None, cmap=CMAP):
-    ax.set_xlabel("$x$")
-    ax.set_ylabel("$y$")
-    contf = ax.tricontourf(
-        test_inputs[:, 0],
-        test_inputs[:, 1],
-        z,
-        # 100,
-        # levels=mean_levels,
-        cmap=cmap,
-    )
+    try:
+        contf = ax.tricontourf(
+            test_inputs[:, 0],
+            test_inputs[:, 1],
+            z,
+            # 100,
+            levels=levels,
+            cmap=cmap,
+        )
+    except ValueError:
+        # TODO check this works
+        contf = ax.tricontourf(
+            test_inputs[:, 0],
+            test_inputs[:, 1],
+            np.ones(z.shape),
+            # 100,
+            levels=levels,
+            cmap=cmap,
+        )
     return contf
 
 

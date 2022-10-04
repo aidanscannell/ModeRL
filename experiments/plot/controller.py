@@ -143,7 +143,9 @@ def plot_env(ax, env, test_inputs: InputData):
         pixel = env.state_to_pixel(test_state)
         mode_probs.append(env.gating_bitmap[pixel[0], pixel[1]])
     mode_probs = tf.stack(mode_probs, 0)
-    CS = ax.tricontour(test_states[:, 0], test_states[:, 1], mode_probs.numpy(), [0.5])
+    CS = ax.tricontour(
+        test_states[:, 0], test_states[:, 1], mode_probs.numpy(), [0.5], colors=["k"]
+    )
     try:
         # clabel = ax.clabel(CS, inline=True, fmt={0.5: "Mode boundary"})
         clabel = ax.clabel(CS, inline=True, fontsize=8, fmt={0.5: "Mode boundary"})
@@ -235,10 +237,14 @@ if __name__ == "__main__":
         save_name = "./images/gating_network_gp_" + key
         plt.savefig(save_name + ".pdf", transparent=True)
         # tikzplotlib.clean_figure()
-        tikzplotlib.save(save_name + ".tex")
+        tikzplotlib.save(
+            save_name + ".tex", axis_width="\\figurewidth", axis_height="\\figureheight"
+        )
 
         plot_desired_mixing_probs(dynamics, test_inputs)  # pyright: ignore
         save_name = "./images/desired_mixing_prob_" + key
         plt.savefig(save_name + ".pdf", transparent=True)
         # tikzplotlib.clean_figure()
-        tikzplotlib.save(save_name + ".tex")
+        tikzplotlib.save(
+            save_name + ".tex", axis_width="\\figurewidth", axis_height="\\figureheight"
+        )
