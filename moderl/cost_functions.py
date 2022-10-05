@@ -6,6 +6,7 @@ import tensor_annotations.tensorflow as ttf
 import tensorflow as tf
 import tensorflow_probability as tfp
 from gpflow import default_float
+from mosvgpe.keras.utils import try_array_except_none
 from tensor_annotations.axes import Batch
 
 from moderl.custom_types import Horizon, HorizonPlusOne, InputDim, One, StateDim
@@ -62,6 +63,23 @@ class Additive(CostFunction):
             self.add_2(state=state, control=control),
         )
 
+    def get_config(self) -> dict:
+        return {
+            "first_part": tf.keras.utils.serialize_keras_object(self.add_1),
+            "second_part": tf.keras.utils.serialize_keras_object(self.add_2),
+        }
+
+    @classmethod
+    def from_config(cls, cfg: dict):
+        # TODO Need to implement from_config() for cost_fns to instantiate weight_matrix properly
+        first_part = tf.keras.layers.deserialize(
+            cfg["first_part"], custom_objects=COST_FUNCTION_OBJECTS
+        )
+        second_part = tf.keras.layers.deserialize(
+            cfg["second_part"], custom_objects=COST_FUNCTION_OBJECTS
+        )
+        return cls(first_part=first_part, second_part=second_part)
+
 
 class ZeroCostFunction(CostFunction):
     def __call__(
@@ -108,6 +126,10 @@ class StateQuadraticCostFunction(CostFunction):
     def get_config(self) -> dict:
         return {"weight_matrix": self.weight_matrix.numpy()}
 
+    @classmethod
+    def from_config(cls, cfg: dict):
+        return cls(weight_matrix=try_array_except_none(cfg, "weight_matrix"))
+
 
 class ControlQuadraticCostFunction(CostFunction):
     def __init__(
@@ -139,6 +161,10 @@ class ControlQuadraticCostFunction(CostFunction):
 
     def get_config(self) -> dict:
         return {"weight_matrix": self.weight_matrix.numpy()}
+
+    @classmethod
+    def from_config(cls, cfg: dict):
+        return cls(weight_matrix=try_array_except_none(cfg, "weight_matrix"))
 
 
 class TargetStateCostFunction(CostFunction):
@@ -182,6 +208,13 @@ class TargetStateCostFunction(CostFunction):
             "target_state": self.target_state.numpy(),
         }
 
+    @classmethod
+    def from_config(cls, cfg: dict):
+        return cls(
+            weight_matrix=try_array_except_none(cfg, "weight_matrix"),
+            target_state=try_array_except_none(cfg, "target_state"),
+        )
+
 
 class StateDiffCostFunction(CostFunction):
     def __init__(
@@ -213,6 +246,13 @@ class StateDiffCostFunction(CostFunction):
             "target_state": self.target_state.numpy(),
         }
 
+    @classmethod
+    def from_config(cls, cfg: dict):
+        return cls(
+            weight_matrix=try_array_except_none(cfg, "weight_matrix"),
+            target_state=try_array_except_none(cfg, "target_state"),
+        )
+
 
 class ModeProbCostFunction(CostFunction):
     """Simple mode probability cost function class."""
@@ -243,6 +283,14 @@ class ModeProbCostFunction(CostFunction):
         )
         negative_probs = -probs * self.weight
         return tf.reduce_sum(negative_probs)
+
+    def get_config(self) -> dict:
+        # TODO how to serialise fn?
+        raise NotImplementedError
+
+    @classmethod
+    def from_config(cls, cfg: dict):
+        raise NotImplementedError
 
 
 def quadratic_cost_fn(
@@ -276,6 +324,7 @@ def terminal_state_cost_fn(
 
 
 COST_FUNCTIONS = [
+    Additive,
     ZeroCostFunction,
     StateQuadraticCostFunction,
     StateDiffCostFunction,

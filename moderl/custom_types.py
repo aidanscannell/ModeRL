@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from gpflow import default_float
+from builtins import NotImplementedError, classmethod
 from dataclasses import dataclass
 from typing import Callable, List, NamedTuple, NewType, Optional, Tuple, Union
 
@@ -72,6 +74,20 @@ class ControlTrajectory(tf.Module):
 
     def copy(self):
         return ControlTrajectory(self.dist.copy())
+
+    def get_config(self) -> dict:
+        return {"dist": type(self.dist).__name__, "mean": self.dist.mean().numpy()}
+
+    @classmethod
+    def from_config(cls, cfg: dict):
+        if "Deterministic" in cfg["dist"]:
+            means = tf.Variable(cfg["mean"], dtype=default_float())
+            dist = tfd.Deterministic(loc=means)
+        else:
+            raise NotImplementedError(
+                "Only implemented serialisation for tfd.Deterministic"
+            )
+        return cls(dist=dist)
 
 
 class Transition(NamedTuple):
