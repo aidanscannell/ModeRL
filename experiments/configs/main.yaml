@@ -6,8 +6,21 @@ defaults:
   - override hydra/hydra_logging: none
   - _self_
 
+wandb:
+  entity: "aidanscannell"
+  project: "mode_remaining_exploration"
+  # project: "mode_remaining_exploration_for_mbrl"
+  # log_artifacts: True
+  # notes: ${run.comment}
+  # name: fold_${run.fold}
+
+hydra:
+  job:
+    chdir: False
+  run:
+    dir: ""
+
 random_seed: 42
-# random_seed: 1
 
 env:
   name: "velocity-controlled-point-mass/scenario-7"
@@ -20,16 +33,7 @@ state_control_input_dim: 4
 
 # Monitoring config
 logging_epoch_freq: 100
-
-# Training config
-# train:
-#   learning_rate: 1e-3
-#   batch_size: 64
-#   epochs: 10000
-#   verbose: True
-#   validation_split: None
-#   # validation_split: 0.2
-#   num_initial_epochs: 20000
+num_episodes: 40
 
 # Traj opt config
 start_state:
@@ -46,10 +50,10 @@ num_explorative_trajectories: 6
 explorative_controller:
   horizon: 10
   max_iterations: 100
-  # mode_satisfaction_prob: 0.8
-  mode_satisfaction_prob: 0.7
-  # exploration_weight: 10.0
-  exploration_weight: 1.0
+  mode_satisfaction_prob: 0.8
+  # mode_satisfaction_prob: 0.7
+  exploration_weight: 10.0
+  # exploration_weight: 1.0
   keep_last_solution: false
   # keep_last_solution: true
   control_lower_bound: -4.0
@@ -146,7 +150,6 @@ dynamics:
               num_latent_gps: 2
               q_diag: false
               whiten: true
-
         gating_network:
           class_name: SVGPGatingNetwork
           config:
@@ -169,137 +172,3 @@ dynamics:
                 output_dim: 1
             q_diag: false
             whiten: true
-
-wandb:
-  entity: "aidanscannell"
-  project: "mode_remaining_exploration_for_mbrl"
-  # log_artifacts: True
-  # notes: ${run.comment}
-  # name: fold_${run.fold}
-
-hydra:
-  job:
-    chdir: False
-  run:
-    dir: ""
-# dynamics:
-#   _target_: moderl.dynamics.ModeRLDynamics
-#   state_dim: 2
-#   desired_mode: 1
-#   # dataset: null
-#   learning_rate: 0.01
-#   epsilon: 1e-8
-#   # dynamics_fit_kwargs:
-#   #   batch_size:
-#   #   epochs: 20000
-#   #   verbose: true
-#   #   validation_split: 0.2
-#   mosvgpe:
-#     _target_: mosvgpe.mixture_of_experts.MixtureOfSVGPExperts
-#     gating_network:
-#       _target_: mosvgpe.gating_networks.SVGPGatingNetwork
-#       kernel:
-#         _target_: mosvgpe.keras.kernels.Matern52Serializable
-#         active_dims:
-#           - 0
-#           - 1
-#         lengthscales:
-#           _target_: numpy.ones
-#           shape:
-#             - ${state_dim}
-#             # - ${state_control_input_dim}
-#         variance: 1.0
-#       inducing_variable:
-#         _target_: mosvgpe.keras.inducing_variables.InducingPointsSerializable
-#         Z:
-#           _target_: numpy.ones
-#           shape:
-#             - ${num_inducing_gating}
-#             # - ${state_dim}
-#             - ${state_control_input_dim}
-#       mean_function:
-#         _target_: mosvgpe.keras.functions.ZeroSerializable
-#         # output_dim: ${state_dim}
-#       whiten: True
-#     experts_list:
-#       _target_: experiments.utils.TwoExpertsList
-#       expert_one:
-#         _target_: mosvgpe.experts.SVGPExpert
-#         kernel:
-#           _target_: mosvgpe.keras.kernels.SeparateIndependentSerializable
-#           kernels:
-#             - _target_: mosvgpe.keras.kernels.Matern52Serializable
-#               lengthscales:
-#                 _target_: numpy.ones
-#                 shape:
-#                   - ${state_control_input_dim}
-#               variance: 1.0
-#             - _target_: mosvgpe.keras.kernels.Matern52Serializable
-#               lengthscales:
-#                 _target_: numpy.ones
-#                 shape:
-#                   - ${state_control_input_dim}
-#               variance: 1.0
-#         likelihood:
-#           _target_: mosvgpe.keras.likelihoods.GaussianSerializable
-#           variance:
-#             _target_: numpy.ones
-#             shape:
-#               - ${state_dim}
-#         inducing_variable:
-#           _target_: mosvgpe.keras.inducing_variables.SharedIndependentInducingVariablesSerializable
-#           inducing_variable:
-#             _target_: mosvgpe.keras.inducing_variables.InducingPointsSerializable
-#             Z:
-#               _target_: numpy.ones
-#               shape:
-#                 - ${num_inducing_experts}
-#                 - ${state_control_input_dim}
-#         mean_function:
-#           _target_: mosvgpe.keras.functions.ConstantSerializable
-#           c:
-#             _target_: numpy.zeros
-#             shape:
-#               - ${state_dim}
-#         num_latent_gps: ${state_dim}
-#         whiten: True
-#       expert_two:
-#         _target_: mosvgpe.experts.SVGPExpert
-#         kernel:
-#           _target_: mosvgpe.keras.kernels.SeparateIndependentSerializable
-#           kernels:
-#             - _target_: mosvgpe.keras.kernels.Matern52Serializable
-#               lengthscales:
-#                 _target_: numpy.ones
-#                 shape:
-#                   - ${state_control_input_dim}
-#               variance: 1.0
-#             - _target_: mosvgpe.keras.kernels.Matern52Serializable
-#               lengthscales:
-#                 _target_: numpy.ones
-#                 shape:
-#                   - ${state_control_input_dim}
-#               variance: 1.0
-#         likelihood:
-#           _target_: mosvgpe.keras.likelihoods.GaussianSerializable
-#           variance:
-#             _target_: numpy.ones
-#             shape:
-#               - ${state_dim}
-#         inducing_variable:
-#           _target_: mosvgpe.keras.inducing_variables.SharedIndependentInducingVariablesSerializable
-#           inducing_variable:
-#             _target_: mosvgpe.keras.inducing_variables.InducingPointsSerializable
-#             Z:
-#               _target_: numpy.ones
-#               shape:
-#                 - ${num_inducing_experts}
-#                 - ${state_control_input_dim}
-#         mean_function:
-#           _target_: mosvgpe.keras.functions.ConstantSerializable
-#           c:
-#             _target_: numpy.zeros
-#             shape:
-#               - ${state_dim}
-#         num_latent_gps: ${state_dim}
-#         whiten: True
