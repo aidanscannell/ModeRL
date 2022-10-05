@@ -286,7 +286,7 @@ def mode_rl_loop(
 @hydra.main(config_path="configs", config_name="main")
 def run_experiment(cfg: omegaconf.DictConfig):
     tf.keras.utils.set_random_seed(cfg.random_seed)
-    np.random.seed(cfg.random_seed)
+    # np.random.seed(cfg.random_seed)
     ###### Initialise WandB run and save experiment config ######
     run = wandb.init(
         entity=cfg.wandb.entity,
@@ -317,7 +317,7 @@ def run_experiment(cfg: omegaconf.DictConfig):
 
     ###### Instantiate dynamics model and sample inducing inputs data ######
     # dynamics = hydra.utils.instantiate(cfg.dynamics)
-    # load_dir = None
+    load_dir = None
     load_dir = "./wandb/run-20221001_195555-2k2vmkt2/files/saved-models/dynamics-after-training-on-dataset-0-config.json"
     if load_dir is not None:
         ###### Try to load trained dynamics model  ######
@@ -362,11 +362,15 @@ def run_experiment(cfg: omegaconf.DictConfig):
             )
         )
 
+    # load_dir = "./wandb/run-20221004_221209-ldmc9tcg/files/saved-models/controller-optimised-1-config.json"
+    # load_dir = "./wandb/run-20221004_225725-3126jpv6/files/saved-models/controller-optimised-1-config.json"
+    # explorative_controller.load(load_dir)
+
     gpf.utilities.print_summary(dynamics.mosvgpe.gating_network.gp.kernel)
-    dynamics.mosvgpe.gating_network.gp.kernel.lengthscales = (
-        dynamics.mosvgpe.gating_network.gp.kernel.lengthscales * 2
-    )
-    dynamics.mosvgpe.num_data = None
+    # dynamics.mosvgpe.gating_network.gp.kernel.lengthscales = (
+    #     dynamics.mosvgpe.gating_network.gp.kernel.lengthscales * 2
+    # )
+    # dynamics.mosvgpe.num_data = None
     # gpf.utilities.set_trainable(dynamics.mosvgpe.gating_network.gp.kernel, True)
     gpf.utilities.set_trainable(
         dynamics.mosvgpe.experts_list[1].gp.likelihood, False
@@ -391,10 +395,14 @@ def run_experiment(cfg: omegaconf.DictConfig):
         exploration_weight=cfg.explorative_controller.exploration_weight,
         keep_last_solution=cfg.explorative_controller.keep_last_solution,
         callback=None,
-        lower_bound=cfg.explorative_controller.control_lower_bound,
-        upper_bound=cfg.explorative_controller.control_upper_bound,
+        control_lower_bound=cfg.explorative_controller.control_lower_bound,
+        control_upper_bound=cfg.explorative_controller.control_upper_bound,
         method=cfg.explorative_controller.method,
     )
+    explorative_controller.save(
+        os.path.join(log_dir, "saved-models/controller-initial-config.json")
+    )
+
     # explorative_controller.callback = build_controller_plotting_callback(
     #     env=env,
     #     controller=explorative_controller,
@@ -443,6 +451,12 @@ def run_experiment(cfg: omegaconf.DictConfig):
             target_state=target_state,
         )
         wandb.log({"Final traj over desired gating gp": wandb.Image(fig)})
+        explorative_controller.save(
+            os.path.join(
+                log_dir,
+                "saved-models/controller-optimised-{}-config.json".format(iteration),
+            )
+        )
         dynamics.save(
             os.path.join(
                 log_dir,
@@ -459,6 +473,7 @@ def run_experiment(cfg: omegaconf.DictConfig):
         explorative_controller=explorative_controller,
         callback=callback,
         num_explorative_trajectories=cfg.num_explorative_trajectories,
+        num_episodes=cfg.num_episodes,
     )
 
 
