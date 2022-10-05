@@ -226,9 +226,12 @@ class SVGPGatingNetwork(GPGatingNetworkBase):
         inducing_variable = tf.keras.layers.deserialize(
             cfg["inducing_variable"], custom_objects=INDUCING_VARIABLE_OBJECTS
         )
-        mean_function = tf.keras.layers.deserialize(
-            cfg["mean_function"], custom_objects=MEAN_FUNCTION_OBJECTS
-        )
+        try:
+            mean_function = tf.keras.layers.deserialize(
+                cfg["mean_function"], custom_objects=MEAN_FUNCTION_OBJECTS
+            )
+        except KeyError:
+            mean_function = None
         return cls(
             kernel=kernel,
             inducing_variable=inducing_variable,
