@@ -1,2 +1,0 @@
-_target_: gpflow.likelihoods.Gaussian
-variance: 1.0

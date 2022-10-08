@@ -1,9 +1,0 @@
-defaults:
-  - kernel: rbf
-  - likelihood: gaussian
-  - inducing_variable: ones
-  - mean_function: constant
-
-_target_: mosvgpe.experts.SVGPExpert
-num_latent_gps: 1
-whiten: True
