@@ -43,6 +43,63 @@ def joint_gating_function_entropy(
     return tf.reduce_sum(gating_entropy)
 
 
+def conditional_gating_function_entropy(
+    dynamics: ModeRLDynamics, initial_solution: ControlTrajectory, start_state: State
+) -> ttf.Tensor0:
+    """Calculates joint gating function entropy along mean of state trajectory"""
+    control_dists = initial_solution()
+    state_dists = rollout_ControlTrajectory_in_ModeRLDynamics(
+        dynamics=dynamics, control_trajectory=initial_solution, start_state=start_state
+    )
+    input_dists = combine_state_controls_to_input(
+        state=state_dists[1:], control=control_dists
+    )
+    input_means = input_dists.mean()
+
+    h_means_conditioned, h_vars_conditioned = [], []
+    for t in range(1, initial_solution.horizon):
+        state = input_means[t : t + 1, :]
+        print("state.shape")
+        print(state.shape)
+        state_traj = input_means[:t, :]
+        f, h_covs = dynamics.mosvgpe.gating_network.gp.predict_f(
+            state_traj, full_cov=True
+        )
+        print(state_traj.shape)
+        print("f.shape")
+        print(f.shape)
+        Knn = svgp_covariance_conditional(
+            X1=state, X2=state, svgp=dynamics.desired_mode_gating_gp
+        )[0, 0, :]
+        Kmm = svgp_covariance_conditional(
+            X1=state_traj, X2=state_traj, svgp=dynamics.desired_mode_gating_gp
+        )[0, :, :]
+        Kmn = svgp_covariance_conditional(
+            X1=state_traj, X2=state, svgp=dynamics.desired_mode_gating_gp
+        )[0, :, :]
+        Kmm += tf.eye(Kmm.shape[0], dtype=default_float()) * default_jitter()
+        print("Knn.shape")
+        print(Knn.shape)
+        print(Kmm.shape)
+        print(Kmn.shape)
+        h_mean_conditioned, h_var_conditioned = base_conditional(
+            Kmn=Kmn,
+            Kmm=Kmm,
+            Knn=Knn,
+            f=f,
+            full_cov=False,
+            white=False,
+        )
+        h_means_conditioned.append(h_mean_conditioned)
+        h_vars_conditioned.append(h_var_conditioned)
+    h_means_conditioned = tf.concat(h_means_conditioned, 0)
+    h_vars_conditioned = tf.concat(h_vars_conditioned, 0)
+
+    h_dist = tfd.Normal(loc=h_means_conditioned, scale=h_vars_conditioned**2)
+    gating_entropy = h_dist.entropy()
+    return tf.reduce_sum(gating_entropy)
+
+
 def independent_gating_function_entropy(
     dynamics: ModeRLDynamics, initial_solution: ControlTrajectory, start_state: State
 ) -> ttf.Tensor0:
