@@ -1,6 +1,13 @@
 defaults:
   - initial_dataset: default
   - reward_fn: state_diff_control
+  - start_state: default
+  - target_state: default
+  - dynamics: default
+  - controller: joint_gating_function_entropy
+  # - controller: bald
+  # - controller: independent_gating_function_entropy
+  - env: scenario-1
   # disable logging by Hydra
   - override hydra/job_logging: none
   - override hydra/hydra_logging: none
@@ -10,7 +17,9 @@ wandb:
   entity: "aidanscannell"
   # project: "mode_remaining_exploration"
   project: "mode_remaining_exploration_for_mbrl"
-  # log_artifacts: True
+  log_artifacts: True
+  log_constraint_violations: True
+  log_extrinsic_return: True
   # notes: ${run.comment}
   # name: fold_${run.fold}
 
@@ -22,168 +31,12 @@ hydra:
 
 random_seed: 42
 
-env:
-  # name: "velocity-controlled-point-mass/scenario-7"
-  name: "velocity-controlled-point-mass/scenario-1"
-  seed: 42
-
-# General model config
-state_dim: 2
-control_dim: 2
-state_control_input_dim: 4
-
-# Monitoring config
-logging_epoch_freq: 1000
-# logging_epoch_freq: 100
-
-num_episodes: 40
-
-# Traj opt config
-start_state:
-  _target_: tensorflow.constant
-  value: [[0.0, -2.0]]
-  # value: [[1.0, -2.0]]
-  # value: [[2.0, -2.0]]
-  # value: [[-1.0, -2.0]]
-  dtype: "float64"
-target_state:
-  _target_: tensorflow.constant
-  value: [[1.7, 3.0]]
-  dtype: "float64"
-
-# num_explorative_trajectories: 6
-num_explorative_trajectories: 1
-# num_explorative_trajectories: 4
-# num_explorative_trajectories: 2
-
-explorative_controller:
-  horizon: 15
-  max_iterations: 100
-  # explorative_objective_fn: "bald"
-  explorative_objective_fn: "joint_gating_function_entropy"
-  # explorative_objective_fn: "independent_gating_function_entropy"
-  # explorative_objective_fn: "none"
-  mode_satisfaction_prob: 0.8
-  # mode_satisfaction_prob: 0.7
-  # exploration_weight: 0.1
-  # exploration_weight: 10.0
-  exploration_weight: 0.5
-  # exploration_weight: 1.0
-  keep_last_solution: false
-  # keep_last_solution: true
-  control_lower_bound: -4.0
-  control_upper_bound: 10.0
-  method: "SLSQP"
-
-dynamics:
-  class_name: ModeRLDynamics
-  config:
-    state_dim: 2
-    desired_mode: 0
-    learning_rate: 0.01
-    epsilon: 1.0e-08
-    dynamics_fit_kwargs:
-      batch_size: 118
-      epochs: 20000
-      verbose: true
-      validation_split: 0.0
-    mosvgpe:
-      class_name: MixtureOfSVGPExperts
-      config:
-        experts_list:
-          - class_name: SVGPExpert
-            config:
-              kernel:
-                class_name: SeparateIndependentSerializable
-                config:
-                  kernels:
-                    - class_name: Matern52Serializable
-                      # - class_name: RBFSerializable
-                      config:
-                        active_dims:
-                        lengthscales: [1.0, 1.0, 1.0, 1.0]
-                        variance: 1.0
-                    - class_name: Matern52Serializable
-                      # - class_name: RBFSerializable
-                      config:
-                        active_dims:
-                        lengthscales: [1.0, 1.0, 1.0, 1.0]
-                        variance: 1.0
-              likelihood:
-                class_name: GaussianSerializable
-                config:
-                  variance: [1.0, 1.0]
-              inducing_variable:
-                class_name: SharedIndependentInducingVariablesSerializable
-                config:
-                  inducing_variable:
-                    class_name: InducingPointsSerializable
-                    config:
-                      num_inducing: 90
-                      input_dim: 4
-              mean_function:
-                class_name: ConstantSerializable
-                config:
-                  c: [0.0, 0.0]
-              num_latent_gps: 2
-              q_diag: false
-              whiten: true
-          - class_name: SVGPExpert
-            config:
-              kernel:
-                class_name: SeparateIndependentSerializable
-                config:
-                  kernels:
-                    - class_name: Matern52Serializable
-                      # - class_name: RBFSerializable
-                      config:
-                        active_dims:
-                        lengthscales: [1.0, 1.0, 1.0, 1.0]
-                        variance: 1.0
-                    - class_name: Matern52Serializable
-                      # - class_name: RBFSerializable
-                      config:
-                        active_dims:
-                        lengthscales: [1.0, 1.0, 1.0, 1.0]
-                        variance: 1.0
-              likelihood:
-                class_name: GaussianSerializable
-                config:
-                  variance: [1.0, 1.0]
-              inducing_variable:
-                class_name: SharedIndependentInducingVariablesSerializable
-                config:
-                  inducing_variable:
-                    class_name: InducingPointsSerializable
-                    config:
-                      num_inducing: 90
-                      input_dim: 4
-              mean_function:
-                class_name: ConstantSerializable
-                config:
-                  c: [0.0, 0.0]
-              num_latent_gps: 2
-              q_diag: false
-              whiten: true
-        gating_network:
-          class_name: SVGPGatingNetwork
-          config:
-            kernel:
-              class_name: Matern52Serializable
-              # class_name: RBFSerializable
-              config:
-                active_dims: [0, 1]
-                lengthscales: [0.5, 0.5]
-                # lengthscales: [1.0, 1.0]
-                variance: 1.0
-            inducing_variable:
-              class_name: InducingPointsSerializable
-              config:
-                num_inducing: 90
-                input_dim: 4
-            mean_function:
-              class_name: ZeroSerializable
-              config:
-                output_dim: 1
-            q_diag: false
-            whiten: true
+experiment:
+  save: True
+  num_episodes: 80
+  # Early stopping callback
+  callbacks:
+    patience: 50
+    min_delta: 0
+  # Monitoring config
+  logging_epoch_freq: 1000

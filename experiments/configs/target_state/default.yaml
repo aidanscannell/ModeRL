@@ -1,0 +1,4 @@
+_target_: tensorflow.constant
+value: [[1.2, 3.0]]
+# value: [[1.7, 3.0]]
+dtype: "float64"
