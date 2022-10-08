@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from hydra import initialize
 from typing import Callable, Optional, Union
 
 import numpy as np
@@ -8,10 +7,10 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 from gpflow import default_float
 from moderl.constraints import build_mode_chance_constraints_scipy
-from moderl.reward_functions import REWARD_FUNCTION_OBJECTS, RewardFunction
 from moderl.custom_types import ControlTrajectory, State, StateDim
 from moderl.dynamics import ModeRLDynamics
 from moderl.optimisers import TrajectoryOptimiser
+from moderl.reward_functions import REWARD_FUNCTION_OBJECTS, RewardFunction
 from moderl.rollouts import rollout_ControlTrajectory_in_ModeRLDynamics
 from moderl.utils import save_json_config
 from scipy.optimize import LinearConstraint
