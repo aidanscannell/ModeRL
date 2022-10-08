@@ -15,6 +15,33 @@ from moderl.utils import combine_state_controls_to_input
 tfd = tfp.distributions
 
 
+def upper_confidence_bound(
+    dynamics: ModeRLDynamics, initial_solution: ControlTrajectory, start_state: State
+) -> ttf.Tensor0:
+    control_dists = initial_solution()
+    state_dists = rollout_ControlTrajectory_in_ModeRLDynamics(
+        dynamics=dynamics, control_trajectory=initial_solution, start_state=start_state
+    )
+    input_dists = combine_state_controls_to_input(
+        state=state_dists[1:], control=control_dists
+    )
+    h_means, h_vars = dynamics.mosvgpe.gating_network.gp.predict_f(
+        input_dists.mean(), full_cov=True
+    )
+    beta = 1.0
+    h_ucb = h_means + beta * h_vars * initial_solution.hallucinated_controls
+    mode_probs = dynamics.mosvgpe.gating_network.gp.likelihood.conditional_mean(
+        input_dists.mean(), F=h_ucb
+    )
+    alpha = tfd.Bernoulli(probs=mode_probs)
+    # h_vars = (
+    #     h_vars + tf.eye(h_vars.shape[1], h_vars.shape[2], dtype=default_float()) * 1e-6
+    # )
+    # h_dist = tfd.Normal(h_means, h_vars[0, :, :] ** 2)
+    # gating_entropy = h_dist.entropy()
+    # return tf.reduce_sum(gating_entropy)
+
+
 def joint_gating_function_entropy(
     dynamics: ModeRLDynamics, initial_solution: ControlTrajectory, start_state: State
 ) -> ttf.Tensor0:
