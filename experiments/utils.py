@@ -1,25 +1,17 @@
 #!/usr/bin/env python3
 import json
 from typing import List, Optional
-from moderl.dynamics.dynamics import ModeRLDynamics
 
 import mosvgpe
 import numpy as np
 import tensorflow as tf
 from gpflow.inducing_variables import InducingVariables
 from moderl.custom_types import Dataset, State
+from moderl.dynamics.dynamics import ModeRLDynamics
 from moderl.rollouts import collect_data_from_env
 from mosvgpe.custom_types import InputData
-from mosvgpe.experts import SVGPExpert
 from mosvgpe.mixture_of_experts import MixtureOfSVGPExperts
 from omegaconf import DictConfig, OmegaConf
-
-
-class TwoExpertsList(list):
-    def __init__(self, expert_one: SVGPExpert, expert_two: SVGPExpert):
-        super().__init__()
-        self.append(expert_one)
-        self.append(expert_two)
 
 
 def sample_env_trajectories(
@@ -117,20 +109,3 @@ def sample_inducing_inputs_from_data(
     if isinstance(X, tf.Tensor):
         X = X.numpy()
     return X[idx, ...].reshape(-1, X.shape[1])
-
-
-# class CustomSaver(tf.keras.callbacks.Callback):
-#     def __init__(self, save_dir,  save_epoch_freq: int = 10):
-#         self.save_epoch_freq = save_epoch_freq
-
-#     def on_epoch_end(self, epoch, logs={}):
-#         if epoch % self.save_epoch_freq == 0:
-#             # or save after some epoch, each k-th epoch etc.
-#             # self.model.save(
-#             #     "./saved-models/dynamics_model_at_epoch_{}".format(epoch),
-#             #     save_format="tf",
-#             # )
-#             self.model.save(
-#                 os.path.join(ckpt_dir, "step_{}_epoch_{}".format(step, epoch)),
-#                 save_format="tf",
-#             )
