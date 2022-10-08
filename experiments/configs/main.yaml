@@ -1,12 +1,9 @@
 defaults:
-  - initial_dataset: default
-  - reward_fn: state_diff_control
   - start_state: default
   - target_state: default
-  - dynamics: default
-  - controller: joint_gating_function_entropy
-  # - controller: bald
-  # - controller: independent_gating_function_entropy
+  - initial_dataset: default
+  - controller: main
+  - dynamics: main
   - env: scenario-1
   # disable logging by Hydra
   - override hydra/job_logging: none
@@ -29,14 +26,13 @@ hydra:
   run:
     dir: ""
 
-random_seed: 42
-
 experiment:
+  random_seed: 42
   save: True
   num_episodes: 80
   # Early stopping callback
   callbacks:
-    patience: 50
+    patience: 500
     min_delta: 0
   # Monitoring config
   logging_epoch_freq: 1000

@@ -1,0 +1,4 @@
+_target_: mosvgpe.keras.functions.ConstantSerializable
+c:
+  - 0.0
+  - 0.0

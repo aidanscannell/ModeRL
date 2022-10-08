@@ -1,0 +1,6 @@
+_target_: mosvgpe.keras.inducing_variables.InducingPointsSerializable
+Z:
+  _target_: numpy.ones
+  shape:
+    - 90
+    - ${env.input_dim}

@@ -1,0 +1,4 @@
+_target_: mosvgpe.keras.likelihoods.GaussianSerializable
+variance:
+  - 1.0
+  - 1.0

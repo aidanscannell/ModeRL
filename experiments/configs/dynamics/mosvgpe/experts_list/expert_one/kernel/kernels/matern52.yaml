@@ -1,0 +1,6 @@
+- _target_: mosvgpe.keras.kernels.Matern52Serializable
+  lengthscales: [1.0, 1.0, 1.0, 1.0]
+  variance: 1.0
+- _target_: mosvgpe.keras.kernels.Matern52Serializable
+  lengthscales: [1.0, 1.0, 1.0, 1.0]
+  variance: 1.0
