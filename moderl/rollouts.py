@@ -127,15 +127,7 @@ def collect_data_from_env(
     env.state_init = state
     env.reset()
 
-    state_control_inputs = []
-    delta_state_outputs = []
-    # for t in range(controls.shape[0]):
-    #     state_control_inputs.append(np.concatenate([state, controls[t, :]], -1))
-    #     next_time_step = env.step(controls[t, :])
-    #     delta_state_outputs.append(next_time_step.observation - state)
-    #     state = next_time_step.observation
-    # return np.stack(state_control_inputs, 0), np.stack(delta_state_outputs, 0)
-
+    state_control_inputs, delta_state_outputs = [], []
     for t in range(controls.shape[0]):
         state_control_inputs.append(np.concatenate([state, controls[t, :]], -1))
         delta_state_outputs.append(env.transition_dynamics(state, controls[t, :]))
