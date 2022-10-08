@@ -38,8 +38,8 @@ class ExplorativeController(TrajectoryOptimisationController):
         exploration_weight: float = 1.0,
         keep_last_solution: bool = True,
         callback: Optional[Callable[[tf.Tensor, tf.Tensor, int], None]] = None,
-        control_lower_bound: float = -np.inf,
-        control_upper_bound: float = np.inf,
+        control_lower_bound: Optional[float] = None,
+        control_upper_bound: Optional[float] = None,
         method: Optional[str] = "SLSQP",
         # name: str = "ExplorativeController",
         initial_solution: Optional[ControlTrajectory] = None,
@@ -83,27 +83,33 @@ class ExplorativeController(TrajectoryOptimisationController):
                 control_dim=control_dim,
                 start_state=start_state,
             )
-        mode_chance_constraints = build_mode_chance_constraints_scipy(
-            dynamics=dynamics,
-            control_trajectory=initial_solution,
-            start_state=start_state,
-            lower_bound=mode_satisfaction_prob,
-            upper_bound=1.0,  # max prob=1.0
-            # compile=False,
-            compile=True,
-        )
-        control_constraints = LinearConstraint(
-            np.eye(horizon * control_dim), control_lower_bound, control_upper_bound
-        )
+        constraints = [
+            build_mode_chance_constraints_scipy(
+                dynamics=dynamics,
+                control_trajectory=initial_solution,
+                start_state=start_state,
+                lower_bound=mode_satisfaction_prob,
+                upper_bound=1.0,  # max prob=1.0
+                # compile=False,
+                compile=True,
+            )
+        ]
+        if control_lower_bound is not None and control_upper_bound is not None:
+            constraints.append(
+                LinearConstraint(
+                    np.eye(horizon * control_dim),
+                    control_lower_bound,
+                    control_upper_bound,
+                )
+            )
         trajectory_optimiser = TrajectoryOptimiser(
             max_iterations=max_iterations,
             initial_solution=initial_solution,
             objective_fn=augmentd_objective_fn,
             keep_last_solution=keep_last_solution,
-            constraints=[mode_chance_constraints, control_constraints],
+            constraints=constraints,
             method=method,
         )
-
         super().__init__(trajectory_optimiser=trajectory_optimiser)
 
     def previous_solution(self):
