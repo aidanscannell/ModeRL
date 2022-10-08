@@ -4,7 +4,10 @@ import tensor_annotations.tensorflow as ttf
 import tensorflow as tf
 import tensorflow_probability as tfp
 from gpflow import default_float
-from moderl.cost_functions import ControlQuadraticCostFunction, TargetStateCostFunction
+from moderl.reward_functions import (
+    ControlQuadraticRewardFunction,
+    TargetStateRewardFunction,
+)
 from moderl.custom_types import ControlTrajectory, State
 from moderl.dynamics import ModeRLDynamics
 from moderl.optimisers import TrajectoryOptimiser
@@ -21,15 +24,15 @@ def find_solution_in_desired_mode(
             tf.Variable(np.random.random((horizon, control_dim)) * 0.01)
         )
     )
-    terminal_cost_fn = TargetStateCostFunction(
+    terminal_reward_fn = TargetStateRewardFunction(
         weight_matrix=1000 * tf.eye(dynamics.state_dim, dtype=default_float()),
         target_state=start_state
         + tf.ones(start_state.shape, dtype=default_float()) * 0.2,
     )
-    control_cost_fn = ControlQuadraticCostFunction(
+    control_reward_fn = ControlQuadraticRewardFunction(
         weight_matrix=tf.eye(control_dim, dtype=default_float())
     )
-    cost_fn = terminal_cost_fn + control_cost_fn
+    reward_fn = terminal_reward_fn + control_reward_fn
 
     def objective_fn(initial_solution: ControlTrajectory) -> ttf.Tensor0:
         state_dists = rollout_ControlTrajectory_in_ModeRLDynamics(
@@ -38,7 +41,7 @@ def find_solution_in_desired_mode(
             start_state=start_state,
         )
         control_dists = initial_solution()
-        return cost_fn(state=state_dists, control=control_dists)
+        return reward_fn(state=state_dists, control=control_dists)
 
     trajectory_optimiser = TrajectoryOptimiser(
         max_iterations=1000,
