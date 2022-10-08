@@ -192,64 +192,6 @@ class ModeRLDynamics(DynamicsInterface):
             h_var = tf.concat([h_var, h_var], -1)
         return h_mean, h_var
 
-    def mode_variational_expectation(
-        self,
-        state_mean: ttf.Tensor2[Batch, StateDim],
-        control_mean: ttf.Tensor2[Batch, ControlDim],
-        state_var: ttf.Tensor2[Batch, StateDim] = None,
-        control_var: ttf.Tensor2[Batch, ControlDim] = None,
-    ):
-        """Calculate expected log mode probability under trajectory distribution given by,
-
-        \sum_{t=1}^T \E_{p(\state_t, \control_t)} [\log \Pr(\alpha=k_* \mid \state_t, \control_t)]
-
-        \sum_{t=1}^T \E_{p(\state_t, \control_t, h)} [\log \Pr(\alpha=k_* \mid h(\state_t, \control_t) )]
-        """
-
-        input_mean, input_var = combine_state_controls_to_input(
-            state_mean, control_mean, state_var, control_var
-        )
-
-        def f(Xnew):
-            print("Xnew.shape")
-            print(Xnew.shape)
-            # TODO this only works for Bernoulli likelihood
-            # gating_means, gating_vars = self.gating_gp.predict_fs(Xnew, full_cov=False)
-            gating_means, gating_vars = self.mosvgpe.gating_network.gp.predict_f(
-                Xnew, full_cov=False
-            )
-            print("gating_means.shape")
-            print(gating_means.shape)
-            # TODO how to set Y shape if more than two modes?
-            Y = tf.ones(gating_means.shape, dtype=default_float()) * (
-                self.desired_mode + 1
-            )
-            # Y = tf.ones(gating_means.shape, dtype=default_float()) * 2
-            # Y = tf.ones(gating_means.shape, dtype=default_float())
-            # Y = tf.zeros(gating_means.shape, dtype=default_float())
-            gating_var_exp = self.mosvgpe.gating_network.gp.likelihood.predict_log_density(
-                gating_means,
-                gating_vars,
-                Y,
-                # gating_means[..., self.desired_mode],
-                # gating_vars[..., self.desired_mode],
-                # Y[..., self.desired_mode],
-            )
-            return tf.expand_dims(gating_var_exp, -1)
-
-        gauss_quadrature = NDiagGHQuadrature(
-            dim=input_mean.shape[-1], n_gh=DEFAULT_NUM_GAUSS_HERMITE_POINTS
-        )
-        var_exp = gauss_quadrature(f, input_mean, input_var)
-        mode_var_exp = tf.reduce_sum(var_exp)
-
-        print("input_mean.shape")
-        print(input_mean.shape)
-        print(input_var.shape)
-        print("var_exp: {}".format(var_exp))
-        print("mode_var_exp: {}".format(mode_var_exp))
-        return mode_var_exp
-
     @property
     def desired_mode_dynamics_gp(self) -> SVGPDynamicsWrapper:
         return self._desired_mode_dynamics_gp
