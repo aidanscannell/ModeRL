@@ -39,7 +39,7 @@ EXPLORATIVE_OBJECTIVE_FNS = {
     "joint_gating_function_entropy": joint_gating_function_entropy,
     "bald": bald_objective,
     "independent_gating_function_entropy": independent_gating_function_entropy,
-    "none": lambda *args, **kwargs: 0.0,
+    "greedy": lambda *args, **kwargs: 0.0,  # i.e. no exploration term
     "conditional_gating_function_entropy": conditional_gating_function_entropy,
 }
 
@@ -61,7 +61,7 @@ def set_desired_mode(dynamics: ModeRLDynamics) -> int:
 @hydra.main(config_path="configs", config_name="main")
 def run_experiment(cfg: omegaconf.DictConfig):
     ###### Make experiment reproducible ######
-    tf.keras.utils.set_random_seed(cfg.random_seed)
+    tf.keras.utils.set_random_seed(cfg.experiment.random_seed)
 
     ###### Initialise WandB run ######
     run = wandb.init(
@@ -89,77 +89,97 @@ def run_experiment(cfg: omegaconf.DictConfig):
         horizon=cfg.initial_dataset.horizon,
         num_trajectories=cfg.initial_dataset.num_trajectories,
         width=cfg.initial_dataset.width,
-        random_seed=cfg.random_seed,
+        random_seed=cfg.experiment.random_seed,
     )
 
     ###### Instantiate dynamics model and sample inducing inputs from data ######
-    dynamics = model_from_DictConfig(
-        cfg.dynamics, custom_objects={"ModeRLDynamics": ModeRLDynamics}
+    dynamics = hydra.utils.instantiate(
+        cfg.dynamics,
+        dataset=initial_dataset,
+        callbacks=[
+            # build_plotting_callbacks(
+            #     dynamics=dynamics, logging_epoch_freq=logging_epoch_freq
+            # ),
+            tf.keras.callbacks.EarlyStopping(
+                monitor="loss",
+                patience=cfg.experiment.callbacks.patience,
+                min_delta=cfg.experiment.callbacks.min_delta,
+                verbose=0,
+                restore_best_weights=True,
+            ),
+            WandbCallback(
+                monitor="val_loss",
+                save_graph=False,
+                save_model=False,
+                save_weights_only=False,
+                save_traces=False,
+            ),
+            # DynamicsLoggingCallback(dynamics=dynamics, logging_epoch_freq=5),
+        ],
     )
+    gpf.utilities.set_trainable(dynamics.mosvgpe.gating_network.gp.kernel, False)
+    gpf.utilities.set_trainable(
+        # TODO this should be undesired mode. Is it OK to fix it here?
+        dynamics.mosvgpe.experts_list[1].gp.likelihood,
+        False,
+    )  # Needed to stop inf in bound due to expert 2 learning very low noise variance
     sample_mosvgpe_inducing_inputs_from_data(
         model=dynamics.mosvgpe, X=initial_dataset[0]
     )
-    dynamics.update_dataset(initial_dataset)
+    # gpf.utilities.print_summary(dynamics)
 
-    dynamics.callbacks = [
-        # build_plotting_callbacks(
-        #     dynamics=dynamics, logging_epoch_freq=logging_epoch_freq
-        # ),
-        tf.keras.callbacks.EarlyStopping(
-            monitor="loss",
-            patience=cfg.experiment.callbacks.patience,
-            min_delta=cfg.experiment.callbacks.min_delta,
-            verbose=0,
-            restore_best_weights=True,
-        ),
-        WandbCallback(
-            monitor="val_loss",
-            save_graph=False,
-            save_model=False,
-            save_weights_only=False,
-            save_traces=False,
-        ),
-        DynamicsLoggingCallback(dynamics=dynamics, logging_epoch_freq=5),
-    ]
-    gpf.utilities.set_trainable(dynamics.mosvgpe.gating_network.gp.kernel, False)
-    gpf.utilities.set_trainable(
-        dynamics.mosvgpe.experts_list[1].gp.likelihood, False
-    )  # Needed to stop inf in bound due to expert 2 learning very low noise variance
-
-    ###### Build the dynamics model ######
+    ###### Build/train dynamics on initial data set and set desired dynamics mode ######
     dynamics(initial_dataset[0])
-
-    ###### Train dynamics on initial data set and set desired dynamics mode ######
     dynamics.optimise()
     dynamics.desired_mode = set_desired_mode(dynamics)
 
     ###### Build greedy reward function ######
-    explorative_objective_fn = EXPLORATIVE_OBJECTIVE_FNS[
-        cfg.controller.explorative_objective_fn
-    ]
-    reward_fn = hydra.utils.instantiate(cfg.reward_fn)
+    # explorative_objective_fn = EXPLORATIVE_OBJECTIVE_FNS[
+    #     cfg.controller.explorative_objective_fn
+    # ]
+    # print("explorative_objective_fn")
+    # print(explorative_objective_fn)
+    # reward_fn = hydra.utils.instantiate(cfg.reward_fn)
 
     ###### Configure the explorative controller (wraps reward_fn in the explorative objective) ######
-    explorative_controller = ExplorativeController(
-        start_state=start_state,
-        dynamics=dynamics,
-        explorative_objective_fn=explorative_objective_fn,
-        reward_fn=reward_fn,
-        control_dim=env.action_spec().shape[0],
-        horizon=cfg.controller.horizon,
-        max_iterations=cfg.controller.max_iterations,
-        mode_satisfaction_prob=cfg.controller.mode_satisfaction_prob,
-        exploration_weight=cfg.controller.exploration_weight,
-        keep_last_solution=cfg.controller.keep_last_solution,
-        control_lower_bound=cfg.controller.control_lower_bound,
-        control_upper_bound=cfg.controller.control_upper_bound,
-        method=cfg.controller.method,
-    )
+    explorative_controller = hydra.utils.instantiate(cfg.controller, dynamics=dynamics)
+    print("explorative_controller")
+    print(explorative_controller)
+    # explorative_controller = ExplorativeController(
+    #     start_state=start_state,
+    #     dynamics=dynamics,
+    #     explorative_objective_fn=explorative_objective_fn,
+    #     reward_fn=reward_fn,
+    #     control_dim=env.action_spec().shape[0],
+    #     horizon=cfg.controller.horizon,
+    #     max_iterations=cfg.controller.max_iterations,
+    #     mode_satisfaction_prob=cfg.controller.mode_satisfaction_prob,
+    #     exploration_weight=cfg.controller.exploration_weight,
+    #     keep_last_solution=cfg.controller.keep_last_solution,
+    #     control_lower_bound=cfg.controller.control_lower_bound,
+    #     control_upper_bound=cfg.controller.control_upper_bound,
+    #     method=cfg.controller.method,
+    # )
 
     ###### Run the mbrl loop ######
     converged = False
     test_inputs = create_test_inputs(40000)  # test inputs for plotting
     explorative_controller.save(save_name.format("before"))
+
+    fig = plot_trajectories_over_desired_mixing_prob(
+        env,
+        controller=explorative_controller,
+        test_inputs=test_inputs,
+        target_state=target_state,
+    )
+    wandb.log({"Final traj over desired mixing prob": wandb.Image(fig)})
+    fig = plot_trajectories_over_desired_gating_gp(
+        env,
+        controller=explorative_controller,
+        test_inputs=test_inputs,
+        target_state=target_state,
+    )
+    wandb.log({"Final traj over desired gating gp": wandb.Image(fig)})
     for episode in range(0, cfg.experiment.num_episodes):
         ###### Train the dynamics model and set the desired dynamics mode ######
         if episode > 0:
