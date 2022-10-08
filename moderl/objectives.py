@@ -213,20 +213,112 @@ def bald_objective(
     input_dists = combine_state_controls_to_input(
         state=state_dists[1:], control=control_dists
     )
+    input_means = input_dists.mean()
+
+    def bald_objective_closed_form_traj():
+        def entropy_approx(h_means, h_vars, mode_probs):
+            C = tf.constant(np.sqrt(math.pi * np.log(2.0) / 2.0), dtype=default_float())
+            # param_entropy = C * tf.exp(-(h_means**2) / (2 * (h_vars**2 + C**2)))
+            # param_entropy = param_entropy / (tf.sqrt(h_vars**2 + C**2))
+            param_entropy = C * tf.exp(-(h_means**2) / (2 * (h_vars + C**2)))
+            param_entropy = param_entropy / (tf.sqrt(h_vars + C**2))
+            print("param_entropy")
+            print(param_entropy)
+            model_entropy = binary_entropy(mode_probs)
+            print(model_entropy)
+            return model_entropy - param_entropy
+
+        # print("h_covs.shape yoyyoyoyoy")
+        # print(h_covs.shape)
+        h_means_conditioned, h_vars_conditioned = [], []
+        for t in range(1, initial_solution.horizon):
+            state = input_means[t : t + 1, :]
+            print("state.shape")
+            print(state.shape)
+            state_traj = tf.concat([input_means[:t, :], input_means[t + 1 :, :]], 0)
+            f, h_covs = dynamics.mosvgpe.gating_network.gp.predict_f(
+                state_traj, full_cov=True
+            )
+            print(state_traj.shape)
+            # f = tf.concat([h_means[:t, :], h_means[t + 1 :, :]], 0)
+            print("f.shape")
+            print(f.shape)
+            Knn = svgp_covariance_conditional(
+                X1=state, X2=state, svgp=dynamics.desired_mode_gating_gp
+            )[0, 0, :]
+            Kmm = svgp_covariance_conditional(
+                X1=state_traj, X2=state_traj, svgp=dynamics.desired_mode_gating_gp
+            )[0, :, :]
+            Kmn = svgp_covariance_conditional(
+                X1=state_traj, X2=state, svgp=dynamics.desired_mode_gating_gp
+            )[0, :, :]
+            Kmm += tf.eye(Kmm.shape[0], dtype=default_float()) * default_jitter()
+            print("Knn.shape")
+            print(Knn.shape)
+            print(Kmm.shape)
+            print(Kmn.shape)
+            # Lm = tf.linalg.cholesky(Kmm)
+            h_mean_conditioned, h_var_conditioned = base_conditional(
+                Kmn=Kmn,
+                Kmm=Kmm,
+                Knn=Knn,
+                f=f,
+                full_cov=False,
+                # q_sqrt=tf.linalg.cholesky(h_covs),
+                # q_sqrt=None,  # TODO make this h_var??
+                white=False,
+            )
+            h_means_conditioned.append(h_mean_conditioned)
+            h_vars_conditioned.append(h_var_conditioned)
+        h_means_conditioned = tf.concat(h_means_conditioned, 0)
+        h_vars_conditioned = tf.concat(h_vars_conditioned, 0)
+
+        h_means, h_covs = dynamics.mosvgpe.gating_network.gp.predict_f(
+            input_dists.mean(),
+            # full_cov=False
+            full_cov=True,
+        )
+        mode_probs = dynamics.mosvgpe.gating_network.gp.likelihood.predict_mean_and_var(
+            input_means, Fmu=h_means, Fvar=h_covs
+        )[0]
+
+        # mode_probs, _ = dynamics.desired_mode_gating_gp.likelihood.predict_mean_and_var(
+        #     X=input_dists.mean(), Fmu=h_means, Fvar=h_vars
+        # )  # [N, 1]
+        print("mode_probs.shape")
+        print(mode_probs.shape)
+        mode_probs = tf.transpose(tf.linalg.diag_part(mode_probs))[1:, :]
+        print(mode_probs.shape)
+        # print(h_means.shape)
+        # print(h_vars.shape)
+        print(h_means_conditioned.shape)
+        print(h_vars_conditioned.shape)
+        return entropy_approx(
+            h_means_conditioned,
+            h_vars_conditioned,
+            mode_probs,
+            # h_means_conditioned[:, dynamics.desired_mode],
+            # h_vars_conditioned[:, dynamics.desired_mode],
+            # mode_probs[:, dynamics.desired_mode],
+        )
 
     def bald_objective_closed_form():
         h_means, h_vars = dynamics.mosvgpe.gating_network.gp.predict_f(
             input_dists.mean(),
-            full_cov=False
+            full_cov=True
+            # full_cov=False
             # input_dists.mean(), full_cov=True
         )
-
-        input_means = input_dists.mean()
+        print("YOYOYO")
+        print(h_means.shape)
+        print(h_vars.shape)
 
         def entropy_approx(h_means, h_vars, mode_probs):
             C = tf.constant(np.sqrt(math.pi * np.log(2.0) / 2.0), dtype=default_float())
-            param_entropy = C * tf.exp(-(h_means**2) / (2 * (h_vars**2 + C**2)))
-            param_entropy = param_entropy / (tf.sqrt(h_vars**2 + C**2))
+            # param_entropy = C * tf.exp(-(h_means**2) / (2 * (h_vars**2 + C**2)))
+            # param_entropy = param_entropy / (tf.sqrt(h_vars**2 + C**2))
+            param_entropy = C * tf.exp(-(h_means**2) / (2 * (h_vars + C**2)))
+            param_entropy = param_entropy / (tf.sqrt(h_vars + C**2))
             print("param_entropy")
             print(param_entropy)
             model_entropy = binary_entropy(mode_probs)
@@ -259,7 +351,7 @@ def bald_objective(
             Kmn = svgp_covariance_conditional(
                 X1=Xobs, X2=Xnew, svgp=dynamics.desired_mode_gating_gp
             )[0, :, :]
-            Kmm += tf.eye(Kmm.shape[0], dtype=default_float()) * default_jitter()
+            # Kmm += tf.eye(Kmm.shape[0], dtype=default_float()) * default_jitter()
             h_mean, h_var = base_conditional(
                 Kmn=Kmn,
                 Kmm=Kmm,
@@ -291,24 +383,32 @@ def bald_objective(
         # )
         # #     state_means[1:, :], control_means, state_vars[1:, :], control_vars
         # # )
-        (
-            mode_probs,
-            _,
-        ) = dynamics.mosvgpe.gating_network.gp.likelihood.predict_mean_and_var(
-            X=input_dists.mean(), Fmu=h_means, Fvar=h_vars
-        )
+        mode_probs = dynamics.mosvgpe.gating_network.gp.likelihood.predict_mean_and_var(
+            input_means, Fmu=h_means, Fvar=h_vars
+        )[0]
+
+        # mode_probs, _ = dynamics.desired_mode_gating_gp.likelihood.predict_mean_and_var(
+        #     X=input_dists.mean(), Fmu=h_means, Fvar=h_vars
+        # )  # [N, 1]
         print("mode_probs.shape")
         print(mode_probs.shape)
         print(h_means.shape)
         print(h_vars.shape)
+        print(h_means_conditioned.shape)
+        print(h_vars_conditioned.shape)
         return entropy_approx(
-            h_means_conditioned[:, dynamics.desired_mode],
-            h_vars_conditioned[:, dynamics.desired_mode],
-            mode_probs[:, dynamics.desired_mode],
+            h_means_conditioned,
+            h_vars_conditioned,
+            mode_probs,
+            # h_means_conditioned[:, dynamics.desired_mode],
+            # h_vars_conditioned[:, dynamics.desired_mode],
+            # mode_probs[:, dynamics.desired_mode],
         )
 
-    bald_objective = bald_objective_closed_form()
+    bald_objective = bald_objective_closed_form_traj()
+    # bald_objective = bald_objective_closed_form()
     # bald_objective = bald_objective_sampling(input_dists)
+    print("bald_objective")
     print(bald_objective)
     tf.print("entropy")
     tf.print(tf.reduce_sum(bald_objective))
