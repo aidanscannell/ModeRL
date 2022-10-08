@@ -141,13 +141,13 @@ class ModeRLDynamics(DynamicsInterface):
         input_dists = combine_state_controls_to_input(state=state, control=control)
         probs, _ = self.desired_mode_gating_gp.likelihood.predict_mean_and_var(
             input_dists.mean(), h_mean, h_var
-        )  # [N, K]
-        return probs[:, self.desired_mode]
+        )  # [N, 1]
+        # return probs[:, self.desired_mode]
         # probs = self.mosvgpe.gating_network.predict_mixing_probs_given_h(h_mean, h_var)
-        # if probs.shape[-1] == 1:
-        #     return probs
-        # else:
-        #     return probs[:, self.desired_mode]
+        if probs.shape[-1] == 1:
+            return probs
+        else:
+            return probs[:, self.desired_mode]
 
     def uncertain_predict_gating(
         self,
