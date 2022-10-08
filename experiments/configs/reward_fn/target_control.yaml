@@ -1,0 +1,16 @@
+_target_: moderl.reward_functions.Additive
+first_part:
+  _target_: moderl.reward_functions.TargetStateRewardFunction
+  weight_matrix:
+    _target_: tensorflow.constant
+    value: [[100.0, 0.0], [0.0, 100.0]]
+    dtype: "float64"
+  target_state: ${target_state}
+second_part:
+  _target_: moderl.reward_functions.ControlQuadraticRewardFunction
+  weight_matrix:
+    _target_: tensorflow.constant
+    value: [[1.0, 0.0], [0.0, 1.0]]
+    # value: [[0.05, 0.0], [0.0, 0.05]]
+    # value: [[0.5, 0.0], [0.0, 0.5]]
+    dtype: "float64"

@@ -8,7 +8,7 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 from gpflow import default_float
 from moderl.constraints import build_mode_chance_constraints_scipy
-from moderl.cost_functions import COST_FUNCTION_OBJECTS, CostFunction
+from moderl.reward_functions import REWARD_FUNCTION_OBJECTS, RewardFunction
 from moderl.custom_types import ControlTrajectory, State, StateDim
 from moderl.dynamics import ModeRLDynamics
 from moderl.optimisers import TrajectoryOptimiser
@@ -30,7 +30,7 @@ class ExplorativeController(TrajectoryOptimisationController):
         explorative_objective_fn: Callable[
             [ModeRLDynamics, ControlTrajectory, State], float
         ],
-        cost_fn: CostFunction,
+        reward_fn: RewardFunction,
         control_dim: int,
         horizon: int = 10,
         max_iterations: int = 100,
@@ -48,7 +48,7 @@ class ExplorativeController(TrajectoryOptimisationController):
             start_state = tf.constant(start_state, dtype=default_float())
         self.start_state = start_state
         self.dynamics = dynamics
-        self.cost_fn = cost_fn
+        self.reward_fn = reward_fn
         self.exploration_weight = exploration_weight
         self.control_lower_bound = control_lower_bound
         self.control_upper_bound = control_upper_bound
@@ -57,23 +57,24 @@ class ExplorativeController(TrajectoryOptimisationController):
         self.mode_satisfaction_prob = mode_satisfaction_prob
 
         def augmentd_objective_fn(initial_solution: ControlTrajectory) -> ttf.Tensor0:
-            """Augmented objective (expected cost over trajectory) with exploration objective"""
+            """Augmented objective (expected reward over trajectory) with exploration objective"""
             state_dists = rollout_ControlTrajectory_in_ModeRLDynamics(
                 dynamics=self.dynamics,
                 control_trajectory=initial_solution,
                 start_state=self.start_state,
             )
             control_dists = initial_solution()
-            exploration_cost = explorative_objective_fn(
+            exploration_reward = explorative_objective_fn(
                 dynamics=self.dynamics,
                 initial_solution=initial_solution,
                 start_state=self.start_state,
             )
-            return -exploration_cost * exploration_weight + cost_fn(
-                # return cost_fn(
-                state=state_dists,
-                control=control_dists,
-            )
+            reward = reward_fn(state=state_dists, control=control_dists)
+            tf.print("reward")
+            tf.print(reward)
+            tf.print("exploration_reward")
+            tf.print(exploration_reward)
+            return exploration_reward * exploration_weight + reward
 
         if initial_solution is None:
             initial_solution = find_solution_in_desired_mode(
@@ -124,7 +125,7 @@ class ExplorativeController(TrajectoryOptimisationController):
             "start_state": self.start_state.numpy(),
             "dynamics": tf.keras.utils.serialize_keras_object(self.dynamics),
             # "explorative_objective_fn": tf.keras.utils.serialize_keras_object(self.explorative_objective_fn),
-            "cost_fn": tf.keras.utils.serialize_keras_object(self.cost_fn),
+            "reward_fn": tf.keras.utils.serialize_keras_object(self.reward_fn),
             "control_dim": self.trajectory_optimiser.initial_solution.control_dim,
             "horizon": self.trajectory_optimiser.initial_solution.horizon,
             "max_iterations": self.trajectory_optimiser.max_iterations,
@@ -144,9 +145,9 @@ class ExplorativeController(TrajectoryOptimisationController):
         dynamics = tf.keras.layers.deserialize(
             cfg["dynamics"], custom_objects={"ModeRLDynamics": ModeRLDynamics}
         )
-        # TODO implement cost function serialisation
-        cost_fn = tf.keras.layers.deserialize(
-            cfg["cost_fn"], custom_objects=COST_FUNCTION_OBJECTS
+        # TODO implement reward function serialisation
+        reward_fn = tf.keras.layers.deserialize(
+            cfg["reward_fn"], custom_objects=REWARD_FUNCTION_OBJECTS
         )
         try:
             initial_solution = tf.keras.layers.deserialize(
@@ -163,7 +164,7 @@ class ExplorativeController(TrajectoryOptimisationController):
             start_state=np.array(cfg["start_state"]),
             dynamics=dynamics,
             explorative_objective_fn=explorative_objective_fn,
-            cost_fn=cost_fn,
+            reward_fn=reward_fn,
             control_dim=cfg["control_dim"],
             horizon=cfg["horizon"],
             max_iterations=cfg["max_iterations"],

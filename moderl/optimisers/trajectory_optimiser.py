@@ -19,7 +19,7 @@ class TrajectoryOptimiser:
         self,
         max_iterations: int,
         initial_solution: ControlTrajectory,
-        objective_fn: Optional[ObjectiveFn] = None,
+        objective_fn: Optional[ObjectiveFn] = None,  # objective to be maximised
         constraints: Optional[List[Union[LinearConstraint, NonlinearConstraint]]] = [],
         keep_last_solution: bool = True,
         method: Optional[str] = "SLSQP",
@@ -51,8 +51,12 @@ class TrajectoryOptimiser:
             print("RESETING TO INITIAL SOLUTION")
             self.reset()
 
+        def objective_fn_closure():
+            return -self.objective_fn(initial_solution=self.previous_solution)
+
         optimisation_result = self.optimiser.minimize(
-            closure=partial(self.objective_fn, initial_solution=self.previous_solution),
+            closure=objective_fn_closure,
+            # closure=partial(self.objective_fn, initial_solution=self.previous_solution),
             variables=self.previous_solution.trainable_variables,
             method=self.method,
             constraints=self.constraints,
