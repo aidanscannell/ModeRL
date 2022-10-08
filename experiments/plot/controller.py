@@ -10,7 +10,6 @@ import palettable
 import simenvs
 import tensorflow as tf
 import tikzplotlib
-import wandb
 from experiments.plot.utils import create_test_inputs, plot_contf
 from matplotlib import patches
 from moderl.controllers import ControllerInterface, ExplorativeController
@@ -18,6 +17,10 @@ from moderl.custom_types import InputData, State
 from moderl.dynamics import ModeRLDynamics
 from moderl.dynamics.dynamics import ModeRLDynamics
 from moderl.rollouts import rollout_trajectory_optimisation_controller_in_env
+
+import wandb
+
+CMAP = palettable.scientific.sequential.Bilbao_15.mpl_colormap
 
 LABELS = {"env": "Environment", "dynamics": "Dynamics"}
 COLORS = {"env": "c", "dynamics": "m"}
@@ -85,7 +88,7 @@ def plot_trajectories_over_desired_gating_gp(
         plot_mode_satisfaction_probability_given_ax(
             ax, controller=controller, test_inputs=test_inputs
         )
-    handles, labels = plt.gca().get_legend_handles_labels()
+    handles, labels = fig.gca().get_legend_handles_labels()
     by_label = OrderedDict(zip(labels, handles))
     fig.tight_layout()
     fig.legend(
@@ -154,6 +157,28 @@ def plot_env(ax, env, test_inputs: InputData):
         pass
 
 
+def plot_env_cmap(ax, env, test_inputs: InputData, cmap=CMAP):
+    test_states = test_inputs[:, 0:2]
+    mode_probs = []
+    for test_state in test_states:
+        pixel = env.state_to_pixel(test_state)
+        mode_probs.append(env.gating_bitmap[pixel[0], pixel[1]])
+    mode_probs = tf.stack(mode_probs, 0)
+    print("mode_probs")
+    print(mode_probs)
+    print(tf.reduce_min(mode_probs))
+    print(tf.reduce_max(mode_probs))
+    ax.tricontour(
+        test_states[:, 0],
+        test_states[:, 1],
+        mode_probs.numpy(),
+        # [-1, 2],
+        # [0.1, 0.9],
+        cmap=cmap
+        # test_states[:, 0], test_states[:, 1], mode_probs.numpy(), [0.0, 1.0], cmap=cmap
+    )
+
+
 def plot_start_end_pos(ax, start_state, target_state):
     # def plot_start_end_pos(ax, start_state, target_state, bbox=False):
     # if bbox:
@@ -167,15 +192,15 @@ def plot_start_end_pos(ax, start_state, target_state):
         target_state = target_state[tf.newaxis, :]
     ax.annotate(
         "$\mathbf{s}_0$",
-        (start_state[0, 0] + 0.1, start_state[0, 1]),
+        (start_state[0, 0] + 0.15, start_state[0, 1]),
         horizontalalignment="left",
         verticalalignment="top",
         bbox=bbox,
     )
     ax.annotate(
         "$\mathbf{s}_f$",
-        (target_state[0, 0] - 0.1, target_state[0, 1]),
-        horizontalalignment="right",
+        (target_state[0, 0] + 0.15, target_state[0, 1]),
+        horizontalalignment="left",
         verticalalignment="bottom",
         bbox=bbox,
     )

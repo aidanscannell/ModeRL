@@ -12,29 +12,36 @@ import simenvs
 
 # import tensor_annotations.tensorflow as ttf
 import tensorflow as tf
+import tensorflow_probability as tfp
 from gpflow import default_float, inducing_variables
-from experiments.plot.controller import build_controller_plotting_callback
 from moderl.controllers import ControllerInterface, ExplorativeController
 from moderl.custom_types import Batch, InputData, One, StateDim
 from moderl.dynamics import ModeRLDynamics
-from moderl.objectives import bald_objective, joint_gating_function_entropy
+from moderl.objectives import (
+    bald_objective,
+    independent_gating_function_entropy,
+    joint_gating_function_entropy,
+)
+from moderl.rollouts import collect_data_from_env
 from tf_agents.environments import py_environment
 from wandb.keras import WandbCallback
 
 import wandb
-from experiments.plot.utils import create_test_inputs
-from experiments.plot.dynamics import build_plotting_callbacks
 from experiments.plot.controller import (
+    build_controller_plotting_callback,
     plot_trajectories_over_desired_gating_gp,
     plot_trajectories_over_desired_mixing_prob,
 )
-from moderl.rollouts import collect_data_from_env
+from experiments.plot.dynamics import build_plotting_callbacks
+from experiments.plot.utils import create_test_inputs
 from experiments.utils import (
     model_from_DictConfig,
     sample_env_trajectories,
     sample_inducing_inputs_from_data,
     sample_mosvgpe_inducing_inputs_from_data,
 )
+
+tfd = tfp.distributions
 
 tf.keras.utils.set_random_seed(42)
 # from moderl.mode_rl import mode_rl_loop
@@ -264,7 +271,7 @@ def mode_rl_loop(
             break
 
         X, Y = [], []
-        for _ in range(num_explorative_trajectories):
+        for j in range(num_explorative_trajectories):
             X_, Y_ = collect_data_from_env(
                 env=env,
                 start_state=explorative_controller.start_state,
@@ -272,11 +279,26 @@ def mode_rl_loop(
             )
             X.append(X_)
             Y.append(Y_)
+            extrinsic_reward = explorative_controller.cost_fn(
+                state=tfd.Deterministic(X_[:, : dynamics.state_dim]),
+                control=tfd.Deterministic(X_[:, dynamics.state_dim :]),
+            )
+            # TODO add final state??
+            wandb.log({"Extrinsic reward rollout " + str(j): extrinsic_reward})
+
         X = np.concatenate(X, 0)
         Y = np.concatenate(Y, 0)
         new_dataset = (X, Y)
         # print("new_dataset")
         # print(new_dataset)
+
+        num_constraint_violations = 0.0
+        for test_state in X[:, : dynamics.state_dim]:
+            pixel = env.state_to_pixel(test_state)
+            gating_value = env.gating_bitmap[pixel[0], pixel[1]]
+            if gating_value < 0.5:
+                num_constraint_violations += 1.0
+        wandb.log({"Number constraint violations": num_constraint_violations})
 
         # new_data = self.explore_env()
         dynamics.update_dataset(new_dataset)
@@ -318,7 +340,12 @@ def run_experiment(cfg: omegaconf.DictConfig):
     ###### Instantiate dynamics model and sample inducing inputs data ######
     # dynamics = hydra.utils.instantiate(cfg.dynamics)
     load_dir = None
-    load_dir = "./wandb/run-20221001_195555-2k2vmkt2/files/saved-models/dynamics-after-training-on-dataset-0-config.json"
+    # load_dir = "./wandb/run-20221001_195555-2k2vmkt2/files/saved-models/dynamics-after-training-on-dataset-0-config.json"
+    # load_dir = "./wandb/run-20221006_141321-kaquc615/files/saved-models/dynamics-after-training-on-dataset-0-config.json"
+    # load_dir = "./wandb/run-20221007_151826-1pzhiyxb/files/saved-models/dynamics-after-training-on-dataset-0-config.json"
+    # load_dir = "./wandb/run-20221007_154315-1fzua0ff/files/saved-models/dynamics-after-training-on-dataset-0-config.json"
+    # load_dir = "./wandb/run-20221007_175642-4frzrfrz/files/saved-models/dynamics-after-training-on-dataset-1-config.json"
+
     if load_dir is not None:
         ###### Try to load trained dynamics model  ######
         dynamics = ModeRLDynamics.load(load_dir)
@@ -326,6 +353,9 @@ def run_experiment(cfg: omegaconf.DictConfig):
             dynamics, logging_epoch_freq=cfg.logging_epoch_freq
         )
         gpf.utilities.set_trainable(dynamics.mosvgpe.gating_network.gp.kernel, False)
+        gpf.utilities.set_trainable(
+            dynamics.mosvgpe.experts_list[1].gp.likelihood, False
+        )  # Needed to stop inf in bound due to expert 2 learning very low noise variance
     else:
         dynamics = model_from_DictConfig(
             cfg.dynamics, custom_objects={"ModeRLDynamics": ModeRLDynamics}
@@ -337,6 +367,9 @@ def run_experiment(cfg: omegaconf.DictConfig):
             model=dynamics.mosvgpe, X=initial_dataset[0]
         )
         gpf.utilities.set_trainable(dynamics.mosvgpe.gating_network.gp.kernel, False)
+        gpf.utilities.set_trainable(
+            dynamics.mosvgpe.experts_list[1].gp.likelihood, False
+        )  # Needed to stop inf in bound due to expert 2 learning very low noise variance
         # gpf.utilities.print_summary(dynamics)
 
         ###### Build the dynamics model ######
@@ -372,14 +405,23 @@ def run_experiment(cfg: omegaconf.DictConfig):
     # )
     # dynamics.mosvgpe.num_data = None
     # gpf.utilities.set_trainable(dynamics.mosvgpe.gating_network.gp.kernel, True)
-    gpf.utilities.set_trainable(
-        dynamics.mosvgpe.experts_list[1].gp.likelihood, False
-    )  # Needed to stop inf in bound due to expert 2 learning very low noise variance
     # gpf.utilities.set_trainable(dynamics.mosvgpe.experts_list[1].gp.kernel, False)
 
     # dynamics.desired_mode = set_desired_mode(dynamics)
-    # explorative_objective_fn = bald_objective
-    explorative_objective_fn = joint_gating_function_entropy
+    if (
+        "joint_gating_function_entropy"
+        in cfg.explorative_controller.explorative_objective_fn
+    ):
+        explorative_objective_fn = joint_gating_function_entropy
+    elif "bald" in cfg.explorative_controller.explorative_objective_fn:
+        explorative_objective_fn = bald_objective
+    elif (
+        "independent_gating_function_entropy"
+        in cfg.explorative_controller.explorative_objective_fn
+    ):
+        explorative_objective_fn = independent_gating_function_entropy
+    elif "none" in cfg.explorative_controller.explorative_objective_fn:
+        explorative_objective_fn = lambda *args, **kwargs: 0.0
     ###### Build greedy cost function ######
     cost_fn = hydra.utils.instantiate(cfg.cost_fn)
     ###### Configure the explorative controller (wraps cost_fn in the explorative objective) ######

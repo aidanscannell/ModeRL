@@ -48,6 +48,7 @@ class TrajectoryOptimiser:
                 "Please set `objective_fn` before using TrajectoryOptimisationController"
             )
         if not self.keep_last_solution:
+            print("RESETING TO INITIAL SOLUTION")
             self.reset()
 
         optimisation_result = self.optimiser.minimize(
