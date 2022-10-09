@@ -2,6 +2,7 @@
 from .experts import SVGPExpert
 from .gating_networks import SVGPGatingNetwork
 
+
 EXPERTS = [SVGPExpert]
 GATING_NETWORKS = [SVGPGatingNetwork]
 

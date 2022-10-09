@@ -5,6 +5,7 @@ import tensorflow_probability as tfp
 from tensor_annotations import axes
 from tensor_annotations.axes import Batch
 
+
 NumExperts = NewType("NumExperts", axes.Axis)
 NumData = NewType("NumData", axes.Axis)
 InputDim = NewType("InputDim", axes.Axis)

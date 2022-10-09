@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-from gpflow.likelihoods import Gaussian
 import tensorflow as tf
+from gpflow.likelihoods import Gaussian
 
 
 class GaussianSerializable(Gaussian, tf.keras.layers.Layer):

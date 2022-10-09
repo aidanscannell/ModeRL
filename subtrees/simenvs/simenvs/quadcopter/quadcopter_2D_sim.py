@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import cv2
-import tf_agents
 import imageio
 
 # Who's up for a gathering/small party/fire in the woods past Beese's on Saturday eve (into the night)? Will need to have a rain check nearer the time but rain atm isn't very heavy so we should be fine. We can take some tarps to be safe. Expect music, dancing, midnight swimming and general party vibes.
@@ -8,6 +7,8 @@ import imageio
 import numpy as np
 import scipy as sp
 import tensorflow as tf
+import tf_agents
+from simenvs.visualisation import EnvRenderer
 from tf_agents.environments import (
     py_environment,
     tf_environment,
@@ -17,7 +18,6 @@ from tf_agents.environments import (
 from tf_agents.specs import array_spec
 from tf_agents.trajectories import time_step as ts
 
-from simenvs.visualisation import EnvRenderer
 
 float_type = np.float64
 

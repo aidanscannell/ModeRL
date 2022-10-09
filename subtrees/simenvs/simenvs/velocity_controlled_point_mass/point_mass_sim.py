@@ -12,6 +12,7 @@ from tf_agents.environments import (
 from tf_agents.specs import array_spec
 from tf_agents.trajectories import time_step as ts
 
+
 float_type = np.float64
 
 # control constraints

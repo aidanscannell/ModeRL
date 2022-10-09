@@ -2,8 +2,8 @@
 import tensorflow as tf
 from gpflow.inducing_variables import (
     InducingPoints,
-    SharedIndependentInducingVariables,
     SeparateIndependentInducingVariables,
+    SharedIndependentInducingVariables,
 )
 
 

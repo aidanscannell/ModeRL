@@ -6,6 +6,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
+import wandb
 from gpflow import default_float
 from gpflow.inducing_variables import InducingPoints, MultioutputInducingVariables
 from gpflow.kernels import RBF
@@ -19,7 +20,6 @@ from mosvgpe.mixture_of_experts import MixtureOfSVGPExperts
 # from mosvgpe.utils import sample_mosvgpe_inducing_inputs_from_data
 from wandb.keras import WandbCallback
 
-import wandb
 
 PlotFn = Callable[[], matplotlib.figure.Figure]
 

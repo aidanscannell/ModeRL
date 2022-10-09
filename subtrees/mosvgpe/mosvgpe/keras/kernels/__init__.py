@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 from .multioutput import SeparateIndependentSerializable, SharedIndependentSerializable
 from .stationaries import (
-    RBFSerializable,
     Matern12Serializable,
     Matern32Serializable,
     Matern52Serializable,
+    RBFSerializable,
 )
+
 
 KERNELS = [
     RBFSerializable,

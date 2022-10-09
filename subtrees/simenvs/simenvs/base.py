@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import cv2
-
 import numpy as np
 import scipy as sp
 from tf_agents.environments import (

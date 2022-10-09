@@ -7,6 +7,7 @@ from gpflow.monitor import ImageToTensorBoard, MonitorTaskGroup
 from mogpe.training.monitor import ImageWithCbarToTensorBoard
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
+
 color_1 = "olive"
 color_2 = "darkmagenta"
 color_2 = "darkslategrey"

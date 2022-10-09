@@ -3,8 +3,8 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 from simenvs.generate_dataset_from_env import (
-    generate_transitions_dataset,
     generate_random_transitions_dataset,
+    generate_transitions_dataset,
 )
 from simenvs.parse_env_toml_config import parse_toml_config_to_RotatingPointMass2DEnv
 

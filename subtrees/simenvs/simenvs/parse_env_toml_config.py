@@ -1,10 +1,10 @@
 import numpy as np
 import toml
 from bunch import Bunch
-
+from simenvs.point_mass import RotatingPointMass2DEnv
 from simenvs.quadcopter import VelocityControlledQuadcopter2DEnv
 from simenvs.velocity_controlled_point_mass import VelocityControlledPointMass2DEnv
-from simenvs.point_mass import RotatingPointMass2DEnv
+
 
 # control constraints
 MIN_VELOCITY = -10

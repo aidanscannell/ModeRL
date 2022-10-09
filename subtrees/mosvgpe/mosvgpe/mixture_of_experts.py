@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import abc
+import logging
 from typing import List, Optional
 
 import tensor_annotations.tensorflow as ttf
@@ -7,20 +8,19 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 from gpflow import default_float
 from gpflow.models import BayesianModel
+from mosvgpe import EXPERT_OBJECTS, GATING_NETWORK_OBJECTS
 
 from .custom_types import Dataset, DatasetBatch, InputData
 from .experts import ExpertBase, SVGPExpert
-from .gating_networks import (
-    GatingNetworkBase,
-    SVGPGatingNetwork,
-)
-from mosvgpe import GATING_NETWORK_OBJECTS, EXPERT_OBJECTS
+from .gating_networks import GatingNetworkBase, SVGPGatingNetwork
+
 
 EXPERT_OBJECTS = {"SVGPExpert": SVGPExpert}
 
 tf.keras.backend.set_floatx("float64")
 tfd = tfp.distributions
 
+logger = logging.getLogger(__name__)
 
 # class MixtureOfExpertsBase(gpf.models.BayesianModel, abc.ABC):
 # class MixtureOfExpertsBase(tf.keras.Model, abc.ABC):
@@ -208,7 +208,7 @@ class MixtureOfSVGPExperts(MixtureOfExpertsBase):
         mixing_probs = self.gating_network.predict_categorical_dist(
             X, num_samples=num_samples
         ).probs  # [S, N, K]
-        print("Mixing probs: {}".format(mixing_probs.shape))
+        logger.info("Mixing probs: {}".format(mixing_probs.shape))
 
         # Evaluate experts
         Y = tf.expand_dims(Y, 0)  # [S, N, F]
@@ -218,7 +218,7 @@ class MixtureOfSVGPExperts(MixtureOfExpertsBase):
             for expert in self.experts_list
         ]
         experts_probs = tf.stack(experts_probs, -1)  # [S, N, K]
-        print("Experts probs: {}".format(experts_probs.shape))
+        logger.info("Experts probs: {}".format(experts_probs.shape))
 
         tf.debugging.assert_shapes(
             [

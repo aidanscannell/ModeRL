@@ -10,7 +10,6 @@ from gpflow.inducing_variables import InducingVariables
 from gpflow.kernels import Kernel, MultioutputKernel
 from gpflow.mean_functions import MeanFunction
 from gpflow.models.model import GPModel
-
 from mosvgpe.keras.utils import try_array_except_none, try_val_except_none
 
 from .custom_types import (
@@ -27,6 +26,7 @@ from .custom_types import (
 from .gp import predict_f_given_inducing_samples
 from .keras import INDUCING_VARIABLE_OBJECTS, KERNEL_OBJECTS, MEAN_FUNCTION_OBJECTS
 from .keras.utils import try_array_except_none, try_val_except_none
+
 
 tfd = tfp.distributions
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-from gpflow.functions import Zero, Constant
 import tensorflow as tf
+from gpflow.functions import Constant, Zero
 
 
 class ConstantSerializable(Constant, tf.keras.layers.Layer):

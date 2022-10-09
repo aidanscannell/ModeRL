@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
-from typing import Callable, List
 from functools import partial
+from typing import Callable, List
 
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
+import wandb
 from gpflow.inducing_variables import MultioutputInducingVariables
 from mosvgpe.custom_types import InputData
 from mosvgpe.mixture_of_experts import MixtureOfSVGPExperts
 
-import wandb
 
 PlotFn = Callable[[], matplotlib.figure.Figure]
 

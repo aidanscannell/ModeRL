@@ -3,6 +3,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
+
 # from simenvs.point_mass_sim import PointMass2DEnv
 
 float_type = np.float64

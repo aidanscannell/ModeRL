@@ -3,9 +3,10 @@ from .inducing_variables import InducingPointsSerializable
 
 # from .multioutput.inducing_variables import Shared
 from .multioutput import (
-    SharedIndependentInducingVariablesSerializable,
     SeparateIndependentInducingVariablesSerializable,
+    SharedIndependentInducingVariablesSerializable,
 )
+
 
 INDUCING_VARIABLES = [
     InducingPointsSerializable,

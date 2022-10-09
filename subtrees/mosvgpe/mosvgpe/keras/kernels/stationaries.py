@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-from gpflow.kernels import RBF, Matern52, Matern32, Matern12
 import tensorflow as tf
+from gpflow.kernels import Matern12, Matern32, Matern52, RBF
 
 
 class RBFSerializable(RBF, tf.keras.layers.Layer):

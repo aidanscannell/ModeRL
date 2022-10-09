@@ -2,9 +2,9 @@
 import os
 
 from simenvs.parse_env_toml_config import (
-    parse_toml_config_to_VelocityControlledQuadcopter2DEnv,
-    parse_toml_config_to_VelocityControlledPointMass2DEnv,
     parse_toml_config_to_RotatingPointMass2DEnv,
+    parse_toml_config_to_VelocityControlledPointMass2DEnv,
+    parse_toml_config_to_VelocityControlledQuadcopter2DEnv,
 )
 
 

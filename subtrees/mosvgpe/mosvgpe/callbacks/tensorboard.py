@@ -6,6 +6,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import tensorflow as tf
 
+
 PlotFn = Callable[[], matplotlib.figure.Figure]
 
 

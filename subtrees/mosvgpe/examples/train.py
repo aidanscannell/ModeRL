@@ -19,6 +19,7 @@ from mosvgpe.gating_networks import SVGPGatingNetwork
 from mosvgpe.mixture_of_experts import MixtureOfSVGPExperts
 from wandb.keras import WandbCallback
 
+
 # import examples
 
 # from examples.mcycle.plot import build_plotting_callbacks

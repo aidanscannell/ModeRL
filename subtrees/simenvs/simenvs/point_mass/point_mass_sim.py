@@ -5,6 +5,7 @@ from simenvs.base import BaseGatingEnv
 from tf_agents.environments import tf_py_environment, utils
 from tf_agents.trajectories import time_step as ts
 
+
 float_type = np.float64
 
 # control constraints

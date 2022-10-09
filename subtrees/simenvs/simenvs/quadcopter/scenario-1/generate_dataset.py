@@ -5,6 +5,7 @@ from simenvs.parse_env_toml_config import (
     parse_toml_config_to_VelocityControlledQuadcopter2DEnv,
 )
 
+
 toml_env_config_file = "./configs/env_config.toml"  # environment config to use
 omit_data_mask = "./bitmaps/omit_data_mask.bmp"  # remove states if bmp<255/2
 save_dataset_filename = "./data/quad_sim_scenario_1.npz"  # save dataset here

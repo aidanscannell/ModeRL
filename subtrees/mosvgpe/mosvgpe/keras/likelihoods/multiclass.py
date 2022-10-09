@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-from gpflow.likelihoods import Softmax
 import tensorflow as tf
+from gpflow.likelihoods import Softmax
 
 
 class SoftmaxSerializable(Softmax, tf.keras.layers.Layer):

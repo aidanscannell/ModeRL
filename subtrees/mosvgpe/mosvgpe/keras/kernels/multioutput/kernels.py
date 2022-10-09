@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-from gpflow.kernels import SeparateIndependent, SharedIndependent
 import tensorflow as tf
+from gpflow.kernels import SeparateIndependent, SharedIndependent
+
 from .single_output_kernel_objects import SINGLE_OUTPUT_KERNEL_OBJECTS
 
 

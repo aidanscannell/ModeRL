@@ -10,6 +10,7 @@ from gpflow.inducing_variables import InducingVariables
 from .custom_types import InputData
 from .mixture_of_experts import MixtureOfSVGPExperts
 
+
 tfd = tfp.distributions
 
 
@@ -67,6 +68,7 @@ def sample_inducing_inputs_from_data(
 
 
 from .mixture_of_experts import MixtureOfSVGPExperts
+
 
 tfd = tfp.distributions
 

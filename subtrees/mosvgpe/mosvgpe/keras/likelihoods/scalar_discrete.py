@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-from gpflow.likelihoods import Bernoulli
 import tensorflow as tf
+from gpflow.likelihoods import Bernoulli
 
 
 class BernoulliSerializable(Bernoulli, tf.keras.layers.Layer):
