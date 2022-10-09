@@ -10,7 +10,6 @@ import palettable
 import simenvs
 import tensorflow as tf
 import tikzplotlib
-from experiments.plot.utils import create_test_inputs, plot_contf
 from matplotlib import patches
 from moderl.controllers import ControllerInterface, ExplorativeController
 from moderl.custom_types import InputData, State
@@ -19,6 +18,7 @@ from moderl.dynamics.dynamics import ModeRLDynamics
 from moderl.rollouts import rollout_trajectory_optimisation_controller_in_env
 
 import wandb
+from experiments.plot.utils import create_test_inputs, plot_contf
 
 CMAP = palettable.scientific.sequential.Bilbao_15.mpl_colormap
 

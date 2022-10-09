@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-import os
 import logging
+import os
 
 import gpflow as gpf
 import hydra
 import omegaconf
 import tensorflow as tf
 import tensorflow_probability as tfp
-from moderl.dynamics import ModeRLDynamics
 from moderl.controllers import ExplorativeController
+from moderl.dynamics import ModeRLDynamics
 from moderl.objectives import (
     bald_objective,
     conditional_gating_function_entropy,

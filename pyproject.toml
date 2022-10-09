@@ -44,7 +44,7 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-dev = ["black", "pyright", "isort", "pyflakes", "pytest"]
+dev = ["black[jupyter]", "pyright", "isort", "pyflakes", "pytest"]
 # examples = ["pandas", "jupyter", "hydra-core", "simenvs @ git+https://github.com/aidanscannell/simenvs.git@v0.2.0#egg=simenvs"]
 examples = ["pandas", "jupyter", "hydra-core", "palettable"]
 experiments = ["pandas", "jupyter", "hydra-core", "palettable", "tikzplotlib"]

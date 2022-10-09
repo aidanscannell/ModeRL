@@ -16,8 +16,6 @@ import palettable
 import simenvs
 import tensorflow as tf
 import tikzplotlib
-import wandb
-from experiments.plot.utils import PlottingCallback, create_test_inputs, plot_contf
 from matplotlib import patches
 from moderl.controllers import ControllerInterface
 from moderl.controllers.explorative_controller import ExplorativeController
@@ -26,6 +24,9 @@ from moderl.dynamics.dynamics import ModeRLDynamics
 from mosvgpe.custom_types import Dataset, InputData
 from mosvgpe.mixture_of_experts import MixtureOfSVGPExperts
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+
+import wandb
+from experiments.plot.utils import PlottingCallback, create_test_inputs, plot_contf
 
 plt.style.use("seaborn-paper")
 CMAP = palettable.scientific.sequential.Bilbao_15.mpl_colormap

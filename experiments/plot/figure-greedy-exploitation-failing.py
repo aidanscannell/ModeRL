@@ -13,17 +13,6 @@ import palettable
 import simenvs
 import tensorflow as tf
 import tikzplotlib
-from experiments.plot.controller import (
-    plot_env,
-    plot_env_cmap,
-    plot_trajectories,
-    plot_start_end_pos,
-)
-from experiments.plot.utils import (
-    create_test_inputs,
-    plot_contf,
-    plot_mode_satisfaction_prob,
-)
 from matplotlib import patches
 from moderl.controllers import ExplorativeController
 from moderl.controllers.explorative_controller import ExplorativeController
@@ -33,6 +22,17 @@ from moderl.dynamics.dynamics import ModeRLDynamics
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 import wandb
+from experiments.plot.controller import (
+    plot_env,
+    plot_env_cmap,
+    plot_start_end_pos,
+    plot_trajectories,
+)
+from experiments.plot.utils import (
+    create_test_inputs,
+    plot_contf,
+    plot_mode_satisfaction_prob,
+)
 
 plt.style.use("seaborn-paper")
 CMAP = palettable.scientific.sequential.Bilbao_15.mpl_colormap

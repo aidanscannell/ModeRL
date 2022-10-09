@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import tikzplotlib
 import os
 from functools import partial
 from typing import Callable, List
@@ -16,12 +15,13 @@ import omegaconf
 import palettable
 import simenvs
 import tensorflow as tf
+import tikzplotlib
 from matplotlib import patches
 from moderl.controllers import ControllerInterface
 from moderl.controllers.explorative_controller import ExplorativeController
 from moderl.dynamics import ModeRLDynamics
 from moderl.dynamics.dynamics import ModeRLDynamics
-from mosvgpe.custom_types import InputData, Dataset
+from mosvgpe.custom_types import Dataset, InputData
 from mosvgpe.mixture_of_experts import MixtureOfSVGPExperts
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 

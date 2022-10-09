@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
+import logging
+
 import numpy as np
 import tensor_annotations.tensorflow as ttf
 import tensorflow as tf
 import tensorflow_probability as tfp
 from gpflow import default_float
+from moderl.custom_types import ControlTrajectory, State
+from moderl.dynamics import ModeRLDynamics
+from moderl.optimisers import TrajectoryOptimiser
 from moderl.reward_functions import (
     ControlQuadraticRewardFunction,
     TargetStateRewardFunction,
 )
-from moderl.custom_types import ControlTrajectory, State
-from moderl.dynamics import ModeRLDynamics
-from moderl.optimisers import TrajectoryOptimiser
 from moderl.rollouts import rollout_ControlTrajectory_in_ModeRLDynamics
 
 tfd = tfp.distributions
@@ -21,7 +23,7 @@ def find_solution_in_desired_mode(
     horizon: int,
     control_dim: int,
     start_state: State,
-    target_state_weight: float = 100.0,
+    target_state_weight: float = 100,
 ) -> ControlTrajectory:
     initial_solution = ControlTrajectory(
         dist=tfd.Deterministic(
@@ -56,4 +58,5 @@ def find_solution_in_desired_mode(
         method="SLSQP",
     )
     trajectory_optimiser.optimise()
+    logging.info("Found initial solution in desired dynamics mode")
     return trajectory_optimiser.previous_solution
