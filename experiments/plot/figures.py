@@ -1,11 +1,8 @@
 #!/usr/bin/env python3
 import os
 from collections import OrderedDict
-from typing import Callable, List
+from typing import List
 
-import hydra
-import keras
-import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import omegaconf
@@ -13,15 +10,6 @@ import palettable
 import simenvs
 import tensorflow as tf
 import tikzplotlib
-from matplotlib import patches
-from moderl.controllers import ExplorativeController
-from moderl.controllers.explorative_controller import ExplorativeController
-from moderl.custom_types import InputData, State
-from moderl.dynamics import ModeRLDynamics
-from moderl.dynamics.dynamics import ModeRLDynamics
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-
-import wandb
 from experiments.plot.controller import (
     plot_env,
     plot_env_cmap,
@@ -33,6 +21,10 @@ from experiments.plot.utils import (
     plot_contf,
     plot_mode_satisfaction_prob,
 )
+from moderl.controllers import ExplorativeController
+from moderl.custom_types import State
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+
 
 plt.style.use("seaborn-paper")
 CMAP = palettable.scientific.sequential.Bilbao_15.mpl_colormap
@@ -103,7 +95,8 @@ def figure_1(
     )
 
     # ax.set_title(
-    #     "$S_{k^*}^{i} = \{\\mathbf{s} \\in \\mathcal{S} \\mid \\Pr \\left(\\alpha=k^{*} \\mid \\mathbf{s}, \\mathcal{D}_{0:i} \\geq 1-\\delta \\right) \}$"
+    #    "$S_{k^*}^{i} = \{\\mathbf{s} \\in \\mathcal{S} \\mid \\Pr \\left(\\alpha=k^{*}
+    #     \\mid \\mathbf{s}, \\mathcal{D}_{0:i} \\geq 1-\\delta \\right) \}$"
     # )
     ax.set_xlabel("$x$")
     ax.set_ylabel("$y$")
@@ -175,7 +168,7 @@ def figure_3(
     cax = divider.append_axes("right", size="5%", pad=0.05)
     cbar = fig.colorbar(contf, use_gridspec=True, cax=cax)
 
-    cbar.set_label("$\Pr(\\alpha=k^* \mid \mathbf{s}, \mathcal{D}_{0:i})$")
+    cbar.set_label(r"$\Pr(\\alpha=k^* \mid \mathbf{s}, \mathcal{D}_{0:i})$")
     handles, labels = axs[idx].get_legend_handles_labels()
     by_label = OrderedDict(zip(labels, handles))
     axs[0].legend(
@@ -221,7 +214,7 @@ def figure_3_separately(
                 test_inputs
             )
         )
-        contf = plot_contf(
+        plot_contf(
             ax,
             test_inputs,
             z=probs[:, explorative_controller.dynamics.desired_mode],
@@ -269,8 +262,9 @@ def figure_4(
     gs = fig.add_gridspec(1, 1)
     axs = gs.subplots()
 
-    ax.set_xlabel("$i$")
+    axs[0].set_xlabel("$i$")
     # ax.set_ylabel("$\\sum_{t=0}^{T} r(s_t, a_t)$")
+    levels = np.linspace(0, 1, 11)
 
     for idx, i in enumerate(iterations):
         load_file = os.path.join(
@@ -305,7 +299,7 @@ def figure_4(
     cax = divider.append_axes("right", size="5%", pad=0.05)
     cbar = fig.colorbar(contf, use_gridspec=True, cax=cax)
 
-    cbar.set_label("$\Pr(\\alpha=k^* \mid \mathbf{s}, \mathcal{D}_{0:i})$")
+    cbar.set_label(r"$\Pr(\\alpha=k^* \mid \mathbf{s}, \mathcal{D}_{0:i})$")
     handles, labels = fig.gca().get_legend_handles_labels()
     print("handles")
     print(handles)
@@ -361,7 +355,7 @@ if __name__ == "__main__":
     #     tikzplotlib.save(
     #         save_name
     #         + ".tex"
-    #         # save_name + ".tex", axis_width="\\figurewidth", axis_height="\\figureheight"
+    #         # save_name + ".tex",
     #     )
 
     fig = figure_3(

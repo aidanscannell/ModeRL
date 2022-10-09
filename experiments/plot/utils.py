@@ -1,35 +1,19 @@
 #!/usr/bin/env python3
-import os
-from functools import partial
-from typing import Callable, List
+from typing import Callable
 
-import gpflow as gpf
-import hydra
-import keras
 import matplotlib
 import matplotlib.pyplot as plt
-
-# import matplotlib.pyplot as plt
 import numpy as np
-import omegaconf
 import palettable
-import simenvs
 import tensorflow as tf
-import tikzplotlib
-from matplotlib import patches
-from moderl.controllers import ControllerInterface
+import wandb
 from moderl.controllers.explorative_controller import ExplorativeController
 from moderl.dynamics import ModeRLDynamics
-from moderl.dynamics.dynamics import ModeRLDynamics
-from mosvgpe.custom_types import Dataset, InputData
-from mosvgpe.mixture_of_experts import MixtureOfSVGPExperts
-from mpl_toolkits.axes_grid1 import make_axes_locatable
+from mosvgpe.custom_types import InputData
 
-import wandb
 
 plt.style.use("seaborn-paper")
 CMAP = palettable.scientific.sequential.Bilbao_15.mpl_colormap
-
 
 PlotFn = Callable[[], matplotlib.figure.Figure]
 
@@ -67,25 +51,25 @@ def plot_desired_mixing_prob(ax, dynamics: ModeRLDynamics, test_inputs: InputDat
 
 def plot_gating_function_mean(ax, dynamics: ModeRLDynamics, test_inputs: InputData):
     mean, _ = dynamics.mosvgpe.gating_network.predict_h(test_inputs)
-    label = (
-        "$\mathbb{E}[h_{"
-        + str(dynamics.desired_mode + 1)
-        + "}(\mathbf{x}) \mid \mathcal{D}_{0:"
-        # + str(iteration)
-        + "}]$"
-    )
+    # label = (
+    #     "$\mathbb{E}[h_{"
+    #     + str(dynamics.desired_mode + 1)
+    #     + "}(\mathbf{x}) \mid \mathcal{D}_{0:"
+    #     # + str(iteration)
+    #     + "}]$"
+    # )
     return plot_contf(ax, test_inputs, z=mean[:, dynamics.desired_mode])
 
 
 def plot_gating_function_variance(ax, dynamics: ModeRLDynamics, test_inputs: InputData):
     _, var = dynamics.mosvgpe.gating_network.predict_h(test_inputs)
-    label = (
-        "$\mathbb{V}[h_{"
-        + str(dynamics.desired_mode + 1)
-        + "}(\mathbf{x}) \mid \mathcal{D}_{0:"
-        # + str(iteration)
-        + "}]$"
-    )
+    # label = (
+    #     "$\mathbb{V}[h_{"
+    #     + str(dynamics.desired_mode + 1)
+    #     + "}(\mathbf{x}) \mid \mathcal{D}_{0:"
+    #     # + str(iteration)
+    #     + "}]$"
+    # )
     return plot_contf(ax, test_inputs, z=var[:, dynamics.desired_mode])
 
 

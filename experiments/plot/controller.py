@@ -1,24 +1,17 @@
 #!/usr/bin/env python3
 from collections import OrderedDict
-from typing import Callable, List, Optional
+from typing import Callable, Optional
 
 import matplotlib
 import matplotlib.pyplot as plt
-import numpy as np
-import omegaconf
 import palettable
-import simenvs
 import tensorflow as tf
-import tikzplotlib
-from matplotlib import patches
-from moderl.controllers import ControllerInterface, ExplorativeController
-from moderl.custom_types import InputData, State
-from moderl.dynamics import ModeRLDynamics
-from moderl.dynamics.dynamics import ModeRLDynamics
-from moderl.rollouts import rollout_trajectory_optimisation_controller_in_env
-
 import wandb
 from experiments.plot.utils import create_test_inputs, plot_contf
+from moderl.controllers import ControllerInterface
+from moderl.custom_types import InputData, State
+from moderl.rollouts import rollout_trajectory_optimisation_controller_in_env
+
 
 CMAP = palettable.scientific.sequential.Bilbao_15.mpl_colormap
 
@@ -174,8 +167,7 @@ def plot_env_cmap(ax, env, test_inputs: InputData, cmap=CMAP):
         mode_probs.numpy(),
         # [-1, 2],
         # [0.1, 0.9],
-        cmap=cmap
-        # test_states[:, 0], test_states[:, 1], mode_probs.numpy(), [0.0, 1.0], cmap=cmap
+        cmap=cmap,
     )
 
 
@@ -191,14 +183,14 @@ def plot_start_end_pos(ax, start_state, target_state):
     if len(target_state.shape) == 1:
         target_state = target_state[tf.newaxis, :]
     ax.annotate(
-        "$\mathbf{s}_0$",
+        r"$\mathbf{s}_0$",
         (start_state[0, 0] + 0.15, start_state[0, 1]),
         horizontalalignment="left",
         verticalalignment="top",
         bbox=bbox,
     )
     ax.annotate(
-        "$\mathbf{s}_f$",
+        r"$\mathbf{s}_f$",
         (target_state[0, 0] + 0.15, target_state[0, 1]),
         horizontalalignment="left",
         verticalalignment="bottom",
@@ -243,33 +235,28 @@ def build_controller_plotting_callback(
     return plotting_callback
 
 
-if __name__ == "__main__":
-    save_dirs = {
-        "before": "./wandb/run-20220929_123312-2x3tjd8w/files/saved-models/dynamics-before-training-config.json",
-        "after": "./wandb/run-20220929_123312-2x3tjd8w/files/saved-models/dynamics-after-training-on-dataset-0-config.json",
-    }
+# if __name__ == "__main__":
+#     save_dirs = {
+#         "before": "./wandb/run-20220929_123312-2x3tjd8w/files/saved-models/dynamics-before-training-config.json",  # noqa: E501
+#         "after": "./wandb/run-20220929_123312-2x3tjd8w/files/saved-models/dynamics-after-training-on-dataset-0-config.json",  # noqa: E501
+#     }
 
-    test_inputs = create_test_inputs(100)
-    print("test_inputs")
-    print(test_inputs.shape)
-    print(test_inputs)
+#     test_inputs = create_test_inputs(100)
+#     print("test_inputs")
+#     print(test_inputs.shape)
+#     print(test_inputs)
 
-    for key in save_dirs.keys():
-        dynamics = ModeRLDynamics.load(save_dirs[key])
-        explorative_controller = ExplorativeController.load(save_dirs[key])
+#     for key in save_dirs.keys():
+#         dynamics = ModeRLDynamics.load(save_dirs[key])
+#         explorative_controller = ExplorativeController.load(save_dirs[key])
 
-        plot_gating_networks_gp(dynamics, test_inputs)  # pyright: ignore
-        save_name = "./images/gating_network_gp_" + key
-        plt.savefig(save_name + ".pdf", transparent=True)
-        # tikzplotlib.clean_figure()
-        tikzplotlib.save(
-            save_name + ".tex", axis_width="\\figurewidth", axis_height="\\figureheight"
-        )
+#         plot_gating_networks_gp(dynamics, test_inputs)  # pyright: ignore
+#         save_name = "./images/gating_network_gp_" + key
+#         plt.savefig(save_name + ".pdf", transparent=True)
+#         # tikzplotlib.clean_figure()
 
-        plot_desired_mixing_probs(dynamics, test_inputs)  # pyright: ignore
-        save_name = "./images/desired_mixing_prob_" + key
-        plt.savefig(save_name + ".pdf", transparent=True)
-        # tikzplotlib.clean_figure()
-        tikzplotlib.save(
-            save_name + ".tex", axis_width="\\figurewidth", axis_height="\\figureheight"
-        )
+#         plot_desired_mixing_probs(dynamics, test_inputs)  # pyright: ignore
+#         save_name = "./images/desired_mixing_prob_" + key
+#         plt.savefig(save_name + ".pdf", transparent=True)
+#         # tikzplotlib.clean_figure()
+#         )
