@@ -6,24 +6,19 @@ import tensor_annotations.tensorflow as ttf
 import tensorflow as tf
 import tensorflow_probability as tfp
 from gpflow.models import SVGP
-from gpflow.quadrature import NDiagGHQuadrature
-from moderl.custom_types import ControlDim, Dataset, Horizon, StateDim
+from moderl.custom_types import Dataset, Horizon
 from moderl.utils import combine_state_controls_to_input, save_json_config
 from mosvgpe.mixture_of_experts import MixtureOfSVGPExperts
-from tensor_annotations.axes import Batch
 
 from .svgp import SVGPDynamicsWrapper
 
 tfd = tfp.distributions
 
-DEFAULT_NUM_GAUSS_HERMITE_POINTS = 20  # Uses too much memory!
-DEFAULT_NUM_GAUSS_HERMITE_POINTS = 4
-
 DEFAULT_DYNAMICS_FIT_KWARGS = {
     "batch_size": 16,
     "epochs": 1000,
     "verbose": True,
-    "validation_split": 0.2,
+    "validation_split": 0.0,
 }
 
 
@@ -58,7 +53,7 @@ class ModeRLDynamics(DynamicsInterface):
         mosvgpe: MixtureOfSVGPExperts,
         state_dim: int,
         desired_mode: int = 1,
-        dataset: Dataset = None,
+        dataset: Optional[Dataset] = None,
         learning_rate: float = 0.01,
         epsilon: float = 1e-8,
         dynamics_fit_kwargs: dict = DEFAULT_DYNAMICS_FIT_KWARGS,
@@ -129,8 +124,6 @@ class ModeRLDynamics(DynamicsInterface):
         else:
             self.dataset = dataset
         self.mosvgpe.num_data = self.dataset[0].shape[0]
-        # TODO should I really be updating batch size here?
-        # self.dynamics_fit_kwargs.update({"batch_size": self.dataset[0].shape[0]})
 
     def predict_mode_probability(
         self,
