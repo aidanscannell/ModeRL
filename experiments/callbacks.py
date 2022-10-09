@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 import tensorflow as tf
-from moderl.dynamics import ModeRLDynamics
-
 import wandb
+from moderl.dynamics import ModeRLDynamics
 
 
 class DynamicsLoggingCallback(tf.keras.callbacks.Callback):
