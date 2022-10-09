@@ -17,7 +17,11 @@ tfd = tfp.distributions
 
 
 def find_solution_in_desired_mode(
-    dynamics: ModeRLDynamics, horizon: int, control_dim: int, start_state: State
+    dynamics: ModeRLDynamics,
+    horizon: int,
+    control_dim: int,
+    start_state: State,
+    target_state_weight: float = 100.0,
 ) -> ControlTrajectory:
     initial_solution = ControlTrajectory(
         dist=tfd.Deterministic(
@@ -25,7 +29,8 @@ def find_solution_in_desired_mode(
         )
     )
     terminal_reward_fn = TargetStateRewardFunction(
-        weight_matrix=1000 * tf.eye(dynamics.state_dim, dtype=default_float()),
+        weight_matrix=target_state_weight
+        * tf.eye(dynamics.state_dim, dtype=default_float()),
         target_state=start_state
         + tf.ones(start_state.shape, dtype=default_float()) * 0.2,
     )
