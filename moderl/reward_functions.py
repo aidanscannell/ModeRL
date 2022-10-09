@@ -5,10 +5,10 @@ from typing import Optional, Union
 import tensor_annotations.tensorflow as ttf
 import tensorflow as tf
 import tensorflow_probability as tfp
+from moderl.custom_types import Horizon, InputDim, One, StateDim
 from mosvgpe.keras.utils import try_array_except_none
 from tensor_annotations.axes import Batch
 
-from moderl.custom_types import Horizon, InputDim, One, StateDim
 
 tfd = tfp.distributions
 
@@ -22,13 +22,14 @@ class RewardFunction(abc.ABC):
         state: Union[tfd.Normal, tfd.Deterministic],  # [Horizon, StateDim]
         control: Union[tfd.Normal, tfd.Deterministic],  # [Horizon, ControlDim]
     ) -> ttf.Tensor0:
-        """Expected reward func under Normally distributed states and controls
+        r"""Expected reward func under Normally distributed states and controls
 
-        E[ c(x_T, u_T) ] = \mu_{e_T}^T H \mu_{e_T} + tr(H \Sigma_{e_T})
-        with:
-            e = x_T - target_state ~ N(\mu_e, \Sigma_e)
-            x ~ N(\mu_x, \Sigma_x)
-            T is final time step
+        ..math:
+            E[ c(x_T, u_T) ] = \mu_{e_T}^T H \mu_{e_T} + tr(H \Sigma_{e_T})
+            with:
+                e = x_T - target_state ~ N(\mu_e, \Sigma_e)
+                x ~ N(\mu_x, \Sigma_x)
+                T is final time step
         """
         raise NotImplementedError(
             "Implement the __call__ method for this reward function"
@@ -42,7 +43,7 @@ class RewardFunction(abc.ABC):
 
     @classmethod
     def from_config(cls, cfg: dict):
-        # TODO Need to implement from_config() for reward_fns to instantiate weight_matrix properly
+        # TODO Implement from_config() for to instantiate weight_matrix properly
         return cls(**cfg)
 
 
@@ -70,7 +71,7 @@ class Additive(RewardFunction):
 
     @classmethod
     def from_config(cls, cfg: dict):
-        # TODO Need to implement from_config() for reward_fns to instantiate weight_matrix properly
+        # TODO Implement from_config() for to instantiate weight_matrix properly
         first_part = tf.keras.layers.deserialize(
             cfg["first_part"], custom_objects=REWARD_FUNCTION_OBJECTS
         )
@@ -94,12 +95,13 @@ class ControlQuadraticRewardFunction(RewardFunction):
         state: Union[tfd.Normal, tfd.Deterministic],  # [Horizon, StateDim]
         control: Union[tfd.Normal, tfd.Deterministic],  # [Horizon, ControlDim]
     ) -> ttf.Tensor0:
-        """Expected quadratic integral control reward func
+        r"""Expected quadratic integral control reward func
 
-        E[ \Sum_{t=0}^{T-1} r(x_t, u_t) ] = - \mu_{u_t}^T R \mu_{u_t} + tr(R \Sigma_{u_t})
+        ..math:
+            E[\Sum_{t=0}^{T-1} r(x_t,u_t)] =-\mu_{u_t}^T R \mu_{u_t} + tr(R\Sigma_{u_t})
 
-        with:
-            u ~ N(\mu_u, \Sigma_u)
+            with:
+                u ~ N(\mu_u, \Sigma_u)
         """
         control_rewards = quadratic_reward_fn(
             vector=control.mean(),
@@ -130,14 +132,15 @@ class TargetStateRewardFunction(RewardFunction):
         state: Union[tfd.Normal, tfd.Deterministic],  # [Horizon, StateDim]
         control: Union[tfd.Normal, tfd.Deterministic],  # [Horizon, ControlDim]
     ) -> ttf.Tensor0:
-        """Expected quadratic terminal state reward func
+        r"""Expected quadratic terminal state reward func
 
-        E[ r(x_T, u_T) ] = -\mu_{e_T}^T H \mu_{e_T} + tr(H \Sigma_{e_T})
+        ..math:
+            E[ r(x_T, u_T) ] = -\mu_{e_T}^T H \mu_{e_T} + tr(H \Sigma_{e_T})
 
-        with:
-            e = x_T - target_state ~ N(\mu_e, \Sigma_e)
-            x ~ N(\mu_x, \Sigma_x)
-            T is final time step
+            with:
+                e = x_T - target_state ~ N(\mu_e, \Sigma_e)
+                x ~ N(\mu_x, \Sigma_x)
+                T is final time step
         """
         error = state.mean()[-1:, :] - self.target_state
         if isinstance(state, tfd.Deterministic):
