@@ -1,8 +1,4 @@
 _target_: mosvgpe.keras.kernels.Matern52Serializable
-lengthscales:
-  - 0.8
-  - 0.8
+lengthscales: [0.8, 0.8]
 variance: 1.0
-active_dims:
-  - 0
-  - 1
+active_dims: [0, 1]

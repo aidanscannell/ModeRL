@@ -1,5 +1,55 @@
-defaults:
-  - expert_one: default
-  - expert_two: default
+# Expert 1
+- _target_: mosvgpe.experts.SVGPExpert
+  kernel:
+    _target_: mosvgpe.keras.kernels.SeparateIndependentSerializable
+    kernels:
+      - _target_: mosvgpe.keras.kernels.Matern52Serializable
+        lengthscales: [1.0, 1.0, 1.0, 1.0]
+        variance: 1.0
+      - _target_: mosvgpe.keras.kernels.Matern52Serializable
+        lengthscales: [1.0, 1.0, 1.0, 1.0]
+        variance: 1.0
+  likelihood:
+    _target_: mosvgpe.keras.likelihoods.GaussianSerializable
+    variance: [1.0, 1.0]
+  inducing_variable:
+    _target_: mosvgpe.keras.inducing_variables.SharedIndependentInducingVariablesSerializable
+    inducing_variable:
+      _target_: mosvgpe.keras.inducing_variables.InducingPointsSerializable
+      Z:
+        _target_: numpy.ones
+        shape: [50, 4]
+  mean_function:
+    _target_: mosvgpe.keras.functions.ConstantSerializable
+    c: [0.0, 0.0]
+  num_latent_gps: 2
+  whiten: True
+  q_diag: false
 
-_target_: experiments.utils.TwoExpertsList
+# Expert 2
+- _target_: mosvgpe.experts.SVGPExpert
+  kernel:
+    _target_: mosvgpe.keras.kernels.SeparateIndependentSerializable
+    kernels:
+      - _target_: mosvgpe.keras.kernels.Matern52Serializable
+        lengthscales: [1.0, 1.0, 1.0, 1.0]
+        variance: 1.0
+      - _target_: mosvgpe.keras.kernels.Matern52Serializable
+        lengthscales: [1.0, 1.0, 1.0, 1.0]
+        variance: 1.0
+  likelihood:
+    _target_: mosvgpe.keras.likelihoods.GaussianSerializable
+    variance: [1.0, 1.0]
+  inducing_variable:
+    _target_: mosvgpe.keras.inducing_variables.SharedIndependentInducingVariablesSerializable
+    inducing_variable:
+      _target_: mosvgpe.keras.inducing_variables.InducingPointsSerializable
+      Z:
+        _target_: numpy.ones
+        shape: [50, 4]
+  mean_function:
+    _target_: mosvgpe.keras.functions.ConstantSerializable
+    c: [0.0, 0.0]
+  num_latent_gps: 2
+  whiten: True
+  q_diag: false

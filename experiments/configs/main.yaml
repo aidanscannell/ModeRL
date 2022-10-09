@@ -1,19 +1,29 @@
 defaults:
   - start_state: default
   - target_state: default
-  - initial_dataset: default
+  - initial_dataset: square # square around start state
   - controller: main
   - dynamics: main
   - env: scenario-1
-  # disable logging by Hydra
+  # Disable logging by Hydra
   - override hydra/job_logging: none
   - override hydra/hydra_logging: none
   - _self_
 
+experiment:
+  explorative_objective_fn: "joint_gating_function_entropy"
+  num_episodes: 80
+  # logging_epoch_freq: 1000 # monitoring config
+  random_seed: 42
+  save: True
+  # Early stopping callback
+  callbacks:
+    patience: 50
+    min_delta: 0
+
 wandb:
   entity: "aidanscannell"
-  # project: "mode_remaining_exploration"
-  project: "mode_remaining_exploration_for_mbrl"
+  project: "mode_constrained_mbrl"
   log_artifacts: True
   log_constraint_violations: True
   log_extrinsic_return: True
@@ -25,14 +35,3 @@ hydra:
     chdir: False
   run:
     dir: ""
-
-experiment:
-  random_seed: 42
-  save: True
-  num_episodes: 80
-  # Early stopping callback
-  callbacks:
-    patience: 500
-    min_delta: 0
-  # Monitoring config
-  logging_epoch_freq: 1000

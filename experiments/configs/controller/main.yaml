@@ -2,7 +2,6 @@ defaults:
   - reward_fn: state_diff_control
 
 _target_: moderl.controllers.ExplorativeController
-explorative_objective_fn: moderl.objectives.joint_gating_function_entropy
 start_state: ${start_state}
 control_dim: 2
 horizon: 15

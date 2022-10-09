@@ -1,0 +1,7 @@
+_target_: experiments.utils.sample_env_trajectories
+env: ${env}
+start_state: ${start_state}
+horizon: 15
+num_trajectories: 50
+width: 1.0
+random_seed: 42

@@ -1,4 +1,0 @@
-defaults:
-  - kernels: matern52
-
-_target_: mosvgpe.keras.kernels.SeparateIndependentSerializable

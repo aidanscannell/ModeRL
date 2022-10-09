@@ -1,2 +1,2 @@
-name: "velocity-controlled-point-mass/scenario-1"
-input_dim: 4
+_target_: simenvs.make
+env_name: "velocity-controlled-point-mass/scenario-1"

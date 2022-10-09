@@ -10,16 +10,8 @@ from moderl.custom_types import Dataset, State
 from moderl.dynamics.dynamics import ModeRLDynamics
 from moderl.rollouts import collect_data_from_env
 from mosvgpe.custom_types import InputData
-from mosvgpe.experts import SVGPExpert
 from mosvgpe.mixture_of_experts import MixtureOfSVGPExperts
 from omegaconf import DictConfig, OmegaConf
-
-
-class TwoExpertsList(list):
-    def __init__(self, expert_one: SVGPExpert, expert_two: SVGPExpert):
-        super().__init__()
-        self.append(expert_one)
-        self.append(expert_two)
 
 
 def sample_env_trajectories(

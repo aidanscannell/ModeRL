@@ -1,4 +1,0 @@
-defaults:
-  - inducing_variable: ones
-
-_target_: mosvgpe.keras.inducing_variables.SharedIndependentInducingVariablesSerializable

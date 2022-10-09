@@ -1,1 +1,2 @@
 _target_: mosvgpe.keras.functions.ZeroSerializable
+output_dim: 1
