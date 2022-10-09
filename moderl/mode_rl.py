@@ -1,23 +1,18 @@
 #!/usr/bin/env python3
-import datetime
-import os
-from builtins import NotImplementedError
-from typing import Callable, List, Optional, Union
+from typing import Callable
 
 import numpy as np
-import simenvs
 import tensor_annotations.tensorflow as ttf
 import tensorflow as tf
-from gpflow import default_float
+from moderl.controllers import ControllerInterface
+from moderl.custom_types import StateDim
+from moderl.dynamics import ModeRLDynamics
+from moderl.rollouts import collect_data_from_env
 
 # from gpflow.utilities.keras import try_array_except_none, try_val_except_none
 from tensor_annotations.axes import Batch
 from tf_agents.environments import py_environment
 
-from moderl.controllers import ControllerInterface, ExplorativeController
-from moderl.custom_types import Dataset, StateDim
-from moderl.dynamics import ModeRLDynamics
-from moderl.rollouts import collect_data_from_env
 
 Callback = Callable
 

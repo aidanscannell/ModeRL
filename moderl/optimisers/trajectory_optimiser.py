@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
-from functools import partial
-from typing import Callable, List, Optional, Sequence, Union
+import logging
+from typing import Callable, List, Optional, Union
 
 import gpflow as gpf
-import tensor_annotations.tensorflow as ttf
 import tensorflow as tf
 import tensorflow_probability as tfp
 from moderl.custom_types import ControlTrajectory, ObjectiveFn
 from scipy.optimize import LinearConstraint, NonlinearConstraint
 
+
 tfd = tfp.distributions
+
+logger = logging.getLogger(__name__)
 
 
 class TrajectoryOptimiser:
@@ -45,10 +47,10 @@ class TrajectoryOptimiser:
         """Returns a sequence of controls of length self.horizon"""
         if self.objective_fn is None:
             raise RuntimeError(
-                "Please set `objective_fn` before using TrajectoryOptimisationController"
+                "Please set `objective_fn` before using TrajectoryOptimiser"
             )
         if not self.keep_last_solution:
-            print("RESETING TO INITIAL SOLUTION")
+            logger.info("Resetting ControlTrajectory to initial solution")
             self.reset()
 
         def objective_fn_closure():
@@ -56,7 +58,6 @@ class TrajectoryOptimiser:
 
         optimisation_result = self.optimiser.minimize(
             closure=objective_fn_closure,
-            # closure=partial(self.objective_fn, initial_solution=self.previous_solution),
             variables=self.previous_solution.trainable_variables,
             method=self.method,
             constraints=self.constraints,
@@ -65,13 +66,8 @@ class TrajectoryOptimiser:
             options={"maxiter": self.max_iterations},
         )
 
-        # if self.keep_last_solution:
-        #     self.previous_solution = best_solution.roll(-self.replan_freq, dims=0)
-        #     # Note that initial_solution[i] is the same for all values of [i],
-        #     # so just pick i = 0
-        #     self.previous_solution[-self.replan_freq :] = self.initial_solution[0]
-        print("Optimisation result:")
-        print(optimisation_result)
+        logger.info(optimisation_result["message"])
+        logger.debug(optimisation_result)
         return optimisation_result
 
     def reset(self, horizon: Optional[int] = None):

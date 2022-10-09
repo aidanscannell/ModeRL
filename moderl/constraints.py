@@ -11,6 +11,7 @@ from moderl.rollouts import rollout_ControlTrajectory_in_ModeRLDynamics
 from scipy.optimize import NonlinearConstraint
 from tensor_annotations.axes import Batch
 
+
 tfd = tfp.distributions
 
 
@@ -50,8 +51,12 @@ def build_mode_chance_constraints_fn(
         def controls_flat_to_ControlTrajectory(
             controls_flat: tf.Tensor,
         ) -> ControlTrajectory:
-            controls = tf.reshape(controls_flat, [-1, control_dim * 2])
-            control_vars = controls[:, control_dim : control_dim * 2]
+            controls = tf.reshape(
+                controls_flat, [-1, control_trajectory.control_dim * 2]
+            )
+            control_vars = controls[
+                :, control_trajectory.control_dim : control_trajectory.control_dim * 2
+            ]
             return ControlTrajectory(
                 tfd.Normal(loc=controls, scale=tf.math.sqrt(control_vars))
             )

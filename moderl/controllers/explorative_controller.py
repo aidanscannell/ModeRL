@@ -18,6 +18,7 @@ from scipy.optimize import LinearConstraint
 from .base import TrajectoryOptimisationController
 from .utils import find_solution_in_desired_mode
 
+
 tfd = tfp.distributions
 
 
@@ -56,7 +57,7 @@ class ExplorativeController(TrajectoryOptimisationController):
         self.mode_satisfaction_prob = mode_satisfaction_prob
 
         def augmentd_objective_fn(initial_solution: ControlTrajectory) -> ttf.Tensor0:
-            """Augmented objective (expected reward over trajectory) with exploration objective"""
+            """Adds explorative objective to expected reward over trajectory"""
             state_dists = rollout_ControlTrajectory_in_ModeRLDynamics(
                 dynamics=self.dynamics,
                 control_trajectory=initial_solution,
@@ -69,10 +70,8 @@ class ExplorativeController(TrajectoryOptimisationController):
                 start_state=self.start_state,
             )
             reward = reward_fn(state=state_dists, control=control_dists)
-            tf.print("reward")
-            tf.print(reward)
-            tf.print("exploration_reward")
-            tf.print(exploration_reward)
+            # logger.debug("Reward: {}".format(reward))
+            # logger.debug("Exploration reward: {}".format(exploration_reward))
             return exploration_reward * exploration_weight + reward
 
         if initial_solution is None:
@@ -129,7 +128,6 @@ class ExplorativeController(TrajectoryOptimisationController):
         return {
             "start_state": self.start_state.numpy(),
             "dynamics": tf.keras.utils.serialize_keras_object(self.dynamics),
-            # "explorative_objective_fn": tf.keras.utils.serialize_keras_object(self.explorative_objective_fn),
             "reward_fn": tf.keras.utils.serialize_keras_object(self.reward_fn),
             "control_dim": self.trajectory_optimiser.initial_solution.control_dim,
             "horizon": self.trajectory_optimiser.initial_solution.horizon,

@@ -8,6 +8,7 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 from gpflow import default_float
 
+
 tfd = tfp.distributions
 
 
@@ -22,12 +23,12 @@ def combine_state_controls_to_input(
         # state_var = tf.zeros(control_var.shape, dtype=default_float())
         # control_var = tf.zeros(state_var.shape, dtype=default_float())
     else:
-        if state.variance() is None and control.variance() is not None:
-            assert len(control.mean().shape) == 2
-            state_var = tf.zeros(control.variance().shape, dtype=default_float())
-        elif state.variance() is not None and control.variance() is None:
-            assert len(state.mean().shape) == 2
-            control_var = tf.zeros(state.variance().shape, dtype=default_float())
+        # if state.variance() is None and control.variance() is not None:
+        #     assert len(control.mean().shape) == 2
+        #     state_var = tf.zeros(control.variance().shape, dtype=default_float())
+        # elif state.variance() is not None and control.variance() is None:
+        #     assert len(state.mean().shape) == 2
+        #     control_var = tf.zeros(state.variance().shape, dtype=default_float())
         input_var = tf.concat([state.variance(), control.variance()], -1)
     if input_var is None:
         return tfd.Deterministic(loc=input_mean)

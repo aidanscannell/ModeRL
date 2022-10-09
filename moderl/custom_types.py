@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-from gpflow import default_float
-from builtins import NotImplementedError, classmethod
 from dataclasses import dataclass
-from typing import Callable, List, NamedTuple, NewType, Optional, Tuple, Union
+from typing import Callable, NewType, Optional, Tuple, Union
 
 import tensor_annotations.tensorflow as ttf
 import tensorflow as tf
 import tensorflow_probability as tfp
+from gpflow import default_float
 from tensor_annotations import axes
 from tensor_annotations.axes import Batch
+
 
 tfd = tfp.distributions
 
@@ -48,7 +48,6 @@ StateTrajectory = Tuple[StateTrajectoryMean, StateTrajectoryVariance]
 
 @dataclass
 class ControlTrajectory(tf.Module):
-    # dist: Union[tfd.MultivariateNormalDiag, tfd.Deterministic]  # [horizon, control_dim]
     dist: tfd.Distribution  # [horizon, control_dim]
 
     def __call__(

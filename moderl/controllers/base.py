@@ -9,6 +9,7 @@ import tensorflow_probability as tfp
 from moderl.custom_types import ControlDim, Horizon, State
 from moderl.optimisers import TrajectoryOptimiser
 
+
 tfd = tfp.distributions
 
 

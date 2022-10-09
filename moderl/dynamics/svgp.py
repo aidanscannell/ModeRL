@@ -4,11 +4,12 @@ from typing import Union
 
 import tensorflow as tf
 import tensorflow_probability as tfp
-from gpflow import posteriors
+
+# from gpflow import posteriors
 from gpflow.conditionals import uncertain_conditional
 from gpflow.models import SVGP
-from moderl.custom_types import ControlTrajectory
 from moderl.utils import combine_state_controls_to_input
+
 
 tfd = tfp.distributions
 
@@ -107,44 +108,6 @@ class SVGPDynamicsWrapper:
             #     next_state_var = state.variance() + delta_state_var
             next_state_var = state.variance() + delta_state_var
             return tfd.Normal(loc=next_state_mean, scale=tf.math.sqrt(next_state_var))
-
-    # def __call__(
-    #     self,
-    #     state_mean: StateMean,
-    #     control_mean: ControlMean,
-    #     state_var: StateVariance = None,
-    #     control_var: ControlVariance = None,
-    #     predict_state_difference: bool = False,
-    #     add_noise: bool = False,
-    #     ) -> StateMeanAndVariance:
-
-    #     input_mean, input_var = combine_state_controls_to_input(
-    #         state_mean, control_mean, state_var=state_var, control_var=control_var
-    #     )
-    #     # print("input_mean.shape")
-    #     # print(input_mean.shape)
-    #     # print(input_var)
-    #     if input_var is None:
-    #         delta_state_mean, delta_state_var = self.predict_f(input_mean)
-    #     else:
-    #         delta_state_mean, delta_state_var = self.uncertain_predict_f(
-    #             input_mean, input_var
-    #         )
-    #     # delta_state_mean, delta_state_var = self.predict_f(input_mean)
-    #     if add_noise:
-    #         delta_state_mean, delta_state_var = self.gp.likelihood.predict_mean_and_var(
-    #             delta_state_mean, delta_state_var
-    #         )
-
-    #     if predict_state_difference:
-    #         return delta_state_mean, delta_state_var
-    #     else:
-    #         next_state_mean = state_mean + delta_state_mean
-    #         if state_var is None:
-    #             next_state_var = delta_state_var
-    #         else:
-    #             next_state_var = state_var + delta_state_var
-    #         return next_state_mean, next_state_var
 
 
 def multioutput_uncertain_conditional(

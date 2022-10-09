@@ -3,9 +3,6 @@ import numpy as np
 import tensor_annotations.tensorflow as ttf
 import tensorflow as tf
 import tensorflow_probability as tfp
-from tensor_annotations.axes import Batch
-from tf_agents.environments import py_environment
-
 from moderl.controllers.base import TrajectoryOptimisationController
 from moderl.custom_types import (
     ControlDim,
@@ -17,6 +14,9 @@ from moderl.custom_types import (
     StateDim,
 )
 from moderl.dynamics.dynamics import ModeRLDynamics
+from tensor_annotations.axes import Batch
+from tf_agents.environments import py_environment
+
 
 tfd = tfp.distributions
 

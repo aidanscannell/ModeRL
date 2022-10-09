@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import logging
 from typing import Callable, List, Optional, Union
 
 import numpy as np
@@ -12,7 +13,10 @@ from mosvgpe.mixture_of_experts import MixtureOfSVGPExperts
 
 from .svgp import SVGPDynamicsWrapper
 
+
 tfd = tfp.distributions
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_DYNAMICS_FIT_KWARGS = {
     "batch_size": 16,
@@ -135,8 +139,6 @@ class ModeRLDynamics(DynamicsInterface):
         probs, _ = self.desired_mode_gating_gp.likelihood.predict_mean_and_var(
             input_dists.mean(), h_mean, h_var
         )  # [N, 1]
-        # return probs[:, self.desired_mode]
-        # probs = self.mosvgpe.gating_network.predict_mixing_probs_given_h(h_mean, h_var)
         if probs.shape[-1] == 1:
             return probs
         else:
@@ -202,7 +204,7 @@ class ModeRLDynamics(DynamicsInterface):
     @desired_mode.setter
     def desired_mode(self, desired_mode: int):
         """Set the desired dynamics mode GP (and build GP posterior)"""
-        print("setting desired mode to {}".format(desired_mode))
+        logger.info("Setting desired mode to {}".format(desired_mode))
         assert desired_mode < self.mosvgpe.num_experts
         self._desired_mode = desired_mode
         self.desired_mode_dynamics_gp = self.mosvgpe.experts_list[desired_mode].gp
@@ -219,6 +221,7 @@ class ModeRLDynamics(DynamicsInterface):
             self._desired_mode_gating_gp = gp
         else:
             # TODO build a single output gp from a multi output gp
+            logger.exception("How to convert multi output gp to single dim")
             raise NotImplementedError("How to convert multi output gp to single dim")
 
     @property
