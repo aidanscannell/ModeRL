@@ -1,6 +1,6 @@
 defaults:
-  - start_state: default
-  - target_state: default
+  - start_state: bottom-right
+  - target_state: top-right
   - initial_dataset: square # square around start state
   - controller: main
   - dynamics: main
@@ -11,7 +11,8 @@ defaults:
   - _self_
 
 experiment:
-  explorative_objective_fn: "joint_gating_function_entropy"
+  explorative_objective_fn: "independent_gating_function_entropy"
+  # explorative_objective_fn: "joint_gating_function_entropy"
   num_episodes: 80
   # logging_epoch_freq: 1000 # monitoring config
   random_seed: 42
@@ -29,6 +30,11 @@ wandb:
   log_extrinsic_return: True
   # notes: ${run.comment}
   # name: fold_${run.fold}
+  tags:
+    - ${experiment.explorative_objective_fn}
+    - ${env.env_name}
+    - "mode_prob=${controller.mode_satisfaction_prob}"
+    - "random_seed=${experiment.random_seed}"
 
 hydra:
   job:
