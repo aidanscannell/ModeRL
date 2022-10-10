@@ -23,12 +23,6 @@ from gpflow import default_float
 from moderl.controllers import ExplorativeController
 from moderl.custom_types import State
 from moderl.dynamics import ModeRLDynamics
-from moderl.objectives import (
-    bald_objective,
-    conditional_gating_function_entropy,
-    independent_gating_function_entropy,
-    joint_gating_function_entropy,
-)
 from moderl.rollouts import collect_data_from_env
 from wandb.keras import WandbCallback
 
@@ -40,14 +34,6 @@ tf.keras.utils.set_random_seed(42)
 logger = logging.getLogger(__name__)
 # logger.setLevel(logging.DEBUG)
 # logger.setLevel(logging.INFO)
-
-EXPLORATIVE_OBJECTIVE_FNS = {
-    "joint_gating_function_entropy": joint_gating_function_entropy,
-    "bald": bald_objective,
-    "independent_gating_function_entropy": independent_gating_function_entropy,
-    "greedy": lambda *args, **kwargs: 0.0,  # i.e. no exploration term
-    "conditional_gating_function_entropy": conditional_gating_function_entropy,
-}
 
 
 def set_desired_mode(dynamics: ModeRLDynamics) -> int:
@@ -82,7 +68,7 @@ def check_converged(controller: ExplorativeController, target_state: State) -> b
 @hydra.main(config_path="configs", config_name="main")
 def run_experiment(cfg: omegaconf.DictConfig):
     # Make experiment reproducible
-    tf.keras.utils.set_random_seed(cfg.experiment.random_seed)
+    tf.keras.utils.set_random_seed(cfg.training.random_seed)
 
     # Initialise WandB run
     run = wandb.init(
@@ -96,12 +82,6 @@ def run_experiment(cfg: omegaconf.DictConfig):
     log_dir = run.dir
     save_name = os.path.join(
         log_dir, "saved-models/controller-optimised-{}-config.json"
-    )
-
-    logger.info(
-        "Using {} for explorative objective".format(
-            cfg.experiment.explorative_objective_fn
-        )
     )
 
     # Configure environment
@@ -125,8 +105,8 @@ def run_experiment(cfg: omegaconf.DictConfig):
             # ),
             tf.keras.callbacks.EarlyStopping(
                 monitor="loss",
-                patience=cfg.experiment.callbacks.patience,
-                min_delta=cfg.experiment.callbacks.min_delta,
+                patience=cfg.training.callbacks.patience,
+                min_delta=cfg.training.callbacks.min_delta,
                 verbose=0,
                 restore_best_weights=True,
             ),
@@ -158,19 +138,12 @@ def run_experiment(cfg: omegaconf.DictConfig):
     )
 
     # Configure explorative controller (wraps reward_fn in the explorative objective)
-    explorative_objective_fn = EXPLORATIVE_OBJECTIVE_FNS[
-        cfg.experiment.explorative_objective_fn
-    ]
-    explorative_controller = hydra.utils.instantiate(
-        cfg.controller,
-        dynamics=dynamics,
-        explorative_objective_fn=explorative_objective_fn,
-    )
+    explorative_controller = hydra.utils.instantiate(cfg.controller, dynamics=dynamics)
 
     # Run the MBRL loop
     test_inputs = create_test_inputs(40000)  # test inputs for plotting
     explorative_controller.save(save_name.format("before"))
-    for episode in range(0, cfg.experiment.num_episodes):
+    for episode in range(0, cfg.training.num_episodes):
         # Train the dynamics model and set the desired dynamics mode
         if episode > 0:
             logger.info("Learning dynamics...")
@@ -230,7 +203,7 @@ def run_experiment(cfg: omegaconf.DictConfig):
             wandb.log({"Final traj over desired gating gp": wandb.Image(fig)})
 
         # Save the controller
-        if cfg.experiment.save:
+        if cfg.training.save:
             explorative_controller.save(save_name.format(episode))
 
 
