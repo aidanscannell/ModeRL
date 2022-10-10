@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import math
+from functools import partial
 
 import numpy as np
 import tensor_annotations.tensorflow as ttf
@@ -7,7 +8,7 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 from gpflow import default_float, default_jitter
 from gpflow.conditionals import base_conditional
-from moderl.custom_types import ControlTrajectory, State
+from moderl.custom_types import ControlTrajectory, ObjectiveFn, State
 from moderl.dynamics import ModeRLDynamics
 from moderl.dynamics.conditionals import svgp_covariance_conditional
 from moderl.rollouts import rollout_ControlTrajectory_in_ModeRLDynamics
@@ -42,6 +43,32 @@ tfd = tfp.distributions
 #     h_dist = tfd.Normal(h_means, h_vars[0, :, :] ** 2)
 #     gating_entropy = h_dist.entropy()
 #     return tf.reduce_sum(gating_entropy)
+
+
+def build_joint_gating_function_entropy(
+    dynamics: ModeRLDynamics, start_state: State
+) -> ObjectiveFn:
+    return partial(
+        joint_gating_function_entropy, dynamics=dynamics, start_state=start_state
+    )
+
+
+def build_independent_gating_function_entropy(
+    dynamics: ModeRLDynamics, start_state: State
+) -> ObjectiveFn:
+    return partial(
+        independent_gating_function_entropy, dynamics=dynamics, start_state=start_state
+    )
+
+
+def build_bernoulli_entropy(
+    dynamics: ModeRLDynamics, start_state: State
+) -> ObjectiveFn:
+    return partial(bernoulli_entropy, dynamics=dynamics, start_state=start_state)
+
+
+def build_bald_objective(dynamics: ModeRLDynamics, start_state: State) -> ObjectiveFn:
+    return partial(bald_objective, dynamics=dynamics, start_state=start_state)
 
 
 def joint_gating_function_entropy(
