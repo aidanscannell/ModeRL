@@ -133,7 +133,7 @@ def bernoulli_entropy(
     bernoulli_entropy = mode_indicator_variable.entropy()
     print("bernoulli_entropy")
     print(bernoulli_entropy)
-    return tf.reduce_sum(bernoulli_entropy)
+    return tf.reduce_mean(bernoulli_entropy)
 
 
 def conditional_gating_function_entropy(
@@ -190,7 +190,7 @@ def conditional_gating_function_entropy(
 
     h_dist = tfd.Normal(loc=h_means_conditioned, scale=h_vars_conditioned**2)
     gating_entropy = h_dist.entropy()
-    return tf.reduce_sum(gating_entropy)
+    return tf.reduce_mean(gating_entropy)
 
 
 def independent_gating_function_entropy(
@@ -212,7 +212,7 @@ def independent_gating_function_entropy(
     )
     h_dist = tfd.Normal(h_means, h_vars[0, :, :] ** 2)
     gating_entropy = h_dist.entropy()
-    return tf.reduce_sum(gating_entropy)
+    return tf.reduce_(ngating_entropy)
 
 
 def bald_objective(
@@ -451,4 +451,4 @@ def bald_objective(
     print(bald_objective)
     tf.print("entropy")
     tf.print(tf.reduce_sum(bald_objective))
-    return tf.reduce_sum(bald_objective)
+    return tf.reduce_mean(bald_objective)
