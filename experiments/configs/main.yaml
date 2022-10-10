@@ -10,9 +10,7 @@ defaults:
   - override hydra/hydra_logging: none
   - _self_
 
-experiment:
-  explorative_objective_fn: "independent_gating_function_entropy"
-  # explorative_objective_fn: "joint_gating_function_entropy"
+training:
   num_episodes: 80
   # logging_epoch_freq: 1000 # monitoring config
   random_seed: 42
@@ -28,13 +26,14 @@ wandb:
   log_artifacts: True
   log_constraint_violations: True
   log_extrinsic_return: True
-  # notes: ${run.comment}
-  # name: fold_${run.fold}
+  exploration: "joint-gating"
+  name: null
   tags:
-    - ${experiment.explorative_objective_fn}
+    - ${wandb.name}
+    - "exploration=${wandb.exploration}"
     - ${env.env_name}
     - "mode_prob=${controller.mode_satisfaction_prob}"
-    - "random_seed=${experiment.random_seed}"
+    - "random_seed=${training.random_seed}"
 
 hydra:
   job:

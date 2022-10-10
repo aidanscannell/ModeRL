@@ -1,0 +1,6 @@
+wandb:
+  exploration: "greedy"
+  name: "greedy-with-constraint"
+
+controller:
+  explorative_objective_fn: null

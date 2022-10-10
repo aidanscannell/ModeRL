@@ -1,0 +1,6 @@
+wandb:
+  exploration: "joint_gating"
+  name: "conservative"
+
+controller:
+  mode_satisfaction_prob: 0.9
