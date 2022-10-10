@@ -85,18 +85,12 @@ def joint_gating_function_entropy(
     h_means, h_vars = dynamics.mosvgpe.gating_network.gp.predict_f(
         input_dists.mean(), full_cov=True
     )
-    h_vars = (
-        h_vars
-        + tf.eye(h_vars.shape[1], h_vars.shape[2], dtype=default_float())
-        * default_jitter()
-    )
-    # TODO make this use cholesky and lower triangular
+    h_vars += tf.eye(h_vars.shape[-1], dtype=default_float()) * default_jitter()
     h_dist = tfd.MultivariateNormalTriL(
-        loc=h_means, scale_tril=tf.linalg.cholesky(h_vars[0, :, :] ** 2)
+        loc=h_means[:, 0], scale_tril=tf.linalg.cholesky(h_vars[0, :, :] ** 2)
     )
-    # h_dist = tfd.MultivariateNormalFullCovariance(h_means, h_vars[0, :, :] ** 2)
     gating_entropy = h_dist.entropy()
-    return tf.reduce_sum(gating_entropy)
+    return gating_entropy
 
 
 def bernoulli_entropy(
