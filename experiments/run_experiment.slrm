@@ -1,14 +1,27 @@
 #!/bin/bash
 #SBATCH -n 1
 #SBATCH --time=0-04:00:00    # 4 hours
-#SBATCH --mem-per-cpu=8000   # 8000MB of memory
-#SBATCH --array=0-9
-#
+#SBATCH --cpus-per-task=6    # 6 cpus
+#SBATCH --mem-per-cpu=1000   # 1000MB of memory
+
 # Load module python
 module load py-virtualenv
+
+# Activate python venv
 cd /home/scannea1/python-projects/moderl
 source activate moderl-venv
+
+# Run experiments from experiment directory
 cd /home/scannea1/python-projects/moderl/experiments
+srun python train.py +experiment=conservative
 
+# # experiments = []
+# for config in "joint_gating_function_entropy" "conservative";
+# do
+#     srun python train.py +experiment=$config ;
 
-srun python train.py $SLURM_ARRAY_TASK_ID
+# srun --mem-per-cpu=500M --cpus-per-task=4 --time=0:10:00 python -c train.py
+
+# # srun --mem-per-cpu=500M --cpus-per-task=4 --time=0:10:00 python train.py
+
+# # srun python train.py $SLURM_ARRAY_TASK_ID
