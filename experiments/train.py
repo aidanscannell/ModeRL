@@ -185,8 +185,8 @@ def run_experiment(cfg: omegaconf.DictConfig):
                 gating_value = env.gating_bitmap[pixel[0], pixel[1]]
                 if gating_value < 0.5:
                     num_constraint_violations += 1
-                if num_constraint_violations > 0:
-                    num_episodes_with_constraint_violations += 1
+            if num_constraint_violations > 0:
+                num_episodes_with_constraint_violations += 1
             wandb.log({"Num constraint violations": num_constraint_violations})
             wandb.log(
                 {
