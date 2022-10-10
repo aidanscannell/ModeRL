@@ -206,7 +206,7 @@ def independent_gating_function_entropy(
     )
     h_dist = tfd.Normal(h_means, h_vars[0, :, :] ** 2)
     gating_entropy = h_dist.entropy()
-    return tf.reduce_(ngating_entropy)
+    return tf.reduce_mean(gating_entropy)
 
 
 def bald_objective(
