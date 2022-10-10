@@ -16,9 +16,14 @@ readme = "README.md"
 requires-python = ">=3.7"
 dependencies = [
     # "gpflow>=2.0.0",
-    # "gpflow",
+    "gpflow>=2.6.1",
     # TODO update gpflow dependency once a release supports Apple silicon
-    "gpflow @ git+https://github.com/GPflow/GPflow@develop#egg=gpflow",
+    # "gpflow @ git+https://github.com/GPflow/GPflow@develop#egg=gpflow",
+    "tensorflow>=2.4.0; platform_system!='Darwin' or platform_machine!='arm64'",
+    # NOTE: Support of Apple Silicon MacOS platforms is in an experimental mode
+    "tensorflow-macos>=2.4.0; platform_system=='Darwin' and platform_machine=='arm64'",
+    # "matplotlib",
+    "tensor_annotations<=1.0.2",
     "numpy",
     "matplotlib",
     # "scikit-learn",  # for test_train_split
