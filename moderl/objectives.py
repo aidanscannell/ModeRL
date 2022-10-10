@@ -72,6 +72,43 @@ def joint_gating_function_entropy(
     return tf.reduce_sum(gating_entropy)
 
 
+def bernoulli_entropy(
+    dynamics: ModeRLDynamics, initial_solution: ControlTrajectory, start_state: State
+) -> ttf.Tensor0:
+    """Calculates entropy of mode indicator variable along mean of state trajectory"""
+    control_dists = initial_solution()
+    state_dists = rollout_ControlTrajectory_in_ModeRLDynamics(
+        dynamics=dynamics, control_trajectory=initial_solution, start_state=start_state
+    )
+    input_dists = combine_state_controls_to_input(
+        state=state_dists[1:], control=control_dists
+    )
+    h_means, h_covs = dynamics.mosvgpe.gating_network.gp.predict_f(
+        # h_means, h_vars = dynamics.mosvgpe.gating_network.gp.predict_f(
+        input_dists.mean(),
+        full_cov=True,
+    )
+    # h_vars = (
+    #     h_vars
+    #     + tf.eye(h_vars.shape[1], h_vars.shape[2], dtype=default_float())
+    #     * default_jitter()
+    # )
+    mode_probs = dynamics.mosvgpe.gating_network.gp.likelihood.predict_mean_and_var(
+        input_dists.mean(),
+        Fmu=h_means,
+        Fvar=h_covs
+        # input_means, Fmu=h_means, Fvar=h_vars
+    )[0]
+    print("mode_probs.shape")
+    print(mode_probs.shape)
+    mode_probs = tf.transpose(tf.linalg.diag_part(mode_probs))[1:, :]
+    mode_indicator_variable = tfd.Bernoulli(probs=mode_probs)
+    bernoulli_entropy = mode_indicator_variable.entropy()
+    print("bernoulli_entropy")
+    print(bernoulli_entropy)
+    return tf.reduce_sum(bernoulli_entropy)
+
+
 def conditional_gating_function_entropy(
     dynamics: ModeRLDynamics, initial_solution: ControlTrajectory, start_state: State
 ) -> ttf.Tensor0:
