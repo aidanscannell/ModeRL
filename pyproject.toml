@@ -11,7 +11,8 @@ keywords = ["model-based reinforcement learning","mixtures-of-gaussian-process-e
 readme = "README.md"
 requires-python = ">=3.7"
 dependencies = [
-    "gpflow",
+    # "gpflow",
+    "gpflow>=2.6.1",
     "numpy",
     "tensorflow-probability",
     "tensorflow>=2.4.0; platform_system!='Darwin' or platform_machine!='arm64'",
