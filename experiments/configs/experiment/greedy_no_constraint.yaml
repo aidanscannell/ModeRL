@@ -1,11 +1,7 @@
 # @package _global_
 wandb:
   exploration: "greedy"
-  name: "greedy-no-constraint"
 
 controller:
-  explorative_objective_fn:
-    _target_: moderl.objectives.build_bernoulli_entropy
-    dynamics: ${dynamics}
-    start_state: ${start_state}
+  explorative_objective_fn: null
   mode_satisfaction_prob: 0.0
