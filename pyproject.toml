@@ -18,7 +18,7 @@ dependencies = [
     # NOTE: Support of Apple Silicon MacOS platforms is in an experimental mode
     "tensorflow-macos>=2.4.0; platform_system=='Darwin' and platform_machine=='arm64'",
     # "matplotlib",
-    "tensor_annotations",
+    "tensor_annotations<=1.0.2",
     # "mosvgpe @ git+https://github.com/aidanscannell/mosvgpe#egg=mosvgpe",
     # TODO make this agnostic of my file path...
     "mosvgpe @ file:///Users/scannea1/python-projects/ModeRL/subtrees/mosvgpe",
@@ -46,8 +46,8 @@ classifiers = [
 [project.optional-dependencies]
 dev = ["black[jupyter]", "pre-commit", "pyright", "isort", "pyflakes", "pytest"]
 # examples = ["pandas", "jupyter", "hydra-core", "simenvs @ git+https://github.com/aidanscannell/simenvs.git@v0.2.0#egg=simenvs"]
-examples = ["pandas", "jupyter", "hydra-core", "palettable"]
-experiments = ["pandas", "hydra-core", "palettable", "tikzplotlib"]
+examples = ["jupyter"]
+experiments = ["hydra-core", "palettable", "tikzplotlib"]
 
 [tool.setuptools]
 packages = ["moderl", "examples", "experiments"]
