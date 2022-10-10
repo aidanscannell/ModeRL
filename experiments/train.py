@@ -144,6 +144,7 @@ def run_experiment(cfg: omegaconf.DictConfig):
     # Run the MBRL loop
     test_inputs = create_test_inputs(40000)  # test inputs for plotting
     explorative_controller.save(save_name.format("before"))
+    num_episodes_with_constraint_violations = 0
     for episode in range(0, cfg.training.num_episodes):
         # Train the dynamics model and set the desired dynamics mode
         if episode > 0:
@@ -178,13 +179,20 @@ def run_experiment(cfg: omegaconf.DictConfig):
 
         # Log the number of constraint violations
         if cfg.wandb.log_constraint_violations:
-            num_constraint_violations = 0.0
+            num_constraint_violations = 0
             for test_state in X[:, : dynamics.state_dim]:
                 pixel = env.state_to_pixel(test_state)
                 gating_value = env.gating_bitmap[pixel[0], pixel[1]]
                 if gating_value < 0.5:
-                    num_constraint_violations += 1.0
-            wandb.log({"Number constraint violations": num_constraint_violations})
+                    num_constraint_violations += 1
+                if num_constraint_violations > 0:
+                    num_episodes_with_constraint_violations += 1
+            wandb.log({"Num constraint violations": num_constraint_violations})
+            wandb.log(
+                {
+                    "Num episodes with constraint violations": num_episodes_with_constraint_violations
+                }
+            )
 
         # Plot trajectory over learned dynamics
         if cfg.wandb.log_artifacts:
