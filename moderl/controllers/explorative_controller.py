@@ -27,11 +27,11 @@ class ExplorativeController(TrajectoryOptimisationController):
         self,
         start_state: Union[ttf.Tensor1[StateDim], np.ndarray],
         dynamics: ModeRLDynamics,
-        explorative_objective_fn: Callable[
-            [ModeRLDynamics, ControlTrajectory, State], float
-        ],
         reward_fn: RewardFunction,
         control_dim: int,
+        explorative_objective_fn: Optional[
+            Callable[[ModeRLDynamics, ControlTrajectory, State], float]
+        ] = None,
         horizon: int = 10,
         max_iterations: int = 100,
         mode_satisfaction_prob: float = 0.8,
@@ -55,6 +55,9 @@ class ExplorativeController(TrajectoryOptimisationController):
         self.callback = callback
         # TODO use setter to build constraints when mode_satisfaction_prob is set
         self.mode_satisfaction_prob = mode_satisfaction_prob
+
+        if explorative_objective_fn is None:
+            explorative_objective_fn = lambda *args, **kwargs: 0.0
 
         def augmentd_objective_fn(initial_solution: ControlTrajectory) -> ttf.Tensor0:
             """Adds explorative objective to expected reward over trajectory"""
