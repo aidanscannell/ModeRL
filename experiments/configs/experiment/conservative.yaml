@@ -4,3 +4,6 @@ wandb:
 
 controller:
   mode_satisfaction_prob: 0.9
+
+training:
+  num_episodes: 200
