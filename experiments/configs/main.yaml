@@ -27,7 +27,7 @@ wandb:
   log_constraint_violations: True
   log_extrinsic_return: True
   exploration: "joint-gating"
-  name: "joint-gating-function-entropy"
+  name: "default"
   tags:
     - ${wandb.name}
     - "exploration=${wandb.exploration}"

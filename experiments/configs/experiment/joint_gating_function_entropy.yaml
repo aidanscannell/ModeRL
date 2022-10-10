@@ -1,3 +1,4 @@
+# @package _global_
 wandb:
   exploration: "joint_gating"
   name: "joint_gating_function_entropy"

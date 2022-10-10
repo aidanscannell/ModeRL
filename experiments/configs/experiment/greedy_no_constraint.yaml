@@ -1,10 +1,4 @@
 # @package _global_
-# defaults:
-# - override /controller: no-constraints
-# - override /controller: main
-# - override /controller: greedy-no-constraint
-# - override /server: nginx
-
 wandb:
   exploration: "greedy"
   name: "greedy-no-constraint"

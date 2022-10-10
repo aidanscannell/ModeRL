@@ -1,3 +1,4 @@
+# @package _global_
 wandb:
   exploration: "independent_gating"
   name: "independent_gating_function_entropy"
