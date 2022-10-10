@@ -28,6 +28,7 @@ wandb:
   log_extrinsic_return: True
   exploration: "joint-gating"
   name: "default"
+  run_name: "${wandb.name}/${controller.mode_satisfaction_prob}"
   tags:
     - ${wandb.name}
     - "exploration=${wandb.exploration}"

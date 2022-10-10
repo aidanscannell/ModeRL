@@ -78,6 +78,7 @@ def run_experiment(cfg: omegaconf.DictConfig):
             cfg, resolve=True, throw_on_missing=True
         ),
         tags=cfg.wandb.tags,
+        name=cfg.wandb.run_name,
     )
     log_dir = run.dir
     save_name = os.path.join(
