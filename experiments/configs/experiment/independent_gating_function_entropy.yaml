@@ -7,3 +7,4 @@ controller:
     _target_: moderl.objectives.build_independent_gating_function_entropy
     dynamics: ${dynamics}
     start_state: ${start_state}
+  exploration_weight: 100.0
