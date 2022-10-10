@@ -155,9 +155,9 @@ def run_experiment(cfg: omegaconf.DictConfig):
         _ = explorative_controller.optimise()
         logger.info("Finished optimising controller")
 
-        if check_converged(explorative_controller, target_state=target_state):
-            # TODO implement a better check for convergence
-            break
+        # if check_converged(explorative_controller, target_state=target_state):
+        #     # TODO implement a better check for convergence
+        #     break
 
         # Rollout the controller in env to collect state transition data
         logger.info("Collecting data from env with controller")
