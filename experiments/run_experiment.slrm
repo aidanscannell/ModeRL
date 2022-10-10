@@ -13,13 +13,7 @@ source activate moderl-venv
 
 # Run experiments from experiment directory
 cd /home/scannea1/python-projects/moderl/experiments
-#srun python train.py
-#srun python train.py +experiment=relaxed
-#srun python train.py +experiment=conservative
-#srun python train.py +experiment=bernoulli
-#srun python train.py +experiment=greedy_no_constraint
-#srun python train.py +experiment=greedy_with_constraint
-srun python train.py +experiment=independent_gating_function_entropy
+srun python train.py +experiment=$1
 
 # # experiments = []
 # for config in "joint_gating_function_entropy" "conservative";
@@ -28,6 +22,7 @@ srun python train.py +experiment=independent_gating_function_entropy
 
 # srun --mem-per-cpu=500M --cpus-per-task=4 --time=0:10:00 python -c train.py
 
-# # srun --mem-per-cpu=500M --cpus-per-task=4 --time=0:10:00 python train.py
+# #
+# srun -n1 --mem-per-cpu=1000M --cpus-per-task=6 --time=0:10:00 python train.py
 
 # # srun python train.py $SLURM_ARRAY_TASK_ID
