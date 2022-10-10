@@ -23,7 +23,7 @@ dependencies = [
     # NOTE: Support of Apple Silicon MacOS platforms is in an experimental mode
     "tensorflow-macos>=2.4.0; platform_system=='Darwin' and platform_machine=='arm64'",
     # "matplotlib",
-    "tensor_annotations<=1.0.2",
+    "tensor_annotations==1.0.2",
     "numpy",
     "matplotlib",
     # "scikit-learn",  # for test_train_split
