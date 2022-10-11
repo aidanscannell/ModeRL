@@ -1,23 +1,29 @@
 #!/usr/bin/env python3
-from typing import Callable
+import os
 
-import matplotlib
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import numpy as np
-import palettable
 import tensorflow as tf
-import wandb
-from moderl.controllers.explorative_controller import ExplorativeController
+from moderl.controllers import ControllerInterface, ExplorativeController
+from moderl.custom_types import InputData, State
 from moderl.dynamics import ModeRLDynamics
-from mosvgpe.custom_types import InputData
+from moderl.rollouts import rollout_trajectory_optimisation_controller_in_env
 
 
-plt.style.use("seaborn-paper")
-CMAP = palettable.scientific.sequential.Bilbao_15.mpl_colormap
+LABELS = {"env": "Environment", "dynamics": "Dynamics"}
+COLORS = {"env": "c", "dynamics": "m"}
+LINESTYLES = {"env": "-", "dynamics": "-"}
+MARKERS = {"env": "*", "dynamics": "."}
 
-PlotFn = Callable[[], matplotlib.figure.Figure]
 
-colors = ["m", "c", "y"]
+def get_ExplorativeController_from_id(i, id, wandb_dir) -> ExplorativeController:
+    for file in os.listdir(wandb_dir):
+        if id in file:
+            load_file = os.path.join(
+                os.path.join(wandb_dir, file),
+                "files/saved-models/controller-optimised-{}-config.json".format(i),
+            )
+            return ExplorativeController.load(load_file)
 
 
 def create_test_inputs(num_test: int = 400):
@@ -31,20 +37,11 @@ def create_test_inputs(num_test: int = 400):
     return test_inputs
 
 
-class PlottingCallback(tf.keras.callbacks.Callback):
-    def __init__(self, plot_fn: PlotFn, logging_epoch_freq: int = 10, name: str = ""):
-        self.plot_fn = plot_fn
-        self.logging_epoch_freq = logging_epoch_freq
-        self.name = name
-
-    def on_epoch_end(self, epoch: int, logs=None):
-        if epoch % self.logging_epoch_freq == 0:
-            fig = self.plot_fn()
-            wandb.log({self.name: wandb.Image(fig)})
-            # wandb.log({self.name: fig})
-
-
-def plot_desired_mixing_prob(ax, dynamics: ModeRLDynamics, test_inputs: InputData):
+def plot_desired_mixing_prob(
+    ax,
+    dynamics: ModeRLDynamics,
+    test_inputs: InputData,
+):
     probs = dynamics.mosvgpe.gating_network.predict_mixing_probs(test_inputs)
     return plot_contf(ax, test_inputs, z=probs[:, dynamics.desired_mode])
 
@@ -74,22 +71,22 @@ def plot_gating_function_variance(ax, dynamics: ModeRLDynamics, test_inputs: Inp
 
 
 def plot_mode_satisfaction_prob(
-    ax,
-    dynamics: ModeRLDynamics,
-    test_inputs: InputData,
-    mode_satisfaction_prob: float,
+    ax, controller: ControllerInterface, test_inputs: InputData
 ):
-    mixing_probs = dynamics.mosvgpe.gating_network.predict_mixing_probs(test_inputs)
-    CS = ax.tricontour(
+    mixing_probs = controller.dynamics.mosvgpe.gating_network.predict_mixing_probs(
+        test_inputs
+    )
+    ax.tricontour(
         test_inputs[:, 0],
         test_inputs[:, 1],
-        mixing_probs[:, dynamics.desired_mode].numpy(),
-        [mode_satisfaction_prob],
+        mixing_probs[:, controller.dynamics.desired_mode].numpy(),
+        [controller.mode_satisfaction_prob],
+        colors=["k"],
     )
-    ax.clabel(CS, inline=True, fontsize=10)
+    # ax.clabel(CS, inline=True, fontsize=12)
 
 
-def plot_contf(ax, test_inputs, z, levels=None, cmap=CMAP):
+def plot_contf(ax, test_inputs, z, levels=None):
     try:
         contf = ax.tricontourf(
             test_inputs[:, 0],
@@ -97,7 +94,6 @@ def plot_contf(ax, test_inputs, z, levels=None, cmap=CMAP):
             z,
             # 100,
             levels=levels,
-            cmap=cmap,
         )
     except ValueError:
         # TODO check this works
@@ -107,56 +103,117 @@ def plot_contf(ax, test_inputs, z, levels=None, cmap=CMAP):
             np.ones(z.shape),
             # 100,
             levels=levels,
-            cmap=cmap,
         )
     return contf
 
 
-# def cbar(fig, ax, contf):
-#     if isinstance(ax, np.ndarray):
-#         divider = make_axes_locatable(ax[0])
-#     else:
-#         divider = make_axes_locatable(ax)
-#     cax = divider.append_axes("top", size="5%", pad=0.05)
-#     cbar = fig.colorbar(
-#         contf,
-#         ax=ax,
-#         use_gridspec=True,
-#         cax=cax,
-#         # format="%0.2f",
-#         orientation="horizontal",
-#     )
-#     # cbar.ax.locator_params(nbins=9)
-
-#     # cax.ticklabel_format(style="sci", scilimits=(0, 3))
-#     cax.xaxis.set_ticks_position("top")
-#     cax.xaxis.set_label_position("top")
-#     return cbar
-
-
-def plot_data_and_traj_over_desired_mixing_prob(
-    ax,
-    dynamics: ModeRLDynamics,
-    controller: ExplorativeController,
-    test_inputs: InputData,
-):
-    plot_desired_mixing_prob(ax, dynamics=dynamics, test_inputs=test_inputs)
-    plot_data_over_ax(ax, x=dynamics.dataset[0][:, 0], y=dynamics.dataset[0][:, 1])
-    plot_mode_satisfaction_prob(
-        ax,
-        dynamics=dynamics,
-        test_inputs=test_inputs,
-        mode_satisfaction_prob=controller.mode_satisfaction_prob,
+def plot_env(ax, env, test_inputs: InputData):
+    test_states = test_inputs[:, 0:2]
+    mode_probs = []
+    for test_state in test_states:
+        pixel = env.state_to_pixel(test_state)
+        mode_probs.append(env.gating_bitmap[pixel[0], pixel[1]])
+    mode_probs = tf.stack(mode_probs, 0)
+    return ax.tricontour(
+        test_states[:, 0],
+        test_states[:, 1],
+        mode_probs.numpy(),
+        [0.5],
+        colors=["b"],
+        linestyles="dashed",
+        zorder=50,
     )
 
 
-def plot_data_over_ax(ax, x, y):
+def plot_start_end_pos(ax, start_state, target_state):
+    bbox = dict(boxstyle="round,pad=0.1", fc="thistle", alpha=1.0)
+    if len(start_state.shape) == 1:
+        start_state = start_state[tf.newaxis, :]
+    if len(target_state.shape) == 1:
+        target_state = target_state[tf.newaxis, :]
+    ax.annotate(
+        r"$\mathbf{s}_0$",
+        (start_state[0, 0] + 0.15, start_state[0, 1]),
+        horizontalalignment="left",
+        verticalalignment="top",
+        bbox=bbox,
+    )
+    ax.annotate(
+        r"$\mathbf{s}_f$",
+        (target_state[0, 0] + 0.15, target_state[0, 1]),
+        horizontalalignment="left",
+        verticalalignment="bottom",
+        bbox=bbox,
+    )
+    ax.scatter(start_state[0, 0], start_state[0, 1], marker="x", color="k", s=8.0)
     ax.scatter(
-        x,
-        y,
+        target_state[0, 0],
+        target_state[0, 1],
+        color="k",
         marker="x",
-        color="b",
-        linewidth=0.5,
-        alpha=0.5,
-        label="Observations",
+        s=8.0,
     )
+
+
+def plot_trajectories(ax, env, controller: ControllerInterface, target_state: State):
+    env_traj = rollout_trajectory_optimisation_controller_in_env(
+        env=env, start_state=controller.start_state, controller=controller
+    )
+    dynamics_traj = controller.rollout_in_dynamics().mean()
+
+    for traj, key in zip([env_traj, dynamics_traj], ["env", "dynamics"]):
+        # for traj, key in zip([dynamics_traj], ["dynamics"]):
+        ax.plot(
+            traj[:, 0],
+            traj[:, 1],
+            label=LABELS[key],
+            color=COLORS[key],
+            linestyle=LINESTYLES[key],
+            linewidth=0.3,
+            marker=MARKERS[key],
+        )
+    plot_start_end_pos(
+        ax, start_state=controller.start_state, target_state=target_state
+    )
+
+
+# def plot_data_and_traj_over_desired_mixing_prob(
+#     ax,
+#     dynamics: ModeRLDynamics,
+#     controller: ExplorativeController,
+#     test_inputs: InputData,
+# ):
+#     plot_desired_mixing_prob(ax, dynamics=dynamics, test_inputs=test_inputs)
+#     plot_data_over_ax(ax, x=dynamics.dataset[0][:, 0], y=dynamics.dataset[0][:, 1])
+#     plot_mode_satisfaction_prob(
+#         ax,
+#         dynamics=dynamics,
+#         test_inputs=test_inputs,
+#         mode_satisfaction_prob=controller.mode_satisfaction_prob,
+#     )
+
+
+# def plot_data_over_ax(ax, x, y):
+#     ax.scatter(
+#         x,
+#         y,
+#         marker="x",
+#         color="b",
+#         linewidth=0.5,
+#         alpha=0.5,
+#         label="Observations",
+#     )
+
+
+# def plot_env_cmap(ax, env, test_inputs: InputData):
+#     test_states = test_inputs[:, 0:2]
+#     mode_probs = []
+#     for test_state in test_states:
+#         pixel = env.state_to_pixel(test_state)
+#         mode_probs.append(env.gating_bitmap[pixel[0], pixel[1]])
+#     mode_probs = tf.stack(mode_probs, 0)
+#     print("mode_probs")
+#     print(mode_probs)
+#     print(tf.reduce_min(mode_probs))
+#     print(tf.reduce_max(mode_probs))
+#     ax.tricontour(test_states[:, 0], test_states[:, 1], mode_probs.numpy())
