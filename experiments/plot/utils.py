@@ -177,6 +177,39 @@ def plot_trajectories(ax, env, controller: ControllerInterface, target_state: St
     )
 
 
+def plot_env_cmap(ax, env, test_inputs: InputData, aspect_ratio: float = 0.75):
+    extent = (
+        env.observation_spec().minimum[0],
+        env.observation_spec().maximum[0],
+        env.observation_spec().minimum[1],
+        env.observation_spec().maximum[1],
+    )
+    gating_bitmap = env.gating_bitmap
+    ax.imshow(gating_bitmap, extent=extent, aspect=aspect_ratio)
+    extent = (
+        np.min(test_inputs[:, 0]),
+        env.observation_spec().minimum[0],
+        np.min(test_inputs[:, 1]),
+        np.max(test_inputs[:, 1]),
+    )
+    padding = np.ones((100, 100))
+    ax.imshow(padding, extent=extent, vmin=0, vmax=1, aspect=aspect_ratio)
+    extent = (
+        np.min(test_inputs[:, 0]),
+        np.max(test_inputs[:, 0]),
+        env.observation_spec().maximum[1] * 0.9,
+        np.max(test_inputs[:, 1]),
+    )
+    ax.imshow(padding, extent=extent, vmin=0, vmax=1, aspect=aspect_ratio)
+    extent = (
+        np.min(test_inputs[:, 0]),
+        np.max(test_inputs[:, 0]),
+        np.min(test_inputs[:, 1]),
+        env.observation_spec().minimum[1],
+    )
+    ax.imshow(padding, extent=extent, vmin=0, vmax=1, aspect=aspect_ratio)
+
+
 # def plot_data_and_traj_over_desired_mixing_prob(
 #     ax,
 #     dynamics: ModeRLDynamics,
@@ -203,17 +236,3 @@ def plot_trajectories(ax, env, controller: ControllerInterface, target_state: St
 #         alpha=0.5,
 #         label="Observations",
 #     )
-
-
-# def plot_env_cmap(ax, env, test_inputs: InputData):
-#     test_states = test_inputs[:, 0:2]
-#     mode_probs = []
-#     for test_state in test_states:
-#         pixel = env.state_to_pixel(test_state)
-#         mode_probs.append(env.gating_bitmap[pixel[0], pixel[1]])
-#     mode_probs = tf.stack(mode_probs, 0)
-#     print("mode_probs")
-#     print(mode_probs)
-#     print(tf.reduce_min(mode_probs))
-#     print(tf.reduce_max(mode_probs))
-#     ax.tricontour(test_states[:, 0], test_states[:, 1], mode_probs.numpy())

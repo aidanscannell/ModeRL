@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
 import argparse
+import os
 
 import hydra
 import matplotlib.pyplot as plt
 import tensorflow as tf
 import wandb
-from experiments.plot.figures import plot_four_iterations_in_row, plot_sinlge_run
+from experiments.plot.figures import (
+    plot_constraint_expanding_figure,
+    plot_four_iterations_in_row,
+    plot_sinlge_run,
+)
 from omegaconf import OmegaConf
 
 
@@ -30,6 +35,15 @@ def plot_all_figures(wandb_dir, saved_runs_yaml, random_seed: int = 42):
     env = hydra.utils.instantiate(cfg.env)
     target_state = hydra.utils.instantiate(cfg.target_state)
 
+    fig = plot_constraint_expanding_figure(
+        env=env,
+        run_id=saved_runs.joint_gating.id.split("/")[-1],
+        wandb_dir=wandb_dir,
+        target_state=target_state,
+        iterations=saved_runs.joint_gating.iterations,
+    )
+    plt.savefig("./figures/joint_gating_constraint_expanding.pdf")
+
     for key in saved_runs_dict.keys():
         print("Plotting {}".format(key))
         run_id = saved_runs_dict[key]["id"].split("/")[-1]
@@ -39,7 +53,6 @@ def plot_all_figures(wandb_dir, saved_runs_yaml, random_seed: int = 42):
             wandb_dir=wandb_dir,
             target_state=target_state,
             iteration=saved_runs_dict[key]["iteration"],
-            # title=saved_runs_dict[key]["title"],
         )
         plt.savefig(os.path.join("./figures", key + ".pdf"))
 
