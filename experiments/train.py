@@ -7,6 +7,7 @@ logging.basicConfig(level=logging.INFO)
 
 import gpflow as gpf
 import hydra
+import matplotlib.pyplot as plt
 import omegaconf
 import tensorflow as tf
 import tensorflow_probability as tfp
@@ -15,8 +16,6 @@ from experiments.plot.callbacks.controller import (
     plot_trajectories_over_desired_gating_gp,
     plot_trajectories_over_desired_mixing_prob,
 )
-
-# from experiments.plot.callbacks import build_dynamics_plotting_callbacks
 from experiments.plot.utils import create_test_inputs
 from experiments.utils import sample_mosvgpe_inducing_inputs_from_data
 from gpflow import default_float
@@ -27,6 +26,8 @@ from moderl.rollouts import collect_data_from_env
 from wandb.keras import WandbCallback
 
 
+# from experiments.plot.callbacks import build_dynamics_plotting_callbacks
+
 tfd = tfp.distributions
 
 tf.keras.utils.set_random_seed(42)
@@ -34,6 +35,16 @@ tf.keras.utils.set_random_seed(42)
 logger = logging.getLogger(__name__)
 # logger.setLevel(logging.DEBUG)
 # logger.setLevel(logging.INFO)
+
+
+params = {
+    # "text.usetex": True,
+    # "savefig.transparent": True,
+    "image.cmap": "RdYlGn",
+    # "figure.figsize": (4, 3),
+    # "figure.figsize": (3.5, 2.7),
+}
+plt.rcParams.update(params)
 
 
 def set_desired_mode(dynamics: ModeRLDynamics) -> int:

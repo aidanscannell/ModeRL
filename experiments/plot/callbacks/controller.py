@@ -7,6 +7,7 @@ import wandb
 from experiments.plot.utils import (
     create_test_inputs,
     plot_contf,
+    plot_env,
     plot_mode_satisfaction_prob,
     plot_trajectories,
 )
