@@ -11,12 +11,12 @@ import omegaconf
 import tensorflow as tf
 import tensorflow_probability as tfp
 import wandb
-
-# from experiments.plot.callbacks import build_dynamics_plotting_callbacks
-from experiments.plot.controller import (
+from experiments.plot.callbacks.controller import (
     plot_trajectories_over_desired_gating_gp,
     plot_trajectories_over_desired_mixing_prob,
 )
+
+# from experiments.plot.callbacks import build_dynamics_plotting_callbacks
 from experiments.plot.utils import create_test_inputs
 from experiments.utils import sample_mosvgpe_inducing_inputs_from_data
 from gpflow import default_float

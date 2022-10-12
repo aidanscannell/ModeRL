@@ -1,12 +1,21 @@
 #!/usr/bin/env python3
-from typing import Callable
+from functools import partial
+from typing import List
 
-import matplotlib as mpl
 import tensorflow as tf
 import wandb
+from experiments.plot.callbacks.dynamics import (
+    plot_gating_network_gps,
+    plot_mixing_probs,
+)
+from experiments.plot.utils import create_test_inputs
+from moderl.dynamics import ModeRLDynamics
 
 
-PlotFn = Callable[[], mpl.figure.Figure]
+# from typing import Callable
+# import matplotlib as mpl
+# PlotFn = Callable[[], mpl.figure.Figure]
+PlotFn = None
 
 
 class KerasPlottingCallback(tf.keras.callbacks.Callback):
@@ -34,3 +43,25 @@ class KerasPlottingCallback(tf.keras.callbacks.Callback):
 #         if step % self.logging_epoch_freq == 0:
 #             fig = self.plot_fn()
 #             wandb.log({self.name: wandb.Image(fig)})
+
+
+def build_dynamics_plotting_callbacks(
+    dynamics: ModeRLDynamics, logging_epoch_freq: int = 100, num_test: int = 100
+) -> List[KerasPlottingCallback]:
+    test_inputs = create_test_inputs(num_test=num_test)
+
+    callbacks = [
+        KerasPlottingCallback(
+            partial(
+                plot_gating_network_gps, dynamics=dynamics, test_inputs=test_inputs
+            ),
+            logging_epoch_freq=logging_epoch_freq,
+            name="Gating function posterior",
+        ),
+        KerasPlottingCallback(
+            partial(plot_mixing_probs, dynamics=dynamics, test_inputs=test_inputs),
+            logging_epoch_freq=logging_epoch_freq,
+            name="Mixing probs",
+        ),
+    ]
+    return callbacks

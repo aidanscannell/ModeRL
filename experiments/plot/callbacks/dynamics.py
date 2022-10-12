@@ -1,17 +1,8 @@
 #!/usr/bin/env python3
-from functools import partial
-from typing import List
-
 import matplotlib.pyplot as plt
-import palettable
-from experiments.plot.callbacks import KearsPlottingCallback
-from experiments.plot.utils import create_test_inputs, plot_contf
+from experiments.plot.utils import plot_contf
 from moderl.dynamics import ModeRLDynamics
 from mosvgpe.custom_types import InputData
-
-
-plt.style.use("seaborn-paper")
-CMAP = palettable.scientific.sequential.Bilbao_15.mpl_colormap
 
 
 def plot_gating_network_gps(dynamics: ModeRLDynamics, test_inputs: InputData):
@@ -52,25 +43,3 @@ def plot_mixing_probs(dynamics: ModeRLDynamics, test_inputs: InputData):
         plot_contf(axs[k], test_inputs, z=probs[:, k])
     fig.tight_layout()
     return fig
-
-
-def build_dynamics_plotting_callbacks(
-    dynamics: ModeRLDynamics, logging_epoch_freq: int = 100, num_test: int = 100
-) -> List[PlottingCallback]:
-    test_inputs = create_test_inputs(num_test=num_test)
-
-    callbacks = [
-        KearsPlottingCallback(
-            partial(
-                plot_gating_network_gps, dynamics=dynamics, test_inputs=test_inputs
-            ),
-            logging_epoch_freq=logging_epoch_freq,
-            name="Gating function posterior",
-        ),
-        KearsPlottingCallback(
-            partial(plot_mixing_probs, dynamics=dynamics, test_inputs=test_inputs),
-            logging_epoch_freq=logging_epoch_freq,
-            name="Mixing probs",
-        ),
-    ]
-    return callbacks
