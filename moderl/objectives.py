@@ -199,13 +199,9 @@ def independent_gating_function_entropy(
         state=state_dists[1:], control=control_dists
     )
     h_means, h_vars = dynamics.mosvgpe.gating_network.gp.predict_f(
-        input_dists.mean(), full_cov=True
+        input_dists.mean(), full_cov=False
     )
-    # h_vars = (
-    #     h_vars + tf.eye(h_vars.shape[1], h_vars.shape[2], dtype=default_float()) * 1e-6
-    # )
-    # h_vars += tf.eye(h_vars.shape[-1], dtype=default_float()) * default_jitter()
-    h_dist = tfd.Normal(h_means, h_vars[0, :, :] ** 2)
+    h_dist = tfd.Normal(h_means[:, 0], h_vars[:, 0] ** 2)
     gating_entropy = h_dist.entropy()
     return tf.reduce_mean(gating_entropy)
 
