@@ -23,5 +23,5 @@ python train.py +experiment=greedy_no_constraint --cfg job
 ## Create figures
 
 ``` shell
-python plot.figures.py
+python plot/plot_all_figures.py --wandb_dir=triton --saved_runs=saved_runs.yaml --random_seed=42
 ```
