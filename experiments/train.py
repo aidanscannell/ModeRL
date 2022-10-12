@@ -12,7 +12,7 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 import wandb
 
-# from experiments.callbacks import DynamicsLoggingCallback
+# from experiments.plot.callbacks import build_dynamics_plotting_callbacks
 from experiments.plot.controller import (
     plot_trajectories_over_desired_gating_gp,
     plot_trajectories_over_desired_mixing_prob,
@@ -99,11 +99,7 @@ def run_experiment(cfg: omegaconf.DictConfig):
         cfg.dynamics,
         dataset=initial_dataset,
         callbacks=[
-            # dynamics.callbacks = [
             # DynamicsLoggingCallback(dynamics=dynamics, logging_epoch_freq=5),
-            # build_plotting_callbacks(
-            #     dynamics=dynamics, logging_epoch_freq=logging_epoch_freq
-            # ),
             tf.keras.callbacks.EarlyStopping(
                 monitor="loss",
                 patience=cfg.training.callbacks.patience,
@@ -120,6 +116,9 @@ def run_experiment(cfg: omegaconf.DictConfig):
             ),
         ],
     )
+    # dynamics.callbacks.append(
+    #     build_dynamics_plotting_callbacks(dynamics=dynamics, logging_epoch_freq=5)
+    # )
     sample_mosvgpe_inducing_inputs_from_data(
         model=dynamics.mosvgpe, X=initial_dataset[0]
     )
