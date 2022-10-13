@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import os
 
-# import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
 from moderl.controllers import ControllerInterface, ExplorativeController
@@ -10,7 +9,13 @@ from moderl.dynamics import ModeRLDynamics
 from moderl.rollouts import rollout_trajectory_optimisation_controller_in_env
 
 
-LABELS = {"env": "Environment", "dynamics": "Dynamics"}
+LABELS = {
+    # "env": r"Environment $\bar{\mathbf{s}}_{\pi_{i}}^{\text{env}}$",
+    # "env": r"Environment $\bar{\mathbf{s}}^{\tilde{f}}_{\pi_{i}}$",
+    "env": r"Environment $\bar{\mathbf{s}}_{\pi_{i}}$",
+    "dynamics": r"Dynamics $\bar{\mathbf{s}}^{f_{k^*}}_{\pi_{i}}$",
+    # "dynamics": r"Dynamics $\bar{\mathbf{s}}_{\pi_{i}}^{\text{GP}}$",
+}
 COLORS = {"env": "c", "dynamics": "m"}
 LINESTYLES = {"env": "-", "dynamics": "-"}
 MARKERS = {"env": "*", "dynamics": "."}
@@ -58,7 +63,9 @@ def plot_gating_function_mean(ax, dynamics: ModeRLDynamics, test_inputs: InputDa
     return plot_contf(ax, test_inputs, z=mean[:, dynamics.desired_mode])
 
 
-def plot_gating_function_variance(ax, dynamics: ModeRLDynamics, test_inputs: InputData):
+def plot_gating_function_variance(
+    ax, dynamics: ModeRLDynamics, test_inputs: InputData, cmap
+):
     _, var = dynamics.mosvgpe.gating_network.predict_h(test_inputs)
     # label = (
     #     "$\mathbb{V}[h_{"
@@ -67,7 +74,7 @@ def plot_gating_function_variance(ax, dynamics: ModeRLDynamics, test_inputs: Inp
     #     # + str(iteration)
     #     + "}]$"
     # )
-    return plot_contf(ax, test_inputs, z=var[:, dynamics.desired_mode])
+    return plot_contf(ax, test_inputs, z=var[:, dynamics.desired_mode], cmap=cmap)
 
 
 def plot_mode_satisfaction_prob(
@@ -86,7 +93,7 @@ def plot_mode_satisfaction_prob(
     # ax.clabel(CS, inline=True, fontsize=12)
 
 
-def plot_contf(ax, test_inputs, z, levels=None):
+def plot_contf(ax, test_inputs, z, levels=None, cmap=None):
     try:
         contf = ax.tricontourf(
             test_inputs[:, 0],
@@ -94,6 +101,7 @@ def plot_contf(ax, test_inputs, z, levels=None):
             z,
             # 100,
             levels=levels,
+            cmap=cmap,
         )
     except ValueError:
         # TODO check this works
@@ -103,6 +111,7 @@ def plot_contf(ax, test_inputs, z, levels=None):
             np.ones(z.shape),
             # 100,
             levels=levels,
+            cmap=cmap,
         )
     return contf
 
@@ -121,6 +130,7 @@ def plot_env(ax, env, test_inputs: InputData):
         [0.5],
         colors=["b"],
         linestyles="dashed",
+        alpha=0.5,
         zorder=50,
     )
 
@@ -138,21 +148,17 @@ def plot_start_end_pos(ax, start_state, target_state):
         verticalalignment="top",
         bbox=bbox,
     )
-    ax.annotate(
-        r"$\mathbf{s}_f$",
-        (target_state[0, 0] + 0.15, target_state[0, 1]),
-        horizontalalignment="left",
-        verticalalignment="bottom",
-        bbox=bbox,
-    )
+    # ax.annotate(
+    #     r"$\mathbf{s}_f$",
+    #     (target_state[0, 0] + 0.15, target_state[0, 1]),
+    #     horizontalalignment="left",
+    #     verticalalignment="bottom",
+    #     bbox=bbox,
+    # )
+    # ax.scatter(start_state[0, 0], start_state[0, 1], marker="x", color="k", s=8.0)
+    # ax.scatter(target_state[0, 0], target_state[0, 1], color="k", marker="x", s=8.0)
     ax.scatter(start_state[0, 0], start_state[0, 1], marker="x", color="k", s=8.0)
-    ax.scatter(
-        target_state[0, 0],
-        target_state[0, 1],
-        color="k",
-        marker="x",
-        s=8.0,
-    )
+    ax.scatter(target_state[0, 0], target_state[0, 1], marker="*", color="k", s=250.0)
 
 
 def plot_trajectories(ax, env, controller: ControllerInterface, target_state: State):
@@ -184,30 +190,30 @@ def plot_env_cmap(ax, env, test_inputs: InputData, aspect_ratio: float = 0.75):
         env.observation_spec().minimum[1],
         env.observation_spec().maximum[1],
     )
-    gating_bitmap = env.gating_bitmap
-    ax.imshow(gating_bitmap, extent=extent, aspect=aspect_ratio)
+    gating_bitmap = np.round(env.gating_bitmap) * 0.9
+    padding = np.ones((100, 100)) * 0.9
+    ax.imshow(gating_bitmap, extent=extent, vmin=0.0, vmax=1.0, aspect=aspect_ratio)
     extent = (
         np.min(test_inputs[:, 0]),
         env.observation_spec().minimum[0],
         np.min(test_inputs[:, 1]),
         np.max(test_inputs[:, 1]),
     )
-    padding = np.ones((100, 100))
-    ax.imshow(padding, extent=extent, vmin=0, vmax=1, aspect=aspect_ratio)
+    ax.imshow(padding, extent=extent, vmin=0.0, vmax=1.0, aspect=aspect_ratio)
     extent = (
         np.min(test_inputs[:, 0]),
         np.max(test_inputs[:, 0]),
         env.observation_spec().maximum[1] * 0.9,
         np.max(test_inputs[:, 1]),
     )
-    ax.imshow(padding, extent=extent, vmin=0, vmax=1, aspect=aspect_ratio)
+    ax.imshow(padding, extent=extent, vmin=0.0, vmax=1.0, aspect=aspect_ratio)
     extent = (
         np.min(test_inputs[:, 0]),
         np.max(test_inputs[:, 0]),
         np.min(test_inputs[:, 1]),
         env.observation_spec().minimum[1],
     )
-    ax.imshow(padding, extent=extent, vmin=0, vmax=1, aspect=aspect_ratio)
+    ax.imshow(padding, extent=extent, vmin=0.0, vmax=1.0, aspect=aspect_ratio)
 
 
 # def plot_data_and_traj_over_desired_mixing_prob(
@@ -226,13 +232,13 @@ def plot_env_cmap(ax, env, test_inputs: InputData, aspect_ratio: float = 0.75):
 #     )
 
 
-# def plot_data_over_ax(ax, x, y):
-#     ax.scatter(
-#         x,
-#         y,
-#         marker="x",
-#         color="b",
-#         linewidth=0.5,
-#         alpha=0.5,
-#         label="Observations",
-#     )
+def plot_data_over_ax(ax, X):
+    ax.scatter(
+        X[:, 0],
+        X[:, 1],
+        marker="x",
+        color="k",
+        linewidth=0.5,
+        alpha=0.2,
+        label="Observations",
+    )

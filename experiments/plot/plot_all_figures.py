@@ -9,7 +9,9 @@ import wandb
 from experiments.plot.figures import (
     plot_constraint_expanding_figure,
     plot_four_iterations_in_row,
-    plot_sinlge_run,
+    plot_sinlge_run_gating_function_variance,
+    plot_sinlge_run_mode_prob,
+    plot_uncertainty_comparison,
 )
 from omegaconf import OmegaConf
 
@@ -17,9 +19,13 @@ from omegaconf import OmegaConf
 params = {
     "text.usetex": True,
     "savefig.transparent": True,
-    "image.cmap": "RdYlGn",
-    "figure.figsize": (4, 3),
+    "savefig.bbox": "tight",
+    "image.cmap": "PiYG",
+    # "image.cmap": "RdYlGn",
+    "figure.figsize": (3.5, 2.5),
+    # "figure.figsize": (4, 3),
     # "figure.figsize": (3.5, 2.7),
+    "text.latex.preamble": r"\usepackage{amsfonts}",
 }
 plt.rcParams.update(params)
 
@@ -35,6 +41,15 @@ def plot_all_figures(wandb_dir, saved_runs_yaml, random_seed: int = 42):
     env = hydra.utils.instantiate(cfg.env)
     target_state = hydra.utils.instantiate(cfg.target_state)
 
+    fig = plot_uncertainty_comparison(
+        env=env,
+        saved_runs=saved_runs,
+        wandb_dir=wandb_dir,
+        target_state=target_state,
+        # iterations=saved_runs.joint_gating.iterations,
+    )
+    plt.savefig("./figures/uncertainty_comparison.pdf")
+
     fig = plot_constraint_expanding_figure(
         env=env,
         run_id=saved_runs.joint_gating.id.split("/")[-1],
@@ -47,14 +62,30 @@ def plot_all_figures(wandb_dir, saved_runs_yaml, random_seed: int = 42):
     for key in saved_runs_dict.keys():
         print("Plotting {}".format(key))
         run_id = saved_runs_dict[key]["id"].split("/")[-1]
-        fig = plot_sinlge_run(
+        if key is "greedy-with-constraint":
+            cbar = True
+            legend = False
+        else:
+            cbar = False
+            legend = True
+        fig = plot_sinlge_run_mode_prob(
+            env=env,
+            run_id=run_id,
+            wandb_dir=wandb_dir,
+            target_state=target_state,
+            iteration=saved_runs_dict[key]["iteration"],
+            cbar=cbar,
+            legend=legend,
+        )
+        plt.savefig(os.path.join("./figures", key + ".pdf"))
+        fig = plot_sinlge_run_gating_function_variance(
             env=env,
             run_id=run_id,
             wandb_dir=wandb_dir,
             target_state=target_state,
             iteration=saved_runs_dict[key]["iteration"],
         )
-        plt.savefig(os.path.join("./figures", key + ".pdf"))
+        plt.savefig(os.path.join("./figures", key + "_gating_variance.pdf"))
 
     fig = plot_four_iterations_in_row(
         env=env,
