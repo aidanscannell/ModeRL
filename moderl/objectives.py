@@ -82,12 +82,12 @@ def joint_gating_function_entropy(
     input_dists = combine_state_controls_to_input(
         state=state_dists[1:], control=control_dists
     )
-    h_means, h_vars = dynamics.mosvgpe.gating_network.gp.predict_f(
+    h_means, h_covs = dynamics.mosvgpe.gating_network.gp.predict_f(
         input_dists.mean(), full_cov=True
     )
-    h_vars += tf.eye(h_vars.shape[-1], dtype=default_float()) * default_jitter()
+    h_covs += tf.eye(h_covs.shape[-1], dtype=default_float()) * default_jitter()
     h_dist = tfd.MultivariateNormalTriL(
-        loc=h_means[:, 0], scale_tril=tf.linalg.cholesky(h_vars[0, :, :] ** 2)
+        loc=h_means[:, 0], scale_tril=tf.linalg.cholesky(h_covs[0, :, :])
     )
     gating_entropy = h_dist.entropy()
     return gating_entropy
@@ -182,7 +182,7 @@ def conditional_gating_function_entropy(
     h_means_conditioned = tf.concat(h_means_conditioned, 0)
     h_vars_conditioned = tf.concat(h_vars_conditioned, 0)
 
-    h_dist = tfd.Normal(loc=h_means_conditioned, scale=h_vars_conditioned**2)
+    h_dist = tfd.Normal(loc=h_means_conditioned, scale=tf.math.sqrt(h_vars_conditioned))
     gating_entropy = h_dist.entropy()
     return tf.reduce_mean(gating_entropy)
 
@@ -201,7 +201,7 @@ def independent_gating_function_entropy(
     h_means, h_vars = dynamics.mosvgpe.gating_network.gp.predict_f(
         input_dists.mean(), full_cov=False
     )
-    h_dist = tfd.Normal(h_means[:, 0], h_vars[:, 0] ** 2)
+    h_dist = tfd.Normal(h_means[:, 0], tf.math.sqrt(h_vars[:, 0]))
     gating_entropy = h_dist.entropy()
     return tf.reduce_mean(gating_entropy)
 
