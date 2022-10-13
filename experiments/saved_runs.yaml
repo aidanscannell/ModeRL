@@ -1,0 +1,34 @@
+joint_gating:
+  id: "aidanscannell/mode_constrained_mbrl/12tuiu9j"
+  title: "Joint gating function entropy"
+  # iteration: 10
+  iteration: 60
+  iterations: [0, 15, 25, 60]
+bernoulli:
+  id: "aidanscannell/mode_constrained_mbrl/1n0aaayn"
+  title: "Bernoulli entropy"
+  # iteration: 10
+  iteration: 60
+greedy-no-constraint:
+  id: "aidanscannell/mode_constrained_mbrl/9wz2iel5"
+  title: "Greedy (no constraint)"
+  # iteration: 10
+  iteration: 60
+greedy-with-constraint:
+  id: "aidanscannell/mode_constrained_mbrl/20rygjk5"
+  title: "Greedy"
+  # iteration: 10
+  iteration: 60
+independent_gating:
+  id: "aidanscannell/mode_constrained_mbrl/27m40fuy"
+  # id: "aidanscannell/mode_constrained_mbrl/wx5raxbs"
+  # id: "aidanscannell/mode_constrained_mbrl/wx5raxbs"
+  title: "Independent gating function entropy"
+  # iteration: 10
+  iteration: 60
+# conservative:
+#   id: "aidanscannell/mode_constrained_mbrl/3nxjjau5"
+#   title: ""
+# relaxed:
+#   id: "aidanscannell/mode_constrained_mbrl/1tthyl58"
+#   title: "Relax"
