@@ -10,14 +10,13 @@ import palettable
 import tensorflow as tf
 import tensorflow_probability as tfp
 import wandb
-from experiments.plot.utils import (
+from experiments.plot.utils import (  # plot_gating_function_variance,
     create_test_inputs,
     get_ExplorativeController_from_id,
     plot_contf,
     plot_data_over_ax,
     plot_env,
     plot_env_cmap,
-    plot_gating_function_variance,
     plot_mode_satisfaction_prob,
     plot_start_end_pos,
     plot_trajectories,
