@@ -20,7 +20,7 @@ You can display the base config using
 ``` shell
 python train.py --cfg=job
 ```
-The experiments in [](./configs/experiment) are as follows:
+The experiments in [./configs/experiment](./configs/experiment) are as follows:
 - greedy_no_constraint
     - Greedy exploitation strategy with no mode constraint
 - greedy_with_constraint
