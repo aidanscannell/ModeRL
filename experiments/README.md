@@ -1,9 +1,9 @@
 # Experiments for Mode Constrained Model-Based Reinforcement Learning via Gaussian Processes
 
 ## Configuratin with Hydra
-I use hydra to configure the experiments. All of the [experiments](./experiments) use the base
+I use hydra to configure the experiments. All of the [experiments](./configs/experiment) use the base
 config in [./configs/main.yaml]() but override it differently.
-The overrides can be seen in [experiments](./experiments) or an experiments config can be viewed with
+The overrides can be seen in [experiments](./configs/experiment) or an experiments config can be viewed with
 ``` shell
 python train.py +experiment=INSERT_EXPERIMENT_NAME --cfg job
 ```
@@ -11,7 +11,7 @@ You can display the base config using
 ``` shell
 python train.py --cfg=job
 ```
-The experiments in [](./experiments) are as follows:
+The experiments in [](./configs/experiment) are as follows:
 - greedy_no_constraint
     - Greedy exploitation strategy with no mode constraint
 - greedy_with_constraint
