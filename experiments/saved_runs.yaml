@@ -20,6 +20,13 @@ greedy-with-constraint:
   # iteration: 10
   iteration: 60
 independent_gating:
+  # id: "aidanscannell/mode_constrained_mbrl/27m40fuy"
+  id: "aidanscannell/mode_constrained_mbrl/wx5raxbs"
+  # id: "aidanscannell/mode_constrained_mbrl/wx5raxbs"
+  title: "Independent gating function entropy"
+  # iteration: 10
+  iteration: 60
+independent_gating_greedy_and_myopic_comparison:
   id: "aidanscannell/mode_constrained_mbrl/27m40fuy"
   # id: "aidanscannell/mode_constrained_mbrl/wx5raxbs"
   # id: "aidanscannell/mode_constrained_mbrl/wx5raxbs"

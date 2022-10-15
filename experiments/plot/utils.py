@@ -127,10 +127,15 @@ def plot_env(ax, env, test_inputs: InputData):
         test_states[:, 0],
         test_states[:, 1],
         mode_probs.numpy(),
+        # [0.9],
         [0.5],
-        colors=["b"],
+        colors=["red"],
+        # colors=["gray"],
+        # colors=["orange"],
+        # colors=["blue"],
         linestyles="dashed",
-        alpha=0.5,
+        alpha=1.0,
+        # alpha=0.5,
         zorder=50,
     )
 
@@ -142,12 +147,27 @@ def plot_start_end_pos(ax, start_state, target_state):
     if len(target_state.shape) == 1:
         target_state = target_state[tf.newaxis, :]
     ax.annotate(
-        r"$\mathbf{s}_0$",
-        (start_state[0, 0] + 0.15, start_state[0, 1]),
-        horizontalalignment="left",
+        # r"$\mathbf{s}_0$",
+        "Start",
+        (start_state[0, 0], start_state[0, 1] - 0.3),
+        horizontalalignment="right",
         verticalalignment="top",
         bbox=bbox,
     )
+    ax.annotate(
+        "Target",
+        (target_state[0, 0] + 0.15, target_state[0, 1]),
+        horizontalalignment="left",
+        verticalalignment="bottom",
+        bbox=bbox,
+    )
+    # ax.annotate(
+    #     r"$\mathbf{s}_0$",
+    #     (start_state[0, 0] + 0.15, start_state[0, 1]),
+    #     horizontalalignment="left",
+    #     verticalalignment="top",
+    #     bbox=bbox,
+    # )
     # ax.annotate(
     #     r"$\mathbf{s}_f$",
     #     (target_state[0, 0] + 0.15, target_state[0, 1]),
@@ -157,7 +177,8 @@ def plot_start_end_pos(ax, start_state, target_state):
     # )
     # ax.scatter(start_state[0, 0], start_state[0, 1], marker="x", color="k", s=8.0)
     # ax.scatter(target_state[0, 0], target_state[0, 1], color="k", marker="x", s=8.0)
-    ax.scatter(start_state[0, 0], start_state[0, 1], marker="x", color="k", s=8.0)
+    # ax.scatter(start_state[0, 0], start_state[0, 1], marker="x", color="k", s=8.0)
+    ax.scatter(start_state[0, 0], start_state[0, 1], marker="o", color="k", s=40.0)
     ax.scatter(target_state[0, 0], target_state[0, 1], marker="*", color="k", s=250.0)
 
 
@@ -190,30 +211,48 @@ def plot_env_cmap(ax, env, test_inputs: InputData, aspect_ratio: float = 0.75):
         env.observation_spec().minimum[1],
         env.observation_spec().maximum[1],
     )
-    gating_bitmap = np.round(env.gating_bitmap) * 0.9
-    padding = np.ones((100, 100)) * 0.9
-    ax.imshow(gating_bitmap, extent=extent, vmin=0.0, vmax=1.0, aspect=aspect_ratio)
+    # gating_bitmap = np.round(env.gating_bitmap) * 0.7
+    gating_bitmap = np.round(env.gating_bitmap) * 0.8
+    padding = np.ones((100, 100)) * 0.8
+    # gating_bitmap = np.round(env.gating_bitmap) * 0.7
+    # padding = np.ones((100, 100)) * 0.7
+    alpha = 1
+    vmin = -0.1
+    ax.imshow(
+        gating_bitmap,
+        extent=extent,
+        vmin=vmin,
+        vmax=1.0,
+        aspect=aspect_ratio,
+        alpha=alpha,
+    )
     extent = (
         np.min(test_inputs[:, 0]),
         env.observation_spec().minimum[0],
         np.min(test_inputs[:, 1]),
         np.max(test_inputs[:, 1]),
     )
-    ax.imshow(padding, extent=extent, vmin=0.0, vmax=1.0, aspect=aspect_ratio)
+    ax.imshow(
+        padding, extent=extent, vmin=vmin, vmax=1.0, aspect=aspect_ratio, alpha=alpha
+    )
     extent = (
         np.min(test_inputs[:, 0]),
         np.max(test_inputs[:, 0]),
         env.observation_spec().maximum[1] * 0.9,
         np.max(test_inputs[:, 1]),
     )
-    ax.imshow(padding, extent=extent, vmin=0.0, vmax=1.0, aspect=aspect_ratio)
+    ax.imshow(
+        padding, extent=extent, vmin=vmin, vmax=1.0, aspect=aspect_ratio, alpha=alpha
+    )
     extent = (
         np.min(test_inputs[:, 0]),
         np.max(test_inputs[:, 0]),
         np.min(test_inputs[:, 1]),
         env.observation_spec().minimum[1],
     )
-    ax.imshow(padding, extent=extent, vmin=0.0, vmax=1.0, aspect=aspect_ratio)
+    ax.imshow(
+        padding, extent=extent, vmin=vmin, vmax=1.0, aspect=aspect_ratio, alpha=alpha
+    )
 
 
 # def plot_data_and_traj_over_desired_mixing_prob(
