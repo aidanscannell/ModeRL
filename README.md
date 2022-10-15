@@ -14,10 +14,6 @@ Install `ModeRL` in editable mode using
 ```
 pip install --editable .
 ```
-To install with the developer requirements use
-```
-pip install --editable ".[experiments]"
-```
 Or to install with the developer requirements use
 ```
 pip install --editable ".[dev]"

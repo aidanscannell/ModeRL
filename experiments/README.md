@@ -1,9 +1,12 @@
-# Experiments for Mode Constrained Model-Based Reinforcement Learning via Gaussian Processes
-
-Experiments accompanying paper.
-
+# Experiments accompanying paper
 I use [hydra](https://hydra.cc/) to configure the experiments and [Weights & Biases](https://wandb.ai/site)
 for experiment tracking.
+
+## Install
+Install `ModeRL` with the dependencies for running experiments using
+```
+pip install --editable ".[experiments]"
+```
 
 ## Configuratin with Hydra
 All of the [experiments](./configs/experiment) use the base hydra
