@@ -1,8 +1,9 @@
 # ModeRL - Mode constrained model-based Reinforcement Learning
 `ModeRL` is a model-based reinforcement learning method that constrains learning to a single dynamics.
-It learns a representation of the dynamics using the Mixture of Sparse Variational Gaussian Process Experts model from [mosvgpe](https://github.com/aidanscannell/mosvgpe).
-It then make decisions under the uncertainty of the learned dynamics model to provide probabilistic guarantees
-of remaining in a desired dynamics mode.
+It simultaneously learns and enforces the mode constraint by
+learning a representation of the dynamics using the Mixture of Sparse Variational Gaussian Process Experts model from [mosvgpe](https://github.com/aidanscannell/mosvgpe).
+It then makes decisions under the uncertainty of the learned dynamics model to provide probabilistic guarantees
+of remaining in the desired dynamics mode.
 
 ## Usage
 See the notebook in [examples](./examples) for how to configure and run `ModeRL`.
