@@ -2,7 +2,7 @@
 
 ## Configuratin with Hydra
 I use hydra to configure the experiments. All of the [experiments](./configs/experiment) use the base
-config in [./configs/main.yaml]() but override it differently.
+config in [](./configs/main.yaml) but override it differently.
 The overrides can be seen in [experiments](./configs/experiment) or an experiments config can be viewed with
 ``` shell
 python train.py +experiment=INSERT_EXPERIMENT_NAME --cfg job
