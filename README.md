@@ -6,8 +6,8 @@ It then makes decisions under the uncertainty of the learned dynamics model to p
 of remaining in the desired dynamics mode.
 
 ## Usage
-See the notebook in [examples](./examples) for how to configure and run `ModeRL`.
-See the [experiments](./experiments) for how to configure and run `ModeRL`.
+See the notebook in [examples](./examples) for how to configure and run `ModeRL`
+or see [experiments](./experiments) for how to train `ModeRL` using different configs.
 
 ## Install
 Install `ModeRL` in editable mode using

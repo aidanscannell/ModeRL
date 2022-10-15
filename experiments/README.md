@@ -1,9 +1,15 @@
 # Experiments for Mode Constrained Model-Based Reinforcement Learning via Gaussian Processes
 
+Experiments accompanying paper.
+
+I use [hydra](https://hydra.cc/) to configure the experiments and [Weights & Biases](https://wandb.ai/site)
+for experiment tracking.
+
 ## Configuratin with Hydra
-I use hydra to configure the experiments. All of the [experiments](./configs/experiment) use the base
+All of the [experiments](./configs/experiment) use the base hydra
 config in [./configs/main.yaml](./configs/main.yaml) but override it differently.
-The overrides can be seen in [experiments](./configs/experiment) or an experiments config can be viewed with
+The overrides can be seen in [experiments](./configs/experiment).
+Alternatively, an experiments config can be viewed with
 ``` shell
 python train.py +experiment=INSERT_EXPERIMENT_NAME --cfg job
 ```
@@ -49,8 +55,7 @@ python plot/plot_all_figures.py --wandb_dir=triton --saved_runs=saved_runs.yaml 
 ### Setup the environment
 Clone the repo with
 ``` shell
-cd ~/python-projects
-git clone https://github.com/aidanscannell/ModeRL.git
+git clone https://github.com/aidanscannell/ModeRL.git ~/python-projects/moderl
 ```
 Create a virtual environment
 ``` shell
