@@ -75,6 +75,10 @@ class ExplorativeController(TrajectoryOptimisationController):
             reward = reward_fn(state=state_dists, control=control_dists)
             # logger.debug("Reward: {}".format(reward))
             # logger.debug("Exploration reward: {}".format(exploration_reward))
+            # tf.print("Extrinsic reward")
+            # tf.print(reward)
+            # tf.print("Exploration reward")
+            # tf.print(exploration_reward)
             return exploration_reward * exploration_weight + reward
 
         if initial_solution is None:
