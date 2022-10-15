@@ -79,7 +79,7 @@ MarkupSafe==2.1.1
 matplotlib==3.6.1
 matplotlib-inline==0.1.6
 mistune==2.0.4
--e git+https://github.com/aidanscannell/ModeRL.git@af5680153aed7fd32957990eb1224488ec80d195#egg=ModeRL
+-e git+https://github.com/aidanscannell/ModeRL.git@355d0f234aed8e83f2632612ece327d9c650e676#egg=ModeRL
 mosvgpe @ file:///Users/scannea1/python-projects/ModeRL/subtrees/mosvgpe
 multipledispatch==0.6.0
 mypy-extensions==0.4.3
@@ -96,6 +96,7 @@ opencv-python==4.6.0.66
 opt-einsum==3.3.0
 packaging==21.3
 palettable==3.3.0
+pandas==1.5.0
 pandocfilters==1.5.0
 parso==0.8.3
 pathspec==0.10.1
@@ -125,6 +126,7 @@ pyright==1.1.274
 pyrsistent==0.18.1
 pytest==7.1.3
 python-dateutil==2.8.2
+pytz==2022.4
 PyYAML==6.0
 pyzmq==24.0.1
 qtconsole==5.3.2
