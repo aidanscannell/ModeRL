@@ -16,3 +16,6 @@ superseded
 
 images
 wandb
+.hydra
+.ipynb_checkpoints
+*.icloud
