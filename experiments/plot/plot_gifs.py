@@ -148,10 +148,10 @@ if __name__ == "__main__":
 
     saved_runs = OmegaConf.load(args.saved_runs_yaml)
     run_ids = {
-        # "moderl-exploration.gif": saved_runs.joint_gating.id,
-        # "greedy-with-constraint.gif": saved_runs["greedy-with-constraint"].id,
-        # "greedy-no-constraint.gif": saved_runs["greedy-no-constraint"].id,
-        # "aleatoric-uncertainty.gif": saved_runs.bernoulli.id,
+        "moderl-exploration.gif": saved_runs.joint_gating.id,
+        "greedy-with-constraint.gif": saved_runs["greedy-with-constraint"].id,
+        "greedy-no-constraint.gif": saved_runs["greedy-no-constraint"].id,
+        "aleatoric-uncertainty.gif": saved_runs.bernoulli.id,
         "myopic-moderl.gif": saved_runs.independent_gating.id,
     }
     # for key in run_ids.keys():
