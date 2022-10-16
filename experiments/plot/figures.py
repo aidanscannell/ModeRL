@@ -44,21 +44,9 @@ def plot_constraint_expanding_figure(
     gs = fig.add_gridspec(1, 1)
     ax = gs.subplots()
     plot_env_cmap(ax, env, test_inputs=test_inputs, aspect_ratio=0.6)
-    # plot_env(ax, env, test_inputs=test_inputs)
-    # COLORS = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728"]
     iterations.reverse()
-    # COLORS = ["#6e5f6e", "#8e3f8e", "#ad20ad", "#c508c5"]  # ,"#cd00cd","#800080"]
-    # COLORS = ["#efbbff", "#d896ff", "#be29ec", "#800080", "#660066"]
-    # COLORS = ["#efbbff", "#d896ff", "#be29ec", "#800080", "#660066"]
-    # COLORS = ["#0000ff", "#0000b1", "#000076", "#00003b"]
-    # COLORS = ["#0000ff", "#efbbff" "#0000b1", "#000076", "#00003b"]
-    # COLORS = ["#ffc0cb", "#70d0f0", "#787078", "#261150"]
-    COLORS = ["#ffc0cb", "#70d0f0", "#484348", "#261150"]
-    LINESTYLES = ["dashed", "dashdot", "dotted", "solid"]
     LINESTYLES = ["solid", "dashed", "dashdot", "dotted"]
-    # reversing the original colormap using reversed() function
-    # reversed_map = cmap.reversed()
-    # COLORS.reverse()
+
     for idx, i in enumerate(iterations):
         explorative_controller = get_ExplorativeController_from_id(
             i=i, id=run_id, wandb_dir=wandb_dir
@@ -74,28 +62,20 @@ def plot_constraint_expanding_figure(
             test_states[:, 1],
             probs.numpy(),
             [explorative_controller.mode_satisfaction_prob],
-            # colors=cmap(idx),
-            # colors=COLORS[idx],
             colors="k",
-            linestyles=LINESTYLES[idx]
-            # cmap=palettable.scientific.sequential.Bilbao_15.mpl_colormap,
-            # cmap=palettable.scientific.sequential.Bilbao_15.mpl_colormap.reversed(),
+            linestyles=LINESTYLES[idx],
         )
-        # r"$\Pr(\alpha=k^* \mid \mathbf{s}, \mathcal{D}_{0:" + str(i) + "}>0.8$"
 
     # plot_env(ax, env, test_inputs=test_inputs)
     plot_start_end_pos(
         ax, start_state=explorative_controller.start_state, target_state=target_state
     )
-    # ax.set_xlabel("$x$")
-    # ax.set_ylabel("$y$")
     ax.set_xticklabels([])
     ax.set_yticklabels([])
 
     # Legend
     handles, labels = ax.get_legend_handles_labels()
     iterations.reverse()
-    COLORS.reverse()
     LINESTYLES.reverse()
     for idx, i in enumerate(iterations):
         handles.append(mpl.lines.Line2D([1], [1], linestyle=LINESTYLES[idx], color="k"))
@@ -109,9 +89,6 @@ def plot_constraint_expanding_figure(
     labels.append("Mode 1")
     handles.append(mpl.patches.Patch(color=c0))
     labels.append("Mode 2")
-
-    # handles.append(mpl.lines.Line2D([1], [1], color="b", linestyle="dashed"))
-    # labels.append("Mode boundary")
 
     by_label = OrderedDict(zip(labels, handles))
     ax.legend(by_label.values(), by_label.keys(), loc="lower left")
@@ -290,9 +267,8 @@ def plot_greedy_and_myopic_comparison_figure(
     run_id = saved_runs.joint_gating.id.split("/")[-1]
     contf = plot_variance(ax3, run_id=run_id, iteration=iteration)
     # run_id = saved_runs.independent_gating.id.split("/")[-1]
-    run_id = saved_runs.independent_gating_greedy_and_myopic_comparison.id.split("/")[
-        -1
-    ]
+    # run_id = saved_runs.independent_gating_greedy_and_myopic_comparison.id.split("/")[
+    run_id = saved_runs.independent_gating.id.split("/")[-1]
     contf = plot_variance(ax4, run_id=run_id, iteration=iteration)
     divider = make_axes_locatable(ax4)
     cax = divider.append_axes("right", size="5%", pad=0.05)

@@ -24,8 +24,9 @@ params = {
     "text.usetex": True,
     "savefig.transparent": True,
     "savefig.bbox": "tight",
-    "image.cmap": "PiYG",
+    # "image.cmap": "PiYG",
     # "image.cmap": "RdYlGn",
+    "image.cmap": "bwr_r",
     "figure.figsize": (3.5, 2.5),
     # "figure.figsize": (4, 3),
     # "figure.figsize": (3.5, 2.7),
@@ -45,36 +46,6 @@ def plot_all_figures(wandb_dir, saved_runs_yaml, random_seed: int = 42):
     env = hydra.utils.instantiate(cfg.env)
     target_state = hydra.utils.instantiate(cfg.target_state)
 
-    cmap = ListedColormap(["darkred", "lightgrey"])
-    # cmap = ListedColormap(["red", "green"])
-    viridis = cmap.resampled(256)
-    # viridis = mpl.colormaps['viridis'].resampled(256)
-    newcolors = viridis(np.linspace(0, 1, 256))
-    # pink = np.array([248/256, 24/256, 148/256, 1])
-    # newcolors[:25, :] = pink
-    newcmap = ListedColormap(newcolors, name="RedGreen")
-    mpl.colormaps.register(newcmap)
-
-    top = mpl.colormaps["Reds_r"].resampled(128)
-    bottom = mpl.colormaps["Blues"].resampled(128)
-    newcolors = np.vstack((top(np.linspace(0, 1, 128)), bottom(np.linspace(0, 1, 128))))
-    newcmap = ListedColormap(newcolors, name="OrangeBlue")
-
-    mpl.colormaps.register(newcmap)
-    # mpl.colormaps.register(LinearSegmentedColormap('BlueRed2', cdict2))
-    # blue_red1 = LinearSegmentedColormap("BlueRed1", cdict1)
-    # params = {"image.cmap": "PiYG"}
-    params = {"image.cmap": "OrangeBlue"}
-    params = {"image.cmap": "bwr_r"}
-    # params = {"image.cmap": "RedGreen"}
-    plt.rcParams.update(params)
-    # cmap=palettable.scientific.sequential.Bilbao_15.mpl_colormap
-    # cmap="Reds"
-    # cmap = plt.cm.get_cmap("Reds")
-    # cmap = plt.cm.get_cmap("viridis")
-    # cmap = mpl.colormaps["viridis"]
-    # cmap = mpl.colormaps["Reds"]
-    # cmap = mpl.cm.get_cmap("viridis")
     # Figure 1
     fig = plot_constraint_expanding_figure(
         env=env,
@@ -84,7 +55,6 @@ def plot_all_figures(wandb_dir, saved_runs_yaml, random_seed: int = 42):
         iterations=saved_runs.joint_gating.iterations,
     )
     plt.savefig("./figures/joint_gating_constraint_expanding.pdf")
-    # exit()
 
     # Figure 2
     fig = plot_four_iterations_in_row(
@@ -149,7 +119,9 @@ def plot_all_figures(wandb_dir, saved_runs_yaml, random_seed: int = 42):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--wandb_dir", help="directory contraining wandb results", default="./triton"
+        "--wandb_dir",
+        help="directory contraining wandb results",
+        default="./saved_runs",
     )
     parser.add_argument(
         "--saved_runs_yaml",
