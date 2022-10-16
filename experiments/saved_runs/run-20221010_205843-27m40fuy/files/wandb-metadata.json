@@ -1,0 +1,24 @@
+{
+    "os": "Linux-3.10.0-1160.71.1.el7.x86_64-x86_64-with-glibc2.2.5",
+    "python": "3.8.7",
+    "heartbeatAt": "2022-10-10T17:58:43.741598",
+    "startedAt": "2022-10-10T17:58:43.138383",
+    "docker": null,
+    "cpu_count": 24,
+    "cuda": null,
+    "args": [
+        "+experiment=independent_gating_function_entropy"
+    ],
+    "state": "running",
+    "program": "train.py",
+    "codePath": "experiments/train.py",
+    "git": {
+        "remote": "https://github.com/aidanscannell/ModeRL",
+        "commit": "0376900f55a9297834d2839a08ba5668eec64d18"
+    },
+    "email": null,
+    "root": "/home/scannea1/python-projects/moderl",
+    "host": "c595.int.triton.aalto.fi",
+    "username": "scannea1",
+    "executable": "/home/scannea1/python-projects/moderl/moderl-venv/bin/python"
+}
