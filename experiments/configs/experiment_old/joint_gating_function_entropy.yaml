@@ -1,0 +1,9 @@
+# @package _global_
+wandb:
+  exploration: "joint_gating"
+
+controller:
+  explorative_objective_fn:
+    _target_: moderl.objectives.build_joint_gating_function_entropy
+    dynamics: ${dynamics}
+    start_state: ${start_state}
