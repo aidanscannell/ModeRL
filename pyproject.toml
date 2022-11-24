@@ -22,8 +22,8 @@ dependencies = [
     "tensor_annotations==1.0.2",
     # "mosvgpe @ git+https://github.com/aidanscannell/mosvgpe#egg=mosvgpe",
     # TODO make this agnostic of my file path...
-    "mosvgpe @ file:///Users/scannea1/python-projects/ModeRL/subtrees/mosvgpe",
-    "simenvs @ file:///Users/scannea1/python-projects/ModeRL/subtrees/simenvs",
+    "mosvgpe @ file:///home/scannea1/python-projects/moderl/subtrees/mosvgpe",
+    "simenvs @ file:///home/scannea1/python-projects/moderl/subtrees/simenvs",
     # "mosvgpe @ file://./mosvgpe",
     # "mosvgpe @ file://./mosvgpe",
     # "mosvgpe @ git+https://github.com/aidanscannell/mosvgpe#egg=mosvgpe",
