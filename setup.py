@@ -57,7 +57,7 @@ install_requires = [
 ]
 extras_require = {
     "experiments": ["hydra-core", "palettable", "tikzplotlib"],
-    "examples": ["jupyter"],
+    "examples": ["jupyter", "hydra-core"],
     "dev": ["black[jupyter]", "pre-commit", "pyright", "isort", "pyflakes", "pytest"],
 }
 
