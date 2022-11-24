@@ -14,7 +14,7 @@ repos:
     hooks:
       - id: nbqa-black
       - id: nbqa-isort
-      - id: nbqa-flake8
+      # - id: nbqa-flake8
   - repo: https://github.com/PyCQA/isort
     rev: 5.10.1
     hooks:
