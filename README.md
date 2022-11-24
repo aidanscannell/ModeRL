@@ -1,14 +1,29 @@
-# ModeRL - Mode Remaining Exploration for Model-Based Reinforcement Learning
+# ModeRL: Mode-constrained model-based reinforcement learning
+`ModeRL` is a model-based reinforcement learning method that attempts to constrain learning to a single dynamics.
+It simultaneously learns and enforces the mode constraint by
+learning a representation of the dynamics using the Mixtures of Sparse Variational Gaussian Process Experts
+method from [mosvgpe](https://github.com/aidanscannell/mosvgpe).
+It then makes decisions under the uncertainty of the learned dynamics model to provide probabilistic guarantees
+of remaining in the desired dynamics mode.
 
-`ModeRL` is a model-based reinforcement learning method for exploring environments with multimodal transition dynamics.
-In particular, it provides probabilistic guarantees on remaining in a desired dynamics mode. 
-For example, this may be desirable behaviour if some of the dynamics modes are believed to be inoperable.
-`ModeRL` learns representations of multimodal dynamical systems using the Mixture of Sparse Variational Gaussian Process Experts model from [mosvgpe](https://github.com/aidanscannell/mosvgpe).
-It then make decisions under the uncertainty of the learned dynamics model.
+## Usage
+- See [experiments](./experiments) for how to train `ModeRL` using different configs.
+- See the notebook in [examples](./examples) for how to configure and run `ModeRL`.
+
+## Install
+Install `ModeRL` in editable mode using
+```
+pip install --editable .
+```
+Or to install with the developer requirements use
+```
+pip install --editable ".[dev]"
+```
+
 
 ## Using git subtrees
-I use git subtrees to manage dependencies on my own packages. In particular, my Mixture of Sparse Variational Gaussian 
-Process Experts package [mosvgpe](https://github.com/aidanscannell/mosvgpe) and my simulation environments 
+I use git subtrees to manage dependencies on my own packages. In particular, my Mixture of Sparse Variational Gaussian
+Process Experts package [mosvgpe](https://github.com/aidanscannell/mosvgpe) and my simulation environments
 package [simenvs](https://github.com/aidanscannell/simenvs).
 
 If I make changes to [https://github.com/aidanscannell/mosvgpe](https://github.com/aidanscannell/mosvgpe) I can pull them using,
