@@ -12,10 +12,6 @@ import omegaconf
 import tensorflow as tf
 import tensorflow_probability as tfp
 import wandb
-from experiments.plot.callbacks.controller import (
-    plot_trajectories_over_desired_gating_gp,
-    plot_trajectories_over_desired_mixing_prob,
-)
 from gpflow import default_float
 from moderl.controllers import ExplorativeController
 from moderl.custom_types import State
@@ -27,6 +23,11 @@ from moderl.rollouts import collect_data_from_env
 from plot.utils import create_test_inputs
 from utils import sample_mosvgpe_inducing_inputs_from_data
 from wandb.keras import WandbCallback
+
+from .plot.callbacks.controller import (
+    plot_trajectories_over_desired_gating_gp,
+    plot_trajectories_over_desired_mixing_prob,
+)
 
 
 # from experiments.plot.callbacks import build_dynamics_plotting_callbacks
