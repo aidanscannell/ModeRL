@@ -4,12 +4,10 @@ from typing import List
 
 import tensorflow as tf
 import wandb
-from experiments.plot.callbacks.dynamics import (
-    plot_gating_network_gps,
-    plot_mixing_probs,
-)
-from experiments.plot.utils import create_test_inputs
 from moderl.dynamics import ModeRLDynamics
+
+from ..utils import create_test_inputs
+from .dynamics import plot_gating_network_gps, plot_mixing_probs
 
 
 # from typing import Callable

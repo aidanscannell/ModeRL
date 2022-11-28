@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
 import wandb
-from experiments.plot.figures import (
+from figures import (
     plot_constraint_expanding_figure,
     plot_four_iterations_in_row,
     plot_greedy_and_myopic_comparison_figure,
