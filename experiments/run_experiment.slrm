@@ -13,7 +13,8 @@ source activate moderl-venv
 
 # Run experiments from experiment directory
 cd /home/scannea1/python-projects/moderl/experiments
-srun python train.py +experiment=$1 ++training.random_seed=43,44,45,46,47,48
+srun python train.py +experiment=$1 ++controller.exploration_weight=0,1,2,5,10
+# srun python train.py +experiment=$1 ++training.random_seed=43,44,45,46,47,48
 
 # # experiments = []
 # for config in "joint_gating_function_entropy" "conservative";
