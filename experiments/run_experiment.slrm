@@ -13,8 +13,9 @@ source activate moderl-venv
 
 # Run experiments from experiment directory
 cd /home/scannea1/python-projects/moderl/experiments
-#srun python train.py $1
-srun python train.py +experiment=$1 ++controller.exploration_weight=1
+srun python train.py $1
+# srun python train.py +experiment=$1
+# srun python train.py +experiment=$1 ++controller.exploration_weight=1
 # srun python train.py +experiment=$1 ++controller.exploration_weight=[0,1]
 # srun python train.py +experiment=$1 ++training.random_seed=43,44,45,46,47,48
 
