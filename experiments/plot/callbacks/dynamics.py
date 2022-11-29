@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 import matplotlib.pyplot as plt
+from experiments.plot.utils import plot_contf
 from moderl.dynamics import ModeRLDynamics
 from mosvgpe.custom_types import InputData
-
-from ..utils import plot_contf
 
 
 def plot_gating_network_gps(dynamics: ModeRLDynamics, test_inputs: InputData):

@@ -4,16 +4,15 @@ from typing import Callable
 
 import matplotlib.pyplot as plt
 import wandb
-from moderl.controllers import ControllerInterface
-from moderl.custom_types import InputData, State
-
-from ..utils import (
+from experiments.plot.utils import (
     create_test_inputs,
     plot_contf,
     plot_env,
     plot_mode_satisfaction_prob,
     plot_trajectories,
 )
+from moderl.controllers import ControllerInterface
+from moderl.custom_types import InputData, State
 
 
 def plot_trajectories_over_desired_mixing_prob(

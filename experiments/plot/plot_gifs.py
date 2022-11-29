@@ -9,11 +9,7 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
 import wandb
-from figures import custom_labels
-from matplotlib.animation import FuncAnimation
-from moderl.custom_types import State
-from omegaconf import OmegaConf
-from plot.utils import (
+from experiments.plot.utils import (
     create_test_inputs,
     get_ExplorativeController_from_id,
     plot_contf,
@@ -21,6 +17,10 @@ from plot.utils import (
     plot_mode_satisfaction_prob,
     plot_trajectories,
 )
+from figures import custom_labels
+from matplotlib.animation import FuncAnimation
+from moderl.custom_types import State
+from omegaconf import OmegaConf
 
 
 tfd = tfp.distributions

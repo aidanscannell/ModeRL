@@ -11,10 +11,7 @@ import palettable
 import tensorflow as tf
 import tensorflow_probability as tfp
 import wandb
-from moderl.custom_types import State
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-from mpl_toolkits.axes_grid1.inset_locator import mark_inset, zoomed_inset_axes
-from utils import (  # plot_gating_function_variance,
+from experiments.plot.utils import (  # plot_gating_function_variance,
     create_test_inputs,
     get_ExplorativeController_from_id,
     plot_contf,
@@ -25,6 +22,9 @@ from utils import (  # plot_gating_function_variance,
     plot_start_end_pos,
     plot_trajectories,
 )
+from moderl.custom_types import State
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+from mpl_toolkits.axes_grid1.inset_locator import mark_inset, zoomed_inset_axes
 
 
 tfd = tfp.distributions
