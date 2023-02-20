@@ -19,6 +19,7 @@ from experiments.plot.callbacks.controller import (
 from experiments.plot.utils import create_test_inputs
 from experiments.utils import sample_mosvgpe_inducing_inputs_from_data
 from gpflow import default_float
+from moderl.constraints import build_mode_chance_constraints_scipy
 from moderl.controllers import ExplorativeController
 from moderl.custom_types import State
 from moderl.dynamics import ModeRLDynamics
@@ -158,12 +159,31 @@ def run_experiment(cfg: omegaconf.DictConfig):
     test_inputs = create_test_inputs(40000)  # test inputs for plotting
     explorative_controller.save(save_name.format("before"))
     num_episodes_with_constraint_violations = 0
+    initial_delta = 1 - explorative_controller.mode_satisfaction_prob
+    decay_rate = 0.96
+    decay_episodes = 10
     for episode in range(0, cfg.training.num_episodes):
         # Train the dynamics model and set the desired dynamics mode
         if episode > 0:
             logger.info("Learning dynamics...")
             dynamics.optimise()
             logger.info("Finished learning dynamics")
+
+        # Decay delta (i.e. tighten constraint)
+        delta = initial_delta * decay_rate ^ (episode / decay_episodes)
+        mode_satisfaction_prob = 1.0 - delta
+        constraints = [
+            build_mode_chance_constraints_scipy(
+                dynamics=dynamics,
+                control_trajectory=explorative_controller.trajectory_optimiser.previous_solution,
+                start_state=start_state,
+                lower_bound=mode_satisfaction_prob,
+                upper_bound=1.0,  # max prob=1.0
+                # compile=False,
+                compile=True,
+            )
+        ]
+        explorative_controller.trajectory_optimiser.constraints = constraints
 
         # Optimise the constrained objective
         logger.info("Optimising controller...")
@@ -206,6 +226,7 @@ def run_experiment(cfg: omegaconf.DictConfig):
                     "Num episodes with constraint violations": num_episodes_with_constraint_violations
                 }
             )
+            wandb.log({"Delta": delta})
 
         # Plot trajectory over learned dynamics
         if cfg.wandb.log_artifacts:
