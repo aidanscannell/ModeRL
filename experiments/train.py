@@ -161,6 +161,8 @@ def run_experiment(cfg: omegaconf.DictConfig):
     num_episodes_with_constraint_violations = 0
     initial_delta = 1.0 - explorative_controller.mode_satisfaction_prob
     delta = initial_delta
+    initial_exploration_weight = explorative_controller.exploration_weight
+    exploration_weight = initial_exploration_weight
     for episode in range(0, cfg.training.num_episodes):
         # Train the dynamics model and set the desired dynamics mode
         if episode > 0:
@@ -186,9 +188,23 @@ def run_experiment(cfg: omegaconf.DictConfig):
                 )
             ]
             explorative_controller.trajectory_optimiser.constraints = constraints
-            logger.info("Updated constraint schedule")
+            logger.info("Updated constraint usinexploration_weightg schedule")
         except:
             logger.info("No constraint schedule")
+
+        try:
+            # Decay exploration weight
+            exploration_weight = (
+                initial_exploration_weight
+                * cfg.exploration_weight_schedule.decay_rate
+                ** (episode / cfg.exploration_weight_schedule.decay_episodes)
+            )
+            explorative_controller.trajectory_optimiser.objective_fn = (
+                explorative_controller.build_augmentd_objective_fn(exploration_weight)
+            )
+            logger.info("Updated exploration weight using schedule")
+        except:
+            logger.info("No exploration weight schedule")
 
         # Optimise the constrained objective
         logger.info("Optimising controller...")
@@ -231,7 +247,10 @@ def run_experiment(cfg: omegaconf.DictConfig):
                     "Num episodes with constraint violations": num_episodes_with_constraint_violations
                 }
             )
-            wandb.log({"Delta": delta})
+
+        # Log exploration weight (beta) and constraint (delta)
+        wandb.log({"Delta": delta})
+        wandb.log({"Beta": exploration_weight})
 
         # Plot trajectory over learned dynamics
         if cfg.wandb.log_artifacts:

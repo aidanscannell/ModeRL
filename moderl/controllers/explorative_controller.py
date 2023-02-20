@@ -57,29 +57,9 @@ class ExplorativeController(TrajectoryOptimisationController):
         self.mode_satisfaction_prob = mode_satisfaction_prob
 
         if explorative_objective_fn is None:
-            explorative_objective_fn = lambda *args, **kwargs: 0.0
-
-        def augmentd_objective_fn(initial_solution: ControlTrajectory) -> ttf.Tensor0:
-            """Adds explorative objective to expected reward over trajectory"""
-            state_dists = rollout_ControlTrajectory_in_ModeRLDynamics(
-                dynamics=self.dynamics,
-                control_trajectory=initial_solution,
-                start_state=self.start_state,
-            )
-            control_dists = initial_solution()
-            exploration_reward = explorative_objective_fn(
-                dynamics=self.dynamics,
-                initial_solution=initial_solution,
-                start_state=self.start_state,
-            )
-            reward = reward_fn(state=state_dists, control=control_dists)
-            # logger.debug("Reward: {}".format(reward))
-            # logger.debug("Exploration reward: {}".format(exploration_reward))
-            # tf.print("Extrinsic reward")
-            # tf.print(reward)
-            # tf.print("Exploration reward")
-            # tf.print(exploration_reward)
-            return exploration_reward * exploration_weight + reward
+            self.explorative_objective_fn = lambda *args, **kwargs: 0.0
+        else:
+            self.explorative_objective_fn = explorative_objective_fn
 
         if initial_solution is None:
             initial_solution = find_solution_in_desired_mode(
@@ -107,6 +87,7 @@ class ExplorativeController(TrajectoryOptimisationController):
                     control_upper_bound,
                 )
             )
+        augmentd_objective_fn = self.build_augmentd_objective_fn(exploration_weight)
         trajectory_optimiser = TrajectoryOptimiser(
             max_iterations=max_iterations,
             initial_solution=initial_solution,
@@ -116,6 +97,25 @@ class ExplorativeController(TrajectoryOptimisationController):
             method=method,
         )
         super().__init__(trajectory_optimiser=trajectory_optimiser)
+
+    def build_augmentd_objective_fn(self, exploration_weight: float):
+        def augmentd_objective_fn(initial_solution: ControlTrajectory) -> ttf.Tensor0:
+            """Adds explorative objective to expected reward over trajectory"""
+            state_dists = rollout_ControlTrajectory_in_ModeRLDynamics(
+                dynamics=self.dynamics,
+                control_trajectory=initial_solution,
+                start_state=self.start_state,
+            )
+            control_dists = initial_solution()
+            exploration_reward = self.explorative_objective_fn(
+                dynamics=self.dynamics,
+                initial_solution=initial_solution,
+                start_state=self.start_state,
+            )
+            reward = self.reward_fn(state=state_dists, control=control_dists)
+            return exploration_reward * exploration_weight + reward
+
+        return augmentd_objective_fn
 
     def previous_solution(self):
         return self.trajectory_optimiser.previous_solution
