@@ -213,7 +213,7 @@ def plot_env_cmap(ax, env, test_inputs: InputData, aspect_ratio: float = 0.75):
     )
     # gating_bitmap = np.round(env.gating_bitmap) * 0.7
     gating_bitmap = np.round(env.gating_bitmap) * 0.8
-    padding = np.ones((100, 100)) * 0.8
+    padding = np.ones((1000, 1000)) * 0.8
     # gating_bitmap = np.round(env.gating_bitmap) * 0.7
     # padding = np.ones((100, 100)) * 0.7
     alpha = 1
@@ -252,6 +252,27 @@ def plot_env_cmap(ax, env, test_inputs: InputData, aspect_ratio: float = 0.75):
     )
     ax.imshow(
         padding, extent=extent, vmin=vmin, vmax=1.0, aspect=aspect_ratio, alpha=alpha
+    )
+    test_states = test_inputs[:, 0:2]
+    mode_probs = []
+    for test_state in test_states:
+        pixel = env.state_to_pixel(test_state)
+        mode_probs.append(env.gating_bitmap[pixel[0], pixel[1]])
+    mode_probs = tf.stack(mode_probs, 0)
+    return ax.tricontour(
+        test_states[:, 0],
+        test_states[:, 1],
+        mode_probs.numpy(),
+        # [0.9],
+        [0.5],
+        colors=["red"],
+        # colors=["gray"],
+        # colors=["orange"],
+        # colors=["blue"],
+        # linestyles="dashed",
+        alpha=1.0,
+        # alpha=0.5,
+        # zorder=50,
     )
 
 
