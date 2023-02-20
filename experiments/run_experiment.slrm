@@ -9,7 +9,8 @@ module load py-virtualenv
 
 # Activate python venv
 cd /home/scannea1/python-projects/moderl
-source activate moderl-venv
+source moderl-venv/bin/activate
+# source activate moderl-venv
 
 # Run experiments from experiment directory
 cd /home/scannea1/python-projects/moderl/experiments
