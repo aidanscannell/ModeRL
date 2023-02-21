@@ -1,5 +1,6 @@
 defaults:
-  - kernel: matern52
+  # - kernel: matern52
+  - kernel: rbf
   - inducing_variable: ones
   - mean_function: zero
 

@@ -3,10 +3,12 @@
   kernel:
     _target_: mosvgpe.keras.kernels.SeparateIndependentSerializable
     kernels:
-      - _target_: mosvgpe.keras.kernels.Matern52Serializable
+      # - _target_: mosvgpe.keras.kernels.Matern52Serializable
+      - _target_: mosvgpe.keras.kernels.RBFSerializable
         lengthscales: [1.0, 1.0, 1.0, 1.0]
         variance: 1.0
-      - _target_: mosvgpe.keras.kernels.Matern52Serializable
+      # - _target_: mosvgpe.keras.kernels.Matern52Serializable
+      - _target_: mosvgpe.keras.kernels.RBFSerializable
         lengthscales: [1.0, 1.0, 1.0, 1.0]
         variance: 1.0
   likelihood:
@@ -31,10 +33,12 @@
   kernel:
     _target_: mosvgpe.keras.kernels.SeparateIndependentSerializable
     kernels:
-      - _target_: mosvgpe.keras.kernels.Matern52Serializable
+      # - _target_: mosvgpe.keras.kernels.Matern52Serializable
+      - _target_: mosvgpe.keras.kernels.RBFSerializable
         lengthscales: [1.0, 1.0, 1.0, 1.0]
         variance: 1.0
-      - _target_: mosvgpe.keras.kernels.Matern52Serializable
+      # - _target_: mosvgpe.keras.kernels.Matern52Serializable
+      - _target_: mosvgpe.keras.kernels.RBFSerializable
         lengthscales: [1.0, 1.0, 1.0, 1.0]
         variance: 1.0
   likelihood:

@@ -1,8 +1,4 @@
 _target_: mosvgpe.keras.kernels.RBFSerializable
-lengthscales:
-  - 1.0
-  - 1.0
+lengthscales: [0.8, 0.8]
 variance: 1.0
-active_dims:
-  - 0
-  - 1
+active_dims: [0, 1]
