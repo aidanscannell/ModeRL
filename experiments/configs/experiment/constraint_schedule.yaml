@@ -3,7 +3,7 @@ wandb:
   exploration: "joint_gating"
 
 controller:
-  mode_satisfaction_prob: 0.95
+  mode_satisfaction_prob: 0.6
   explorative_objective_fn:
     _target_: moderl.objectives.build_joint_gating_function_entropy
     dynamics: ${dynamics}
@@ -11,4 +11,4 @@ controller:
 
 constraint_schedule:
   decay_rate: 0.96
-  decay_episodes: 5.0
+  decay_episodes: 2.0
