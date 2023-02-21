@@ -28,12 +28,14 @@ training:
 wandb:
   entity: "aidanscannell"
   project: "mode_constrained_mbrl"
+  name: "moderl"
   log_artifacts: True
   log_constraint_violations: True
   log_extrinsic_return: True
   exploration: "joint-gating"
-  run_name: "${wandb.exploration}/Pr=${controller.mode_satisfaction_prob}/beta=${controller.exploration_weight}"
+  run_name: "${wandb.name}/Pr=${controller.mode_satisfaction_prob}/beta=${controller.exploration_weight}"
   tags:
+    - "name=${wandb.name}"
     - "exploration=${wandb.exploration}"
     - ${env.env_name}
     - "mode_prob=${controller.mode_satisfaction_prob}"
