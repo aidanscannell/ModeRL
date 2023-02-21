@@ -26,13 +26,8 @@ from moderl.custom_types import State
 from moderl.dynamics import ModeRLDynamics
 from moderl.rollouts import collect_data_from_env
 from scipy.optimize import LinearConstraint
-
-# from plot.utils import create_test_inputs
-# from utils import sample_mosvgpe_inducing_inputs_from_data
 from wandb.keras import WandbCallback
 
-
-# from experiments.plot.callbacks import build_dynamics_plotting_callbacks
 
 tfd = tfp.distributions
 
