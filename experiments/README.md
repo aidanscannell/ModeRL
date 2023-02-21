@@ -80,6 +80,11 @@ Alternatively, run a single experiment with,
 ``` shell
 sbatch run_experiment.slrm INSERT_EXPERIMENT_NAME
 ```
+### Run multiple experiments in parallel whilst using hydra's sweep
+``` shell
+python train.py --multirun ++controller.mode_satisfaction_prob=0.6,0.7,0.8,0.9 ++training.random_seed=42,1,69,22,4
+```
+
 
 ### Copy results
 Copy wandb results from triton with,
