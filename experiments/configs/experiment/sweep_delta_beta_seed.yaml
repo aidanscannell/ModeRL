@@ -4,7 +4,6 @@ hydra:
     params:
       controller.mode_satisfaction_prob: 0.6,0.7,0.8,0.9
       controller.exploration_weight: 10.0,20.0
-      training.random_seed: 1
       # training.random_seed: 1,42
 
 controller:
