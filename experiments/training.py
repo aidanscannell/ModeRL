@@ -225,7 +225,10 @@ def train(cfg: omegaconf.DictConfig):
 
         # Optimise the constrained objective
         logger.info("Optimising controller...")
-        _ = explorative_controller.optimise()
+        # _ = explorative_controller.optimise()
+        opt_result = explorative_controller.optimise()
+        logger.info("CONTROLLER OPTIMISATION RESULT")
+        logger.info(opt_result)
         logger.info("Finished optimising controller")
 
         # if check_converged(explorative_controller, target_state=target_state):
