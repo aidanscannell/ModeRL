@@ -5,6 +5,10 @@ defaults:
   - controller: main
   - dynamics: main
   - env: scenario-1
+  # Use slurm on cluster or local?
+  # - override hydra/launcher: submitit_local
+  # - override hydra/launcher: local
+  - override hydra/launcher: slurm
   # Disable logging by Hydra
   - override hydra/job_logging: none
   - override hydra/hydra_logging: none
