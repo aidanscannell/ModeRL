@@ -15,6 +15,8 @@ mode_satisfaction_prob: 0.8
 # exploration_weight: 1.0
 exploration_weight: 10.0
 keep_last_solution: true
-control_lower_bound: null
-control_upper_bound: null
+# control_lower_bound: null
+# control_upper_bound: null
+control_lower_bound: -4.0
+control_upper_bound: 4.0
 method: "SLSQP"
