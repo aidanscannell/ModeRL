@@ -25,6 +25,10 @@ training:
     patience: 50
     min_delta: 0
 
+exploration_weight_schedule:
+  decay_rate: 0.96
+  decay_episodes: 2.0
+
 wandb:
   entity: "aidanscannell"
   project: "mode_constrained_mbrl"
