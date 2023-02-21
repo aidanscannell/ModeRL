@@ -14,9 +14,9 @@ submitit_folder: ${hydra.sweep.dir}/.submitit/%j
 # partition: ckpt
 timeout_min: 360
 cpus_per_task: 6
-# gpus_per_node: 1
+gpus_per_node: 0
 tasks_per_node: 2
-# mem_gb: 256
+mem_gb: 8
 nodes: 1
 name: ${hydra.job.name}
 comment: null
