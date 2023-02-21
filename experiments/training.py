@@ -153,19 +153,19 @@ def train(cfg: omegaconf.DictConfig):
     # Configure explorative controller (wraps reward_fn in the explorative objective)
     explorative_controller = hydra.utils.instantiate(cfg.controller, dynamics=dynamics)
 
-    explorative_controller.reward_fn = (
-        moderl.reward_functions.TargetStateRewardFunction(
-            tf.constant([[150.0, 0.0], [0.0, 150.0]], dtype="float64"),
-            target_state=target_state,
-        )
-        + moderl.reward_functions.ControlQuadraticRewardFunction(
-            tf.constant([[1.0, 0.0], [0.0, 1.0]], dtype="float64")
-        )
-        + moderl.reward_functions.StateDiffRewardFunction(
-            tf.constant([[1.0, 0.0], [0.0, 1.0]], dtype="float64"),
-            target_state=target_state,
-        )
-    )
+    # explorative_controller.reward_fn = (
+    #     moderl.reward_functions.TargetStateRewardFunction(
+    #         tf.constant([[150.0, 0.0], [0.0, 150.0]], dtype="float64"),
+    #         target_state=target_state,
+    #     )
+    #     + moderl.reward_functions.ControlQuadraticRewardFunction(
+    #         tf.constant([[1.0, 0.0], [0.0, 1.0]], dtype="float64")
+    #     )
+    #     + moderl.reward_functions.StateDiffRewardFunction(
+    #         tf.constant([[1.0, 0.0], [0.0, 1.0]], dtype="float64"),
+    #         target_state=target_state,
+    #     )
+    # )
 
     # Run the MBRL loop
     test_inputs = create_test_inputs(40000)  # test inputs for plotting
