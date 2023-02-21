@@ -1,32 +1,19 @@
-# defaults:
-#   - submitit_slurm
+defaults:
+  - submitit_slurm
 
-# timeout_min: 360 # 6 hours
-# cpus_per_task: 6 # 6 cpus
-# mem_per_cpu: 1000 # 1000MB of memory
-# nodes: 2
-
-# python slurm_hydra_submitit/script.py --multirun hydra/launcher=submitit_slurm
-# python train.py --multirun hydra/launcher=submitit_slurm
 _target_: hydra_plugins.hydra_submitit_launcher.submitit_launcher.SlurmLauncher
-submitit_folder: ${hydra.sweep.dir}/.submitit/%j
-# account: realitylab
-# partition: ckpt
-timeout_min: 360
-cpus_per_task: 6
+# submitit_folder: ${hydra.sweep.dir}/.submitit/%j
+timeout_min: 360 # 6 hours
+cpus_per_task: 6 # 6 cpus
 gpus_per_node: 0
 tasks_per_node: 1
-# mem_gb: 8
 nodes: 1
 name: ${hydra.job.name}
 comment: null
-# constraint: "[a40|rtx6k|titan]"
 exclude: null
 cpus_per_gpu: null
 gpus_per_task: null
-# mem_per_gpu: null
-mem_per_cpu: 1000
-# mem_per_cpu: null
+mem_per_cpu: 1000 # 1000MB of memory
 signal_delay_s: 600
 max_num_timeout: 20
 additional_parameters: {}
