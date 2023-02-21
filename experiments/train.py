@@ -8,6 +8,7 @@ logging.basicConfig(level=logging.INFO)
 import gpflow as gpf
 import hydra
 import matplotlib.pyplot as plt
+import numpy as np
 import omegaconf
 import tensorflow as tf
 import tensorflow_probability as tfp
@@ -24,6 +25,7 @@ from moderl.controllers import ExplorativeController
 from moderl.custom_types import State
 from moderl.dynamics import ModeRLDynamics
 from moderl.rollouts import collect_data_from_env
+from scipy.optimize import LinearConstraint
 
 # from plot.utils import create_test_inputs
 # from utils import sample_mosvgpe_inducing_inputs_from_data
@@ -187,6 +189,17 @@ def run_experiment(cfg: omegaconf.DictConfig):
                     compile=True,
                 )
             ]
+            if (
+                explorative_controller.control_lower_bound is not None
+                and explorative_controller.control_upper_bound is not None
+            ):
+                constraints.append(
+                    LinearConstraint(
+                        np.eye(cfg.controller.horizon * cfg.controller.control_dim),
+                        explorative_controller.control_lower_bound,
+                        explorative_controller.control_upper_bound,
+                    )
+                )
             explorative_controller.trajectory_optimiser.constraints = constraints
             logger.info("Updated constraint usinexploration_weightg schedule")
         except:
@@ -205,6 +218,10 @@ def run_experiment(cfg: omegaconf.DictConfig):
             logger.info("Updated exploration weight using schedule")
         except:
             logger.info("No exploration weight schedule")
+
+        # Log exploration weight (beta) and constraint (delta)
+        wandb.log({"Delta": delta})
+        wandb.log({"Beta": exploration_weight})
 
         # Optimise the constrained objective
         logger.info("Optimising controller...")
@@ -247,10 +264,6 @@ def run_experiment(cfg: omegaconf.DictConfig):
                     "Num episodes with constraint violations": num_episodes_with_constraint_violations
                 }
             )
-
-        # Log exploration weight (beta) and constraint (delta)
-        wandb.log({"Delta": delta})
-        wandb.log({"Beta": exploration_weight})
 
         # Plot trajectory over learned dynamics
         if cfg.wandb.log_artifacts:
