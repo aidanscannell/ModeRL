@@ -6,6 +6,7 @@ import numpy as np
 import tensor_annotations.tensorflow as ttf
 import tensorflow as tf
 import tensorflow_probability as tfp
+from gpflow.conditionals import uncertain_conditional
 from gpflow.models import SVGP
 from moderl.custom_types import Dataset, Horizon
 from moderl.utils import combine_state_controls_to_input, save_json_config
@@ -157,31 +158,45 @@ class ModeRLDynamics(DynamicsInterface):
         #     state_var=state_var,
         #     control_var=control_var,
         # )
-        # if isinstance(input_dists, tfd.Deterministic):
-        #     h_mean, h_var = self.desired_mode_gating_gp.predict_f(
-        #         input_dists.mean(), full_cov=False
-        #     )
-        # elif isinstance(input_dists, tfd.Normal):
-        #     h_mean, h_var = uncertain_conditional(
-        #         input_dists.mean(),
-        #         input_dists.variance(),
-        #         # input_mean,
-        #         # input_var,
-        #         self.desired_mode_gating_gp.inducing_variable,
-        #         kernel=self.desired_mode_gating_gp.kernel,
-        #         q_mu=self.desired_mode_gating_gp.q_mu,
-        #         q_sqrt=self.desired_mode_gating_gp.q_sqrt,
-        #         mean_function=self.desired_mode_gating_gp.mean_function,
-        #         full_output_cov=False,
-        #         full_cov=False,
-        #         white=self.desired_mode_gating_gp.whiten,
-        #     )
-        # else:
-        #     raise NotImplementedError("input_dists should be Normal or Deterministic")
+        if isinstance(input_dists, tfd.Deterministic):
+            h_mean, h_var = self.desired_mode_gating_gp.predict_f(
+                input_dists.mean(), full_cov=False
+            )
+        elif isinstance(input_dists, tfd.Normal):
+            print("self.desired_mode_gating_gp.inducing_variable")
+            print(self.desired_mode_gating_gp.inducing_variable.shape)
+            print("self.desired_mode_gating_gp.q_mu")
+            print(self.desired_mode_gating_gp.q_mu.shape)
+            print(self.desired_mode_gating_gp.q_sqrt.shape)
+            print("input_dists.mean()")
+            print(input_dists.mean())
+            print(input_dists.variance())
+            h_mean, h_var = uncertain_conditional(
+                # h_mean, h_var = multioutput_uncertain_conditional(
+                input_dists.mean(),
+                input_dists.variance(),
+                # input_mean,
+                # input_var,
+                self.desired_mode_gating_gp.inducing_variable,
+                kernel=self.desired_mode_gating_gp.kernel,
+                q_mu=self.desired_mode_gating_gp.q_mu,
+                q_sqrt=self.desired_mode_gating_gp.q_sqrt,
+                mean_function=self.desired_mode_gating_gp.mean_function,
+                full_output_cov=False,
+                full_cov=False,
+                white=self.desired_mode_gating_gp.whiten,
+            )
+            print("h_mean.shape")
+            print(h_mean.shape)
+            print(h_var.shape)
+            # h_mean = h_mean[:, 0 : self.state_dim]
+            # h_var = h_var[:, 0 : self.state_dim]
+        else:
+            raise NotImplementedError("input_dists should be Normal or Deterministic")
         # TODO uncomment uncertainty propagation with uncertan_conditional
-        h_mean, h_var = self.desired_mode_gating_gp.predict_f(
-            input_dists.mean(), full_cov=False
-        )
+        # h_mean, h_var = self.desired_mode_gating_gp.predict_f(
+        #     input_dists.mean(), full_cov=False
+        # )
         if self.mosvgpe.gating_network.num_gating_gps == 1:
             h_mean = tf.concat([h_mean, -h_mean], -1)
             h_var = tf.concat([h_var, h_var], -1)
