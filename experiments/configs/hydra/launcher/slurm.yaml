@@ -4,4 +4,4 @@ defaults:
 timeout_min: 360 # 6 hours
 cpus_per_task: 6 # 6 cpus
 mem_per_cpu: 1000 # 1000MB of memory
-nodes: 1
+nodes: 2
