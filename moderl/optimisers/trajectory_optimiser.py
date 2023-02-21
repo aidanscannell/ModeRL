@@ -66,7 +66,7 @@ class TrajectoryOptimiser:
             options={"maxiter": self.max_iterations},
         )
 
-        logger.info(optimisation_result["message"])
+        logger.info(optimisation_result)
         logger.debug(optimisation_result)
         return optimisation_result
 
