@@ -1,0 +1,10 @@
+# @package _global_
+wandb:
+  exploration: "bernoulli"
+  name: "bernoulli"
+
+controller:
+  explorative_objective_fn:
+    _target_: moderl.objectives.build_bernoulli_entropy
+    dynamics: ${dynamics}
+    start_state: ${start_state}
