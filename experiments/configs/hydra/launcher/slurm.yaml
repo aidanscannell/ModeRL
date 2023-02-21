@@ -10,17 +10,17 @@
 # python train.py --multirun hydra/launcher=submitit_slurm
 _target_: hydra_plugins.hydra_submitit_launcher.submitit_launcher.SlurmLauncher
 submitit_folder: ${hydra.sweep.dir}/.submitit/%j
-account: realitylab
-partition: ckpt
-timeout_min: 120
-cpus_per_task: 5
+# account: realitylab
+# partition: ckpt
+timeout_min: 360
+cpus_per_task: 6
 gpus_per_node: 1
 tasks_per_node: 1
 mem_gb: 256
 nodes: 1
 name: ${hydra.job.name}
 comment: null
-constraint: "[a40|rtx6k|titan]"
+# constraint: "[a40|rtx6k|titan]"
 exclude: null
 cpus_per_gpu: null
 gpus_per_task: null
