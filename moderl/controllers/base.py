@@ -62,7 +62,8 @@ class TrajectoryOptimisationController(ControllerInterface):
 
     def rollout_in_dynamics(self) -> tfd.Distribution:  # [Horizon, StateDim]
         """Rollout a ControlTrajectory in dynamics"""
-        state_dist = tfd.Normal(loc=self.start_state, scale=0.0)
+        # state_dist = tfd.Normal(loc=self.start_state, scale=0.0)
+        state_dist = tfd.Deterministic(loc=self.start_state)
         state_means = state_dist.mean()
         state_vars = state_dist.variance()
         # control_trajectory = self()

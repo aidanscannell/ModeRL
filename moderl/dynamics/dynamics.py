@@ -96,7 +96,8 @@ class ModeRLDynamics(DynamicsInterface):
                 state=tfd.Deterministic(loc=state_control[:, : self.state_dim]),
                 control=tfd.Deterministic(loc=state_control[:, self.state_dim :]),
                 predict_state_difference=predict_state_difference,
-                add_noise=False,
+                add_noise=True,
+                # add_noise=False,
             )
 
     def forward(
@@ -109,7 +110,7 @@ class ModeRLDynamics(DynamicsInterface):
             state=state,
             control=control,
             predict_state_difference=predict_state_difference,
-            add_noise=False,
+            add_noise=True,
         )
 
     def optimise(self):
@@ -163,20 +164,23 @@ class ModeRLDynamics(DynamicsInterface):
                 input_dists.mean(), full_cov=False
             )
         elif isinstance(input_dists, tfd.Normal):
-            print("self.desired_mode_gating_gp.inducing_variable")
-            print(self.desired_mode_gating_gp.inducing_variable.shape)
-            print("self.desired_mode_gating_gp.q_mu")
-            print(self.desired_mode_gating_gp.q_mu.shape)
-            print(self.desired_mode_gating_gp.q_sqrt.shape)
-            print("input_dists.mean()")
-            print(input_dists.mean())
-            print(input_dists.variance())
+            # print("self.desired_mode_gating_gp.inducing_variable")
+            # print(self.desired_mode_gating_gp.inducing_variable.shape)
+            # print("self.desired_mode_gating_gp.q_mu")
+            # print(self.desired_mode_gating_gp.q_mu.shape)
+            # print(self.desired_mode_gating_gp.q_sqrt.shape)
+            # print("input_dists.mean()")
+            # print(input_dists.mean())
+            # print(input_dists.variance())
+            input_var = tf.linalg.diag(input_dists.variance())
+            # print("input_var.shape")
+            # print(input_var.shape)
             h_mean, h_var = uncertain_conditional(
                 # h_mean, h_var = multioutput_uncertain_conditional(
                 input_dists.mean(),
-                input_dists.variance(),
+                # input_dists.variance(),
                 # input_mean,
-                # input_var,
+                input_var,
                 self.desired_mode_gating_gp.inducing_variable,
                 kernel=self.desired_mode_gating_gp.kernel,
                 q_mu=self.desired_mode_gating_gp.q_mu,
@@ -186,9 +190,9 @@ class ModeRLDynamics(DynamicsInterface):
                 full_cov=False,
                 white=self.desired_mode_gating_gp.whiten,
             )
-            print("h_mean.shape")
-            print(h_mean.shape)
-            print(h_var.shape)
+            # print("h_mean.shape")
+            # print(h_mean.shape)
+            # print(h_var.shape)
             # h_mean = h_mean[:, 0 : self.state_dim]
             # h_var = h_var[:, 0 : self.state_dim]
         else:

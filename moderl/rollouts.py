@@ -45,7 +45,8 @@ def rollout_ControlTrajectory_in_ModeRLDynamics(
     start_state: ttf.Tensor2[One, StateDim],  # [1, StateDim]
 ) -> tfd.Distribution:  # [Horizon, StateDim]
     """Rollout a ControlTrajectory in dynamics"""
-    state_dist = tfd.Normal(loc=start_state, scale=0.0)
+    # state_dist = tfd.Normal(loc=start_state, scale=0.0)
+    state_dist = tfd.Deterministic(loc=start_state)
     state_means = state_dist.mean()
     state_vars = state_dist.variance()
     for t in range(control_trajectory.horizon):

@@ -13,7 +13,8 @@ tfd = tfp.distributions
 
 
 def combine_state_controls_to_input(
-    state: tfd.Normal, control: tfd.Normal
+    state: Union[tfd.Normal, tfd.Deterministic],
+    control: Union[tfd.Normal, tfd.Deterministic],
 ) -> Union[tfd.Deterministic, tfd.Normal]:
     assert len(state.mean().shape) == 2
     assert len(control.mean().shape) == 2
@@ -30,7 +31,10 @@ def combine_state_controls_to_input(
         #     assert len(state.mean().shape) == 2
         #     control_var = tf.zeros(state.variance().shape, dtype=default_float())
         input_var = tf.concat([state.variance(), control.variance()], -1)
-    if input_var is None:
+
+    if isinstance(state, tfd.Deterministic) and isinstance(control, tfd.Deterministic):
+        return tfd.Deterministic(loc=input_mean)
+    elif input_var is None:
         return tfd.Deterministic(loc=input_mean)
     else:
         return tfd.Normal(loc=input_mean, scale=tf.math.sqrt(input_var))

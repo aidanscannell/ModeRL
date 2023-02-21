@@ -1,17 +1,25 @@
 #!/usr/bin/env python3
+import logging
 from functools import partial
 from typing import Union
+
+
+logging.basicConfig(level=logging.INFO)
 
 import tensorflow as tf
 import tensorflow_probability as tfp
 
 # from gpflow import posteriors
 from gpflow.conditionals import uncertain_conditional
+
+# from .uncertain_conditional import uncertain_conditional
 from gpflow.models import SVGP
 from moderl.utils import combine_state_controls_to_input
 
 
 tfd = tfp.distributions
+
+logger = logging.getLogger(__name__)
 
 
 class SVGPDynamicsWrapper:
@@ -44,57 +52,43 @@ class SVGPDynamicsWrapper:
             return f_mean, f_var
 
         self.predict_f = partial(svgp.predict_f, full_cov=False, full_output_cov=False)
-        self.uncertain_predict_f = uncertain_predict_f
+        self.uncertain_predict_f = tf.function(uncertain_predict_f)
+        self.svgp = svgp
+        # self.uncertain_predict_f = uncertain_predict_f
 
     def __call__(
         self,
         state: Union[tfd.Normal, tfd.Deterministic],
         control: Union[tfd.Normal, tfd.Deterministic],
         predict_state_difference: bool = False,
-        add_noise: bool = False,
+        add_noise: bool = True,
         # ) -> StateMeanAndVariance:
     ) -> tfd.Normal:
-        # print("hello")
-        # print(state)
-        # print(control)
         state_control_input = combine_state_controls_to_input(
             state=state, control=control
         )
-        # print("state_control_input")
-        # print(state_control_input)
-        # input_mean, input_var = combine_state_controls_to_input(
-        #     state_mean, control_mean, state_var=state_var, control_var=control_var
-        # )
-        # print("input_mean.shape")
-        # print(input_mean.shape)
-        # print(input_var)
-        # if input_var is None:
 
-        # if isinstance(state_control_input, tfd.Deterministic):
-        #     print("here 1")
-        #     delta_state_mean, delta_state_var = self.predict_f(
-        #         state_control_input.mean()
-        #     )
-        # elif isinstance(state_control_input, tfd.Normal):
-        #     print("here 2")
-        #     print("state_control_input.mean()")
-        #     print(state_control_input.mean())
-        #     print(state_control_input.variance())
-        #     delta_state_mean, delta_state_var = self.uncertain_predict_f(
-        #         state_control_input.mean(), state_control_input.variance()
-        #     )
-        # else:
-        #     raise NotImplementedError
-        # TODO uncomment uncertainty propagation using moment mathcing
-        delta_state_mean, delta_state_var = self.predict_f(state_control_input.mean())
-
-        # print("delta_state_mean")
-        # print(delta_state_mean)
-        # print(delta_state_var)
+        if isinstance(state_control_input, tfd.Deterministic):
+            logger.info("Deterministic input so using predict_f")
+            delta_state_mean, delta_state_var = self.predict_f(
+                state_control_input.mean()
+            )
+        elif isinstance(state_control_input, tfd.Normal):
+            logger.info("Normal input so using uncertain_predict_f")
+            delta_state_mean, delta_state_var = self.uncertain_predict_f(
+                state_control_input.mean(), state_control_input.variance()
+            )
+        else:
+            raise NotImplementedError
+        # delta_state_mean, delta_state_var = self.predict_f(state_control_input.mean())
         # delta_state_mean, delta_state_var = self.predict_f(input_mean)
+
         if add_noise:
-            delta_state_mean, delta_state_var = self.gp.likelihood.predict_mean_and_var(
-                delta_state_mean, delta_state_var
+            (
+                delta_state_mean,
+                delta_state_var,
+            ) = self.svgp.likelihood.predict_mean_and_var(
+                state_control_input.mean(), delta_state_mean, delta_state_var
             )
 
         if predict_state_difference:
@@ -124,6 +118,23 @@ def multioutput_uncertain_conditional(
 ):
     # TODO map instead of for loop
     f_means, f_vars = [], []
+    if len(input_var.shape) == 2:
+        input_var = tf.linalg.diag(input_var)
+    # print("DYNAMICS UNCERTAIN_CONDITIONAL")
+    # print(input_mean.shape)
+    # print(input_var.shape)
+    # print(input_var)
+    # print(inducing_variables)
+    # print(type(inducing_variables))
+    # print(kernel)
+    # print(type(kernel))
+    # print(mean_function)
+    # print(type(mean_function))
+    # print(q_mu.shape)
+    # print(q_sqrt.shape)
+    # print(full_output_cov)
+    # print(full_cov)
+    # print(whiten)
     for i, (kernel) in enumerate(kernel.kernels):
         if len(q_sqrt.shape) == 2:
             q_sqrt_i = q_sqrt[:, i : i + 1]
