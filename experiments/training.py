@@ -289,6 +289,41 @@ def train(cfg: omegaconf.DictConfig):
         if cfg.training.save:
             explorative_controller.save(save_name.format(episode))
 
+        mode_prob_at_target_state = dynamics.predict_mode_probability(
+            state=tfd.Deterministic(target_state),
+            control=tfd.Deterministic(np.zeros(target_state.shape)),
+        )
+        print("X.shape")
+        print(X.shape)
+        distance_from_target_state = np.linalg.norm(
+            (X[:, 0 : dynamics.state_dim] - target_state), axis=-1
+        )
+        if (distance_from_target_state < 0.01).any():
+            logger.info(
+                "Termination criteria met (<0.01), ||x - target_state||^2)={}".format(
+                    distance_from_target_state
+                )
+            )
+            break
+        # elif mode_prob_at_target_state > 0.95:
+        #     logger.info(
+        #         "Termination criteria met, Pr(\alpha=k^* | target_state)={}".format(
+        #             mode_prob_at_target_state
+        #         )
+        #     )
+        #     break
+        else:
+            logger.info(
+                "Termination criteria NOT met (<0.01), ||x - target_state||^2)={}".format(
+                    distance_from_target_state
+                )
+            )
+            # logger.info(
+            #     "Termination criteria NOT met, Pr(\alpha=k^* | target_state)={}, continuing...".format(
+            #         mode_prob_at_target_state
+            #     )
+            # )
+
 
 if __name__ == "__main__":
     train()  # pyright: ignore
