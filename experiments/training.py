@@ -78,7 +78,6 @@ def check_converged(controller: ExplorativeController, target_state: State) -> b
         return False
 
 
-@hydra.main(config_path="configs", config_name="main")
 def train(cfg: omegaconf.DictConfig):
     # Make experiment reproducible
     tf.keras.utils.set_random_seed(cfg.training.random_seed)
@@ -241,10 +240,6 @@ def train(cfg: omegaconf.DictConfig):
         logger.info(opt_result)
         logger.info("Finished optimising controller")
 
-        # if check_converged(explorative_controller, target_state=target_state):
-        #     # TODO implement a better check for convergence
-        #     break
-
         # Rollout the controller in env to collect state transition data
         logger.info("Collecting data from env with controller")
         X, Y = collect_data_from_env(
@@ -299,6 +294,9 @@ def train(cfg: omegaconf.DictConfig):
         if cfg.training.save:
             explorative_controller.save(save_name.format(episode))
 
+        # if check_converged(explorative_controller, target_state=target_state):
+        #     # TODO implement a better check for convergence
+        #     break
         distance_from_target_state = np.linalg.norm(
             (X[-1, 0 : dynamics.state_dim] - target_state), axis=-1
         )
