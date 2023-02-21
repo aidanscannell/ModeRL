@@ -4,9 +4,9 @@ import omegaconf
 
 @hydra.main(config_path="configs", config_name="main")
 def train(cfg: omegaconf.DictConfig):
-    from experiments.train import run_experiment
+    from experiments.train import train
 
-    run_experiment(cfg)
+    train(cfg)
 
 
 if __name__ == "__main__":
