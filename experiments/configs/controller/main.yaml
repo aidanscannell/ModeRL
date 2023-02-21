@@ -12,8 +12,7 @@ start_state: ${start_state}
 control_dim: 2
 horizon: 15
 max_iterations: 200
-mode_satisfaction_prob: 0.8
-# exploration_weight: 1.0
+mode_satisfaction_prob: 0.7
 exploration_weight: 10.0
 keep_last_solution: true
 control_lower_bound: null
