@@ -7,6 +7,7 @@ hydra:
       # training.random_seed: 1,42
 
 wandb:
+  name: "constraint_level_comparison"
   tags:
     - "intrinsic_schedule/decay_rate=${exploration_weight_schedule.decay_rate}"
     - "intrinsic_schedule/decay_episodes=${exploration_weight_schedule.decay_episodes}"

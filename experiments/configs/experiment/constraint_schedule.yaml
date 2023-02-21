@@ -1,6 +1,7 @@
 # @package _global_
 wandb:
   exploration: "joint_gating"
+  name: "constraint_schedule"
 
 controller:
   mode_satisfaction_prob: 0.6
