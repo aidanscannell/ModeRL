@@ -56,7 +56,12 @@ install_requires = [
     "wandb",
 ]
 extras_require = {
-    "experiments": ["hydra-core", "palettable", "tikzplotlib"],
+    "experiments": [
+        "hydra-core",
+        "palettable",
+        "tikzplotlib",
+        "hydra-submitit-launcher",
+    ],
     "examples": ["jupyter", "hydra-core"],
     "dev": ["black[jupyter]", "pre-commit", "pyright", "isort", "pyflakes", "pytest"],
 }
