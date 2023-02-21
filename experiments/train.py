@@ -82,6 +82,7 @@ def check_converged(controller: ExplorativeController, target_state: State) -> b
         return False
 
 
+@hydra.main(config_path="configs", config_name="main")
 def train(cfg: omegaconf.DictConfig):
     # Make experiment reproducible
     tf.keras.utils.set_random_seed(cfg.training.random_seed)
