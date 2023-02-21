@@ -15,7 +15,8 @@ defaults:
   - _self_
 
 training:
-  num_episodes: 80
+  # num_episodes: 80
+  num_episodes: 800 # termination criteria should stop before this
   # logging_epoch_freq: 1000 # monitoring config
   random_seed: 42
   save: True
