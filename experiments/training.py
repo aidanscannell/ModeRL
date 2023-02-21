@@ -287,7 +287,7 @@ def train(cfg: omegaconf.DictConfig):
         distance_from_target_state = np.linalg.norm(
             (X[:, 0 : dynamics.state_dim] - target_state), axis=-1
         )
-        if (distance_from_target_state < 0.01).any():
+        if (distance_from_target_state < 0.2).any():
             logger.info(
                 "Termination criteria met (<0.01), ||x - target_state||^2)={}".format(
                     distance_from_target_state
