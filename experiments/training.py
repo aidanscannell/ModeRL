@@ -300,18 +300,18 @@ def train(cfg: omegaconf.DictConfig):
             explorative_controller.save(save_name.format(episode))
 
         distance_from_target_state = np.linalg.norm(
-            (X[:, 0 : dynamics.state_dim] - target_state), axis=-1
+            (X[-1, 0 : dynamics.state_dim] - target_state), axis=-1
         )
-        if (distance_from_target_state < 0.2).any():
+        if distance_from_target_state < 0.05:
             logger.info(
-                "Termination criteria met (<0.01), ||x - target_state||^2)={}".format(
+                "Termination criteria met (<0.05), ||x - target_state||^2)={}".format(
                     distance_from_target_state
                 )
             )
             break
         else:
             logger.info(
-                "Termination criteria NOT met (<0.01), ||x - target_state||^2)={}".format(
+                "Termination criteria NOT met (<0.05), ||x - target_state||^2)={}".format(
                     distance_from_target_state
                 )
             )
