@@ -8,3 +8,6 @@ controller:
     _target_: moderl.objectives.build_bernoulli_entropy
     dynamics: ${dynamics}
     start_state: ${start_state}
+
+training:
+  num_episodes: 20 # because it gets stuck in local optima

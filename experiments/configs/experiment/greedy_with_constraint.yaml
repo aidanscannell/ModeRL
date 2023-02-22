@@ -5,3 +5,6 @@ wandb:
 
 controller:
   explorative_objective_fn: null
+
+training:
+  num_episodes: 20 # because it gets stuck in local optima
