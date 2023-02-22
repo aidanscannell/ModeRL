@@ -154,7 +154,7 @@ def train(cfg: omegaconf.DictConfig):
 
     explorative_controller.reward_fn = (
         moderl.reward_functions.TargetStateRewardFunction(
-            tf.constant([[150.0, 0.0], [0.0, 150.0]], dtype="float64"),
+            tf.constant([[100.0, 0.0], [0.0, 100.0]], dtype="float64"),
             target_state=target_state,
         )
         + moderl.reward_functions.ControlQuadraticRewardFunction(
