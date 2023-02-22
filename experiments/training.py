@@ -257,15 +257,15 @@ def train(cfg: omegaconf.DictConfig):
             wandb.log({"Extrinsic return": extrinsic_return})
 
         # Log the number of constraint violations
+        num_constraint_violations = 0
+        for test_state in X[:, : dynamics.state_dim]:
+            pixel = env.state_to_pixel(test_state)
+            gating_value = env.gating_bitmap[pixel[0], pixel[1]]
+            if gating_value < 0.5:
+                num_constraint_violations += 1
+        if num_constraint_violations > 0:
+            num_episodes_with_constraint_violations += 1
         if cfg.wandb.log_constraint_violations:
-            num_constraint_violations = 0
-            for test_state in X[:, : dynamics.state_dim]:
-                pixel = env.state_to_pixel(test_state)
-                gating_value = env.gating_bitmap[pixel[0], pixel[1]]
-                if gating_value < 0.5:
-                    num_constraint_violations += 1
-            if num_constraint_violations > 0:
-                num_episodes_with_constraint_violations += 1
             wandb.log({"Num constraint violations": num_constraint_violations})
             wandb.log(
                 {
@@ -300,7 +300,7 @@ def train(cfg: omegaconf.DictConfig):
         distance_from_target_state = np.linalg.norm(
             (X[-1, 0 : dynamics.state_dim] - target_state), axis=-1
         )
-        if distance_from_target_state < 0.05:
+        if distance_from_target_state < 0.05 and num_constraint_violations == 0:
             logger.info(
                 "Termination criteria met (<0.05), ||x - target_state||^2)={}".format(
                     distance_from_target_state
