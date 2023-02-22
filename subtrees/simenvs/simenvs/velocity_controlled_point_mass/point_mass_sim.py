@@ -196,6 +196,10 @@ class VelocityControlledPointMass2DEnv(py_environment.PyEnvironment):
         return ts.restart(self._state)
 
     def _step(self, action):
+        if action > self._action_spec.maximum:
+            action = self._action_spec.maximum
+        elif action < self._action_spec.minimum:
+            action = self._action_spec.minimum
         delta_state = self.transition_dynamics(self._state, action)
         # print("delta state")
         # print(delta_state.shape)
