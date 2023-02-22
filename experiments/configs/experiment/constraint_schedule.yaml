@@ -12,4 +12,4 @@ controller:
 
 constraint_schedule:
   decay_rate: 0.96
-  decay_episodes: 2.0
+  decay_episodes: 0.5
