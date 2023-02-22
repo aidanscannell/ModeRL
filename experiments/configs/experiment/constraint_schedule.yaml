@@ -5,6 +5,7 @@ wandb:
 
 controller:
   mode_satisfaction_prob: 0.65
+  exploration_weight: 20
   explorative_objective_fn:
     _target_: moderl.objectives.build_joint_gating_function_entropy
     dynamics: ${dynamics}
