@@ -1,7 +1,7 @@
 defaults:
   # - reward_fn: target_control
-  - reward_fn: state_diff_control_low
-  # - reward_fn: state_diff_control
+  # - reward_fn: state_diff_control_low
+  - reward_fn: state_diff_control
 
 _target_: moderl.controllers.ExplorativeController
 explorative_objective_fn:
