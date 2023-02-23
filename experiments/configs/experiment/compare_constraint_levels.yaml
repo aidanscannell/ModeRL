@@ -6,8 +6,8 @@ hydra:
       # controller.exploration_weight: 10.0,20.0
       training.random_seed: 1,42,69,50,100
 
-controller:
-  exploration_weight: 10.0
+# controller:
+#   exploration_weight: 10.0
 
 wandb:
   name: "constraint_level_comparison"
