@@ -297,22 +297,22 @@ def train(cfg: omegaconf.DictConfig):
         # if check_converged(explorative_controller, target_state=target_state):
         #     # TODO implement a better check for convergence
         #     break
-        # distance_from_target_state = np.linalg.norm(
-        #     (X[-1, 0 : dynamics.state_dim] - target_state), axis=-1
-        # )
-        # if distance_from_target_state < 0.05 and num_constraint_violations == 0:
-        #     logger.info(
-        #         "Termination criteria met (<0.05), ||x - target_state||^2)={}".format(
-        #             distance_from_target_state
-        #         )
-        #     )
-        #     break
-        # else:
-        #     logger.info(
-        #         "Termination criteria NOT met (<0.05), ||x - target_state||^2)={}".format(
-        #             distance_from_target_state
-        #         )
-        #     )
+        distance_from_target_state = np.linalg.norm(
+            (X[-1, 0 : dynamics.state_dim] - target_state), axis=-1
+        )
+        if distance_from_target_state < 0.05 and num_constraint_violations == 0:
+            logger.info(
+                "Termination criteria met (<0.05), ||x - target_state||^2)={}".format(
+                    distance_from_target_state
+                )
+            )
+            break
+        else:
+            logger.info(
+                "Termination criteria NOT met (<0.05), ||x - target_state||^2)={}".format(
+                    distance_from_target_state
+                )
+            )
 
 
 if __name__ == "__main__":
