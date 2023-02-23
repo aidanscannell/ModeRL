@@ -31,7 +31,8 @@ exploration_weight_schedule:
 
 wandb:
   entity: "aidanscannell"
-  project: "mode_constrained_mbrl"
+  project: "aistats-2023"
+  # project: "mode_constrained_mbrl"
   name: "moderl"
   log_artifacts: True
   log_constraint_violations: True
