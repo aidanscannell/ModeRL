@@ -13,3 +13,7 @@ controller:
 constraint_schedule:
   decay_rate: 0.96
   decay_episodes: 10.0
+
+training:
+  # num_episodes: 80
+  num_episodes: 200 # termination criteria should stop before this
