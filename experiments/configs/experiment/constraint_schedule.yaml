@@ -4,8 +4,7 @@ wandb:
   name: "constraint_schedule"
 
 controller:
-  mode_satisfaction_prob: 0.65
-  exploration_weight: 10
+  mode_satisfaction_prob: 0.6
   explorative_objective_fn:
     _target_: moderl.objectives.build_joint_gating_function_entropy
     dynamics: ${dynamics}
@@ -13,4 +12,4 @@ controller:
 
 constraint_schedule:
   decay_rate: 0.96
-  decay_episodes: 4.0
+  decay_episodes: 15.0
