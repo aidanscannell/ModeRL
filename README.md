@@ -6,6 +6,16 @@ method from [mosvgpe](https://github.com/aidanscannell/mosvgpe).
 It then makes decisions under the uncertainty of the learned dynamics model to provide probabilistic guarantees
 of remaining in the desired dynamics mode.
 
+<p align="center">
+<img align="middle" src="./experiments/figures/moderl_four_iterations_in_row.pdf" width="666" />
+</p>
+
+
+
+<!-- ![til](https://raw.githubusercontent.com/hashrocket/hr-til/master/app/assets/images/banner.png) -->
+![til](https://raw.githubusercontent.com/aidanscannell/master/gifs/initial-submission/moderl-exploration.gif)
+
+
 ## Usage
 - See [experiments](./experiments) for how to train `ModeRL` using different configs.
 - See the notebook in [examples](./examples) for how to configure and run `ModeRL`.
