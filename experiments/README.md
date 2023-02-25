@@ -33,7 +33,7 @@ The experiments are as follows:
     <td style="width:10%">
 <img src="https://github.com/aidanscannell/moderl/blob/master/experiments/gifs/greedy-with-constraint.gif" alt="<b>Greedy exploitation WITH mode constraint</b>"> </td>
     <td style="width:10%">
-    `greedy_with_constraint` - Adding the δ-mode-constraint to the greedy exploitation strategy is still not able to solve our δ-mode-constrained navigation problem. This is because the optimisation gets stuck at a local optima induced by the constraint.
+    `greedy_with_constraint` - Adding the δ-mode-constraint to the greedy exploitation strategy is still not able to solve our δ-mode-constrained navigation problem. This is because the optimisation gets stuck at a local optimum induced by the constraint.
      </td>
   </tr>
   <tr>

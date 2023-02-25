@@ -1,4 +1,5 @@
 # ModeRL: Mode-constrained Model-based Reinforcement Learning via Gaussian Processes
+This repo contains the code and source docs for our paper:
 <table>
     <tr>
         <td>
