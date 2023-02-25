@@ -10,7 +10,7 @@
     </tr>
     <tr>
         <td>
-        Model-based reinforcement learning (RL) algorithms do not typically consider environments with multiple dynamic modes, where it is beneficial to avoid inoperable or undesirable modes. We present a model-based RL algorithm that constrains training to a single dynamic mode with high probability. This is a difficult problem because the mode constraint is a hidden variable associated with the environment’s dynamics. As such, it is 1) unknown a priori and 2) we do not observe its output from the environment, so cannot learn it with supervised learning. We present a nonparametric dynamic model which learns the mode constraint alongside the dynamic modes. Importantly, it learns latent structure that our planning scheme leverages to 1) enforce the mode constraint with high probability, and 2) escape local optima induced by the mode constraint. We validate our method by showing that it can solve a simulated quadcopter navigation task whilst providing a level of constraint satisfaction both during and after training
+        Model-based reinforcement learning (RL) algorithms do not typically consider environments with multiple dynamic modes, where it is beneficial to avoid inoperable or undesirable modes. We present a model-based RL algorithm that constrains training to a single dynamic mode with high probability. This is a difficult problem because the mode constraint is a hidden variable associated with the environment’s dynamics. As such, it is 1) unknown a priori and 2) we do not observe its output from the environment, so cannot learn it with supervised learning. We present a nonparametric dynamic model which learns the mode constraint alongside the dynamic modes. Importantly, it learns latent structure that our planning scheme leverages to 1) enforce the mode constraint with high probability, and 2) escape local optima induced by the mode constraint. We validate our method by showing that it can solve a simulated quadcopter navigation task whilst providing a level of constraint satisfaction both during and after training.
         </td>
     </tr>
 </table>
@@ -19,28 +19,10 @@
     <img src="https://github.com/aidanscannell/moderl/blob/master/experiments/gifs/initial-submission/moderl-exploration.gif" alt="ModeRL">
 </p>
 
-<!-- <p align="center"> -->
-<!--     <embed src="https://github.com/aidanscannell/moderl/blob/master/experiments/figures/initial_submission/joint_gating_four_iterations_in_row.pdf" alt="ModeRL" /> -->
-<!--     <\!-- <embed src="./experiments/figures/initial_submission/joint_gating_four_iterations_in_row.pdf" width="800px" height="2100px" alt="ModeRL" /> -\-> -->
-<!-- </p> -->
-<!-- <\!-- <img align="middle" src="./experiments/figures/initial_submission/moderl_four_iterations_in_row.pdf" width="666" /> -\-> -->
-<!-- <p align="center"> -->
-<!-- <img align="middle" src="./experiments/figures/initial_submission/joint_gating_four_iterations_in_row.pdf" width="666" /> -->
-<!-- </p> -->
-
-<!-- `ModeRL` is a model-based reinforcement learning method that attempts to constrain learning to a single dynamics. -->
-<!-- It simultaneously learns and enforces the mode constraint by -->
-<!-- learning a representation of the dynamics using the Mixtures of Sparse Variational Gaussian Process Experts -->
-<!-- method from [mosvgpe](https://github.com/aidanscannell/mosvgpe). -->
-<!-- It then makes decisions under the uncertainty of the learned dynamics model to provide probabilistic guarantees -->
-<!-- of remaining in the desired dynamics mode. -->
-
-## Abstract
-Model-based reinforcement learning (RL) algorithms do not typically consider environments with multiple dynamic modes, where it is beneficial to avoid inoperable or undesirable modes. We present a model-based RL algorithm that constrains training to a single dynamic mode with high probability. This is a difficult problem because the mode constraint is a hidden variable associated with the environment’s dynamics. As such, it is 1) unknown a priori and 2) we do not observe its output from the environment, so cannot learn it with supervised learning. We present a nonparametric dynamic model which learns the mode constraint alongside the dynamic modes. Importantly, it learns latent structure that our planning scheme leverages to 1) enforce the mode constraint with high probability, and 2) escape local optima induced by the mode constraint. We validate our method by showing that it can solve a simulated quadcopter navigation task whilst providing a level of constraint satisfaction both during and after training
 
 ## Usage
 - See [experiments](./experiments) for details on running the experiments in our AISTATS paper.
-- See the notebook in [examples](./examples) for how to configure and run `ModeRL`.
+- See the [example notebook](./examples/quadcopter-navigation-via-mode-constrained-mbrl.ipynb) to see how to use `ModeRL` in practice.
 
 
 ## Running and plotting
