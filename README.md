@@ -1,4 +1,4 @@
-# ModeRL: Mode-constrained Model-based Reinforcement Learning
+# ModeRL: Mode-constrained Model-based Reinforcement Learning via Gaussian Processes
 <table>
     <tr>
         <td>
@@ -21,12 +21,7 @@
 </p>
 
 
-## Usage
-- See [experiments](./experiments) for details on running the experiments in our AISTATS paper.
-- See the [example notebook](./examples/quadcopter-navigation-via-mode-constrained-mbrl.ipynb) to see how to use `ModeRL` in practice.
-
-
-## Running and plotting
+## Install
 Create a virtual environment:
 ```
 cd /path/to/moderl
@@ -37,11 +32,17 @@ Install `ModeRL` in editable mode with dependencies needed for experiments:
 ```
 pip install -e ".[experiments]"
 ```
-Run experiments:
+
+## Running and plotting
+See [experiments](./experiments) for detailed instructions on running all of the experiments in the paper.
+As an example, the `ModeRL` experiment with a schedule that tightens the constraint level during training can be run with:
 ``` shell
 cd ./experiments
-python train.py +experiment=INSERT_EXPERIMENT_NAME
+python train.py +experiment=constraint_schedule
 ```
+See the [example notebook](./examples/quadcopter-navigation-via-mode-constrained-mbrl.ipynb) to see how to use `ModeRL` in practice.
+
+
 
 ## Using git subtrees
 I use git subtrees to manage dependencies on my own packages. In particular, my Mixtures of Sparse Variational Gaussian

@@ -78,17 +78,17 @@ python train.py --cfg=job
 <!-- - compare_constraint_levels -->
 <!--     - Runs a sweep over constraint levels, i.e. it runs separate experiments for $\delta \in \{0.5, 0.4, 0.3, 0.2, 0.1\}$ -->
 
-## Install
-Create a virtual environment:
-```
-cd /path/to/moderl
-python -m venv moderl-venv
-source moderl-venv/bin/activate
-```
-Install `ModeRL` in editable mode with dependencies needed for experiments:
-```
-pip install -e ".[experiments]"
-```
+<!-- ## Install -->
+<!-- Create a virtual environment: -->
+<!-- ``` -->
+<!-- cd /path/to/moderl -->
+<!-- python -m venv moderl-venv -->
+<!-- source moderl-venv/bin/activate -->
+<!-- ``` -->
+<!-- Install `ModeRL` in editable mode with dependencies needed for experiments: -->
+<!-- ``` -->
+<!-- pip install -e ".[experiments]" -->
+<!-- ``` -->
 
 ## Running experiments
 An experiment can be run with,
