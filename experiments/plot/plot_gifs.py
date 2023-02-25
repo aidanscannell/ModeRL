@@ -68,7 +68,10 @@ def plot_frame(
         ax, controller=explorative_controller, test_inputs=test_inputs
     )
     plot_trajectories(
-        ax, environment, controller=explorative_controller, target_state=target_state
+        ax,
+        environment,
+        controller=explorative_controller,
+        target_state=target_state,
     )
 
     ax.set_xticklabels([])
@@ -131,7 +134,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--wandb_dir",
         help="directory contraining wandb results",
-        default="./saved_runs",
+        default="./wandb",
     )
     parser.add_argument(
         "--saved_runs_yaml",
@@ -148,11 +151,24 @@ if __name__ == "__main__":
 
     saved_runs = OmegaConf.load(args.saved_runs_yaml)
     run_ids = {
-        "moderl-exploration.gif": saved_runs.joint_gating.id,
-        "greedy-with-constraint.gif": saved_runs["greedy-with-constraint"].id,
-        "greedy-no-constraint.gif": saved_runs["greedy-no-constraint"].id,
-        "aleatoric-uncertainty.gif": saved_runs.bernoulli.id,
-        "myopic-moderl.gif": saved_runs.independent_gating.id,
+        "moderl-exploration.gif": {"id": saved_runs.moderl.id, "num_episodes": 60},
+        "moderl-constraint-schedule-exploration.gif": {
+            "id": saved_runs.moderl_schedule.id,
+            "num_episodes": 60,
+        },
+        "greedy-with-constraint.gif": {
+            "id": saved_runs.greedy_with_constraint.id,
+            "num_episodes": 20,
+        },
+        "greedy-no-constraint.gif": {
+            "id": saved_runs.greedy_no_constraint.id,
+            "num_episodes": 20,
+        },
+        "aleatoric-uncertainty.gif": {
+            "id": saved_runs.aleatoric_unc_ablation.id,
+            "num_episodes": 20,
+        },
+        "myopic-moderl.gif": {"id": saved_runs.myopic_ablation.id, "num_episodes": 40},
     }
     # for key in run_ids.keys():
     #     plot_gif(
@@ -165,9 +181,9 @@ if __name__ == "__main__":
 
     for key in run_ids.keys():
         plot_gif(
-            run_id=run_ids[key],
+            run_id=run_ids[key]["id"],
             save_name="gifs/" + key,
             wandb_dir=args.wandb_dir,
-            num_episodes=60,
+            num_episodes=run_ids[key]["num_episodes"],
             random_seed=args.random_seed,
         )
