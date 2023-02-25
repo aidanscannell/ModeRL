@@ -1,10 +1,7 @@
 # ModeRL: Mode-constrained model-based reinforcement learning
-<img style="display: block;
-           margin-left: auto;
-           margin-right: auto;
-    src="https://github.com/aidanscannell/ModeRL/blob/master/experiments/gifs/initial-submission/moderl-exploration.gif"
-    alt="ModeRL">
-</img>
+<p align="center">
+    <img src="https://github.com/aidanscannell/moderl/blob/master/experiments/gifs/initial-submission/moderl-exploration.gif" alt="ModeRL">
+</p>
 
 ![ModeRL](https://github.com/aidanscannell/ModeRL/blob/master/experiments/gifs/initial-submission/moderl-exploration.gif "ModeRL")
 
