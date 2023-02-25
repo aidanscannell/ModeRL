@@ -24,35 +24,35 @@ python train.py --cfg=job
   <tbody>
   <tr>
     <td style="width:10%">
-<img src="https://github.com/aidanscannell/moderl/blob/master/experiments/gifs/initial-submission/greedy-no-constraint.gif" alt="<b>Greedy exploitation without mode constraint</b>"> </td>
+<img src="https://github.com/aidanscannell/moderl/blob/master/experiments/gifs/initial-submission/greedy-no-constraint.gif" alt="<b>Greedy exploitation WITHOUT mode constraint</b>"> </td>
     <!-- <td><img src="http://localhost:1313/publications./gifs/greedy-no-constraint.gif" alt="Greedy exploitation without mode constraint"></td> -->
     <td style="width:10%">
      We are not able to solve our δ-mode-constrained navigation problem with the greedy exploitation strategy becaue it leaves the desired dynamics mode.</td>
   </tr>
   <tr>
     <td style="width:10%">
-{{< figure src="./gifs/greedy-with-constraint.gif" caption="<b>Greedy exploitation with mode constraint</b>" >}}</td>
+<img src="https://github.com/aidanscannell/moderl/blob/master/experiments/gifs/initial-submission/greedy-with-constraint.gif" alt="<b>Greedy exploitation WITH mode constraint</b>"> </td>
     <td style="width:10%">
     Adding the δ-mode-constraint to the greedy exploitation strategy is still not able to solve our δ-mode-constrained navigation problem. This is because the optimisation gets stuck at a local optima induced by the constraint.
      </td>
   </tr>
   <tr>
     <td style="width:10%">
-{{< figure src="./gifs/moderl-exploration.gif" caption="<b>ModeRL (ours)</b>" >}}</td>
+<img src="https://github.com/aidanscannell/moderl/blob/master/experiments/gifs/initial-submission/moderl-exploration.gif" alt="<b>ModeRL (ours)</b>"> </td>
     <td style="width:10%">
     Our strategy successfully solves our δ-mode-constrained navigation problem by augmenting the greedy exploitation objective with an intrinsic motivation term. Our intrinsic motivation uses the epistmic uncertainty associated with the learned mode constraint to escape local optima induced by the constraint.
      </td>
   </tr>
   <tr>
     <td style="width:10%">
-{{< figure src="./gifs/aleatoric-uncertainty.gif" caption="<b>Aleatoric uncertainty (ablation)</b>" >}}</td>
+<img src="https://github.com/aidanscannell/moderl/blob/master/experiments/gifs/initial-submission/aleatoric-uncertainty.gif" alt="<b>Aleatoric uncertainty (ablation)</b>"> </td>
     <td style="width:10%">
 Here we show the importance of using only the epistemic uncertainty for exploration. This experiment augmented the greedy objective with the entropy of the mode indicator variable. It cannot escape the local optimum induced by the mode constraint because the mode indicator variable's entropy is <b>always</b> high at the mode boundary. This motivated formulating a dynamics model which can disentangle the sources of uncertainty in the mode constraint.
      </td>
   </tr>
   <tr>
     <td style="width:10%">
-{{< figure src="./gifs/myopic-moderl.gif" caption="<b>Myopic exploration (ablation)</b>" >}}</td>
+<img src="https://github.com/aidanscannell/moderl/blob/master/experiments/gifs/initial-submission/myopic-moderl.gif" alt="<b>Myopic intrinsic exploration (ablation)</b>"> </td>
     <td style="width:10%">
     Finally, we motivate why our intrinsic motivatin term considers the joint entroy over a trajectory, instead of summing the entropy at each time step (as is often seen in the literature). This experiment formulated the intrinsic motivation term as the sum of the gating function entropy at each time step. That is, it assumed each time step is independent and did not consider the information gain over an entire trajectory, i.e. the exploration is myopic (aka shortsighted).
      </td>
