@@ -1,7 +1,0 @@
-# @package _global_
-wandb:
-  exploration: "greedy"
-
-controller:
-  explorative_objective_fn: null
-  mode_satisfaction_prob: 0.0
