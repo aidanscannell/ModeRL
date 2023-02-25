@@ -24,7 +24,7 @@ python train.py --cfg=job
   <tbody>
   <tr>
     <td style="width:10%">
-<img src="https://github.com/aidanscannell/moderl/blob/master/experiments/gifs/greedy-no-constraint.gif" caption="<b>Greedy exploitation without mode constraint</b>" ></td>
+<img src="https://github.com/aidanscannell/moderl/blob/master/experiments/gifs/initial-submission/greedy-no-constraint.gif" alt="<b>Greedy exploitation without mode constraint</b>"> </td>
     <!-- <td><img src="http://localhost:1313/publications./gifs/greedy-no-constraint.gif" alt="Greedy exploitation without mode constraint"></td> -->
     <td style="width:10%">
      We are not able to solve our δ-mode-constrained navigation problem with the greedy exploitation strategy becaue it leaves the desired dynamics mode.</td>
