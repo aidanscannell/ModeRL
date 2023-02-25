@@ -1,5 +1,5 @@
 # ModeRL: Mode-constrained model-based reinforcement learning
-![ModeRL](https://github.com/aidanscannell/aidanscannell/ModeRL/blob/master/gifs/initial-submission/moderl-exploration.gif)
+![ModeRL](https://github.com/aidanscannell/ModeRL/blob/master/experiments/gifs/initial-submission/moderl-exploration.gif)
 
 `ModeRL` is a model-based reinforcement learning method that attempts to constrain learning to a single dynamics.
 It simultaneously learns and enforces the mode constraint by
