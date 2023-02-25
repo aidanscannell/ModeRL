@@ -1,22 +1,15 @@
 # Experiments accompanying paper
-I use [hydra](https://hydra.cc/) to configure the experiments and [Weights & Biases](https://wandb.ai/site)
-for experiment tracking.
-
-## Install
-Install `ModeRL` with the dependencies for running experiments using
-```
-pip install --editable ".[experiments]"
-```
+All experiments are configured using [hydra](https://hydra.cc/) and monitored using [Weights & Biases](https://wandb.ai/site).
 
 ## Configuratin with Hydra
-All of the [experiments](./configs/experiment) use the base hydra
+All [experiments](./configs/experiment) use the base hydra
 config in [./configs/main.yaml](./configs/main.yaml) but override it differently.
-The overrides can be seen in [experiments](./configs/experiment).
-Alternatively, an experiments config can be viewed with
+The overrides can be seen in [./configs/experiment](./configs/experiment).
+An experiment's config can be viewed with:
 ``` shell
 python train.py +experiment=INSERT_EXPERIMENT_NAME --cfg job
 ```
-You can display the base config using
+The base config can be displayed with:
 ``` shell
 python train.py --cfg=job
 ```
@@ -25,17 +18,32 @@ The experiments in [./configs/experiment](./configs/experiment) are as follows:
     - Greedy exploitation strategy with no mode constraint
 - greedy_with_constraint
     - Greedy exploitation strategy with mode constraint
-- joint_gating_function_entropy
+- moderl
     - ModeRL's main strategy which uses the joint entropy of the gating function over a trajectory
-- independent_gating_function_entropy
+- myopic_ablation
     - Myopic strategy which uses the mean of the gating function's entropy at each state
-- bernoulli
+- aleatoric_unc_ablation
     - Uses the entropy of the mode indicator variable which represents aleatoric uncertainty
+- constraint_schedule
+    - Uses an exponentially decaying schedule on the constraint level $\delta$ to tighten the constraint during training
+- compare_constraint_levels
+    - Runs a sweep over constraint levels, i.e. it runs separate experiments for $\delta \in \{0.5, 0.4, 0.3, 0.2, 0.1\}$
 
-## Run experiments
-To reproduce an experiment,
+## Install
+Create a virtual environment:
+```
+cd /path/to/moderl
+python -m venv moderl-venv
+source moderl-venv/bin/activate
+```
+Install `ModeRL` in editable mode with dependencies needed for experiments:
+```
+pip install -e ".[experiments]"
+```
+
+## Running experiments
+An experiment can be run with,
 ``` shell
-cd /path/to/experiments
 python train.py +experiment=INSERT_EXPERIMENT_NAME
 ```
 All experiment can be run with,
@@ -78,6 +86,9 @@ To create the figures for the paper run,
 ``` shell
 python plot/plot_all_figures.py --wandb_dir=wandb --saved_runs=saved_runs.yaml
 ```
+
+
+
 
 ## Running experiments on Triton (Aalto's cluster)
 ### Setup the environment
