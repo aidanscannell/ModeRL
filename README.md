@@ -6,14 +6,15 @@ method from [mosvgpe](https://github.com/aidanscannell/mosvgpe).
 It then makes decisions under the uncertainty of the learned dynamics model to provide probabilistic guarantees
 of remaining in the desired dynamics mode.
 
+<!-- <img align="middle" src="./experiments/figures/initial_submission/moderl_four_iterations_in_row.pdf" width="666" /> -->
 <p align="center">
-<img align="middle" src="./experiments/figures/initial_submission/moderl_four_iterations_in_row.pdf" width="666" />
+<img align="middle" src="./experiments/figures/initial_submission/joint_gating_four_iterations_in_row.pdf" width="666" />
 </p>
 
 
 
 <!-- ![til](https://raw.githubusercontent.com/hashrocket/hr-til/master/app/assets/images/banner.png) -->
-![til](https://raw.githubusercontent.com/aidanscannell/moderl/master/gifs/initial_submission/moderl-exploration.gif)
+![til](https://raw.githubusercontent.com/aidanscannell/moderl/master/gifs/initial-submission/moderl-exploration.gif)
 
 
 ## Usage
