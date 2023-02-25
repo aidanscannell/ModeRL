@@ -4,7 +4,7 @@
 </p>
 
 <p align="center">
-    <embed src="./experiments/figures/initial_submission/joint_gating_four_iterations_in_row.pdf" alt="ModeRL" />
+    <embed src="https://github.com/aidanscannell/moderl/blob/master/experiments/figures/initial_submission/joint_gating_four_iterations_in_row.pdf" alt="ModeRL" />
     <!-- <embed src="./experiments/figures/initial_submission/joint_gating_four_iterations_in_row.pdf" width="800px" height="2100px" alt="ModeRL" /> -->
 </p>
 
