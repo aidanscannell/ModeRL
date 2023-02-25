@@ -14,7 +14,7 @@ The base config can be displayed with:
 ``` shell
 python train.py --cfg=job
 ```
-
+The experiments are as follows:
 <table class=".table" style="width:100%">
   <thead>
   <tr>
@@ -54,7 +54,12 @@ python train.py --cfg=job
     <td style="width:10%">
 <img src="https://github.com/aidanscannell/moderl/blob/master/experiments/gifs/initial-submission/myopic-moderl.gif" alt="<b>Myopic intrinsic exploration (ablation)</b>"> </td>
     <td style="width:10%">
-    `myopic_ablation` - Finally, we motivate why our intrinsic motivatin term considers the joint entroy over a trajectory, instead of summing the entropy at each time step (as is often seen in the literature). This experiment formulated the intrinsic motivation term as the sum of the gating function entropy at each time step. That is, it assumed each time step is independent and did not consider the information gain over an entire trajectory, i.e. the exploration is myopic (aka shortsighted).
+    `myopic_ablation` -  We motivate why our intrinsic motivatin term considers the joint entroy over a trajectory, instead of summing the entropy at each time step (as is often seen in the literature). This experiment formulated the intrinsic motivation term as the sum of the gating function entropy at each time step. That is, it assumed each time step is independent and did not consider the information gain over an entire trajectory, i.e. the exploration is myopic (aka shortsighted).
+     </td>
+  </tr>
+  <tr>
+    <td style="width:10%">
+    `compare_constraint_levels` - Finally, we compare different constraint levels $\delta \in \{0.1, 0.2, 0.3, 0.4, 0.5\}$ to see how it influences training.
      </td>
   </tr>
   </tbody>
@@ -91,11 +96,11 @@ python train.py --cfg=job
 <!-- ``` -->
 
 ## Running experiments
-An experiment can be run with,
+An individual experiment can be run with:
 ``` shell
 python train.py +experiment=INSERT_EXPERIMENT_NAME
 ```
-All experiment can be run with,
+All experiments can be run with:
 ``` shell
 python train.py  --multirun '+experiment=glob(*)'
 ```
@@ -104,71 +109,60 @@ or
 python train.py --multirun +experiment=moderl,greedy_no_constraint,greedy_with_constraint,myopic_ablation,aleatoric_unc_ablation
 python train.py --multirun +experiment=constraint_schedule ++constraint_schedule.decay_episodes=10.0,15.0,20.0
 ```
-Figure 1
-``` shell
-python train.py --multirun +experiment=moderl
-```
-Figure 2
-``` shell
-python train.py --multirun +experiment=constraint_schedule ++controller.mode_satisfaction_prob=0.72
-```
-Figure 3 - greedy  plots (left)
-``` shell
-python train.py --multirun +experiment=greedy_no_constraint,greedy_with_constraint
-```
-Figure 3 - myopic ablation plots (right)
-``` shell
-python train.py --multirun +experiment=myopic_ablation
-```
-Figure 5
-``` shell
-python train.py --multirun +experiment=aleatoric_unc_ablation
-```
-Figure 6
-``` shell
-python train.py --multirun +experiment=compare_constraint_levels ++training.random_seed=1,42,69,100,50
-```
 
-
-## Create figures
-To create the figures for the paper run,
+## Plotting figures
+To create the figures for the paper run:
 ``` shell
 python plot/plot_all_figures.py --wandb_dir=wandb --saved_runs=saved_runs.yaml
 ```
-
-
+The experiments used for plotting are stored in [saved_runs.yaml](./saved_runs.yaml) and can be reproduced as follows.
+- Figure 1
+    ``` shell
+    python train.py --multirun +experiment=moderl
+    ```
+- Figure 2
+    ``` shell
+    python train.py --multirun +experiment=constraint_schedule ++controller.mode_satisfaction_prob=0.72
+    ```
+- Figure 3 - greedy  plots (left)
+    ``` shell
+    python train.py --multirun +experiment=greedy_no_constraint,greedy_with_constraint
+    ```
+- Figure 3 - myopic ablation plots (right)
+    ``` shell
+    python train.py --multirun +experiment=myopic_ablation
+    ```
+- Figure 5
+    ``` shell
+    python train.py --multirun +experiment=aleatoric_unc_ablation
+    ```
+- Figure 6
+    ``` shell
+    python train.py --multirun +experiment=compare_constraint_levels ++training.random_seed=1,42,69,100,50
+    ```
 
 
 ## Running experiments on Triton (Aalto's cluster)
-### Setup the environment
-Clone the repo with
+Clone the repo with:
 ``` shell
 git clone https://github.com/aidanscannell/ModeRL.git ~/python-projects/moderl
 ```
-Create a virtual environment
+Create a virtual environment:
 ``` shell
 module load py-virtualenv
 python -m venv moderl-venv
 ```
-Install dependencies with
+Install dependencies with:
 ``` shell
 cd /path/to/ModeRL/
 source moderl-venv/bin/activate
 pip install -e ".[experiments]"
 ```
-### Run multiple experiments in parallel whilst using hydra's sweep
+Run multiple experiments in parallel whilst using hydra's sweep:
 ``` shell
-python train.py --multirun ++controller.mode_satisfaction_prob=0.6,0.7,0.8,0.9 ++training.random_seed=42,1,69,22,4
+python train.py --multirun +experiments=moderl ++training.random_seed=42,1,69,22,4
 ```
-
-constraint_schedule
-### Copy results
-Copy wandb results from triton with,
+Copy wandb results from triton with:
 ``` shell
-rsync -avz -e  "ssh" scannea1@triton.aalto.fi:/home/scannea1/python-projects/aistats-2023/ModeRL/experiments/wandb ./wandb
-```
-
-An experiment can be run interactively with something like,
-``` shell
-srun --mem-per-cpu=500M --cpus-per-task=4 --time=0:10:00 python train.py
+rsync -avz -e  "ssh" scannea1@triton.aalto.fi:/home/scannea1/python-projects/moderl/experiments/wandb ./wandb
 ```

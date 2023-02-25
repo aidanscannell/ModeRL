@@ -34,7 +34,7 @@ pip install -e ".[experiments]"
 ```
 
 ## Running and plotting
-See [experiments](./experiments) for detailed instructions on running all of the experiments in the paper.
+See [experiments/](./experiments) for detailed instructions on running all of the experiments in the paper.
 As an example, the `ModeRL` experiment with a schedule that tightens the constraint level during training can be run with:
 ``` shell
 cd ./experiments
