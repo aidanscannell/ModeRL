@@ -4,8 +4,9 @@
         <td>
             <strong>Mode-constrained Model-based Reinforcement Learning via Gaussian Processes</strong><br>
             Aidan Scannell, Carl Henrik Ek, Arthur Richards <br>
+            Proceedings of the 26th International Conference on Artificial Intelligence and Statistics (AISTATS) 2023<br>
             <a href="https://www.aidanscannell.com/publication/mode-constrained-mbrl/paper.pdf"><img alt="Paper" src="https://img.shields.io/badge/-Paper-gray"></a>
-            <a href="https://www.aidanscannell.com/publication/mode-constrained-mbrl/"><img alt="Website" src="https://img.shields.io/badge/-Code-gray" ></a></br>
+            <!-- <a href="https://www.aidanscannell.com/publication/mode-constrained-mbrl/"><img alt="Website" src="https://img.shields.io/badge/-Website-gray" ></a></br> -->
         </td></br>
     </tr>
     <tr>
