@@ -25,13 +25,13 @@ The experiments are as follows:
   <tbody>
   <tr>
     <td style="width:10%">
-<img src="https://github.com/aidanscannell/moderl/blob/master/experiments/gifs/initial-submission/greedy-no-constraint.gif" alt="<b>Greedy exploitation WITHOUT mode constraint</b>"> </td>
+<img src="https://github.com/aidanscannell/moderl/blob/master/experiments/gifs/greedy-no-constraint.gif" alt="<b>Greedy exploitation WITHOUT mode constraint</b>"> </td>
     <td style="width:10%">
      `greedy_no_constraint` - We are not able to solve our δ-mode-constrained navigation problem with the greedy exploitation strategy because it leaves the desired dynamics mode.</td>
   </tr>
   <tr>
     <td style="width:10%">
-<img src="https://github.com/aidanscannell/moderl/blob/master/experiments/gifs/initial-submission/greedy-with-constraint.gif" alt="<b>Greedy exploitation WITH mode constraint</b>"> </td>
+<img src="https://github.com/aidanscannell/moderl/blob/master/experiments/gifs/greedy-with-constraint.gif" alt="<b>Greedy exploitation WITH mode constraint</b>"> </td>
     <td style="width:10%">
     `greedy_with_constraint` - Adding the δ-mode-constraint to the greedy exploitation strategy is still not able to solve our δ-mode-constrained navigation problem. This is because the optimisation gets stuck at a local optima induced by the constraint.
      </td>
@@ -45,7 +45,7 @@ The experiments are as follows:
   </tr>
   <tr>
     <td style="width:10%">
-<img src="https://github.com/aidanscannell/moderl/blob/master/experiments/gifs/initial-submission/aleatoric-uncertainty.gif" alt="<b>Aleatoric uncertainty (ablation)</b>"> </td>
+<img src="https://github.com/aidanscannell/moderl/blob/master/experiments/gifs/aleatoric-uncertainty.gif" alt="<b>Aleatoric uncertainty (ablation)</b>"> </td>
     <td style="width:10%">
 `aleatoric_unc_ablation` - Here we show the importance of using only the epistemic uncertainty for exploration. This experiment augmented the greedy objective with the entropy of the mode indicator variable. It cannot escape the local optimum induced by the mode constraint because the mode indicator variable's entropy is <b>always</b> high at the mode boundary. This motivated formulating a dynamics model which can disentangle the sources of uncertainty in the mode constraint.
      </td>
