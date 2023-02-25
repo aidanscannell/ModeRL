@@ -59,6 +59,8 @@ The experiments are as follows:
   </tr>
   <tr>
     <td style="width:10%">
+</td>
+    <td style="width:10%">
     `compare_constraint_levels` - Finally, we compare different constraint levels $\delta \in \{0.1, 0.2, 0.3, 0.4, 0.5\}$ to see how it influences training.
      </td>
   </tr>
