@@ -1,18 +1,107 @@
-joint_gating:
-  id: "aidanscannell/mode_constrained_mbrl/12tuiu9j"
-  iterations: [0, 15, 25, 60]
-bernoulli:
-  id: "aidanscannell/mode_constrained_mbrl/1n0aaayn"
-greedy-no-constraint:
-  id: "aidanscannell/mode_constrained_mbrl/9wz2iel5"
-greedy-with-constraint:
-  id: "aidanscannell/mode_constrained_mbrl/20rygjk5"
-independent_gating:
-  id: "aidanscannell/mode_constrained_mbrl/wx5raxbs"
-  # id: "aidanscannell/mode_constrained_mbrl/27m40fuy" # (Used in initial submission but had bug in code)
-# conservative:
-#   id: "aidanscannell/mode_constrained_mbrl/3nxjjau5"
-#   title: ""
-# relaxed:
-#   id: "aidanscannell/mode_constrained_mbrl/1tthyl58"
-#   title: "Relax"
+greedy_no_constraint:
+  id: "aidanscannell/mode_constrained_mbrl/glm3scsi"
+  iteration: 10
+greedy_with_constraint:
+  # id: "aidanscannell/mode_constrained_mbrl/27bch4fg"
+  id: "aidanscannell/aistats-2023/1afmcswp"
+moderl_schedule:
+  # id: "aidanscannell/mode_constrained_mbrl/1r4um6t0"
+  # iterations: [0, 3, 4, 37]
+  # id: "aidanscannell/aistats-2023/2magxgyx" # uses schedule
+  # id: "aidanscannell/aistats-2023/q1uh9n4b" # uses schedule
+  id: "aidanscannell/aistats-2023/oq0pzysq"
+  # iterations: [0, 2, 5, 36]
+  # iterations: [1, 5, 18, 40]
+  iterations: [1, 8, 18, 40]
+  # iterations: [1, 4, 12, 50]
+moderl:
+  # id: "aidanscannell/mode_constrained_mbrl/1r4um6t0"
+  # iterations: [0, 3, 4, 37]
+  # id: "aidanscannell/aistats-2023/2magxgyx" # uses schedule
+  # id: "aidanscannell/aistats-2023/q1uh9n4b" # uses schedule
+  id: "aidanscannell/aistats-2023/fs5y6g5s" # no schedule
+  iterations: [0, 2, 5, 25]
+  # iterations: [0, 2, 5, 30]
+  # iterations: [1, 4, 12, 50]
+  # iterations: [1, 3, 4, 6]
+  # iterations: [7, 8, 9, 10]
+  # iterations: [11, 12, 13, 14]
+  # iterations: [15,16,17,18]
+  # iterations: [19, 20, 25, 27]
+  # iterations: [28, 29, 30, 31]
+  # iterations: [35, 40, 45, 50]
+  # iterations: [0, 1, 8, 30]
+  # iterations: [33, 36, 37, 38]
+myopic_ablation:
+  # id: "aidanscannell/mode_constrained_mbrl/3vy3wjad"
+  id: "aidanscannell/aistats-2023/8ve4k1e3"
+  iteration: 0
+aleatoric_unc_ablation:
+  # id: "aidanscannell/mode_constrained_mbrl/2rki17to"
+  # iteration: 10
+  id: "aidanscannell/aistats-2023/w1o6xccu"
+  iteration: 10
+constraint_schedule:
+  seeds:
+    # - id: "aidanscannell/aistats-2023/2zj8vj54" # seed=69
+    # - id: "aidanscannell/aistats-2023/3ka6ihl7" # seed=50
+    # - id: "aidanscannell/aistats-2023/t7e1ixyo" # seed=100
+    # - id: "aidanscannell/aistats-2023/3d260xgv" # seed=42
+    # - id: "aidanscannell/aistats-2023/q1uh9n4b" # seed=1
+    - id: "aidanscannell/aistats-2023/2zj8vj54" # seed=69
+    - id: "aidanscannell/aistats-2023/3ka6ihl7" # seed=50
+    - id: "aidanscannell/aistats-2023/t7e1ixyo" # seed=100
+    - id: "aidanscannell/aistats-2023/3d260xgv" # seed=42
+    # - id: "aidanscannell/aistats-2023/q1uh9n4b" # seed=1
+  delta_start: 0.4 # start delta
+  delta_end: 0.2 # start delta
+constraint_levels:
+  - delta: 0.5
+    ids: # different random seeds
+      - "aidanscannell/aistats-2023/3k47cain" # seed=50
+      - "aidanscannell/aistats-2023/1jm2qkjf" # seed=100
+      - "aidanscannell/aistats-2023/1ggs5cbi" # seed=1
+      - "aidanscannell/aistats-2023/1i1asvcl" # seed=69
+      - "aidanscannell/aistats-2023/tehswe9f" # seed=42
+  - delta: 0.4
+    ids: # different random seeds
+      - "aidanscannell/aistats-2023/3k7caqpf" # seed=1
+      - "aidanscannell/aistats-2023/274d8mnp" # seed=69
+      - "aidanscannell/aistats-2023/14ymjlhr" # seed=50
+      - "aidanscannell/aistats-2023/29ttbgjs" # seed=42
+      - "aidanscannell/aistats-2023/35rkjbq1" # seed=100
+  - delta: 0.3
+    ids: # different random seeds
+      - "aidanscannell/aistats-2023/1jkp6wk6" # seed=100
+      - "aidanscannell/aistats-2023/3kyq7gbn" # seed=1
+      - "aidanscannell/aistats-2023/3kuot0kh" # seed=50
+      - "aidanscannell/aistats-2023/3b10b7zm" # seed=69
+      - "aidanscannell/aistats-2023/29yntxg3" # seed=42
+  - delta: 0.2
+    ids: # different random seeds
+      - "aidanscannell/aistats-2023/22rspx1r" # seed=1
+      - "aidanscannell/aistats-2023/1toh823w" # seed=50
+      - "aidanscannell/aistats-2023/2pn3bsup" # seed=69
+      - "aidanscannell/aistats-2023/29cbjc7p" # seed=42
+      # - "aidanscannell/aistats-2023/lh4z546z" # seed=100
+  - delta: 0.1
+    ids: # different random seeds
+      # - "aidanscannell/aistats-2023/hzr99thr" # seed=100
+      - "aidanscannell/aistats-2023/3719rm4z" # seed=1
+      # - "aidanscannell/aistats-2023/we1jjttz" # seed=69
+# joint_gating:
+#   id: "aidanscannell/mode_constrained_mbrl/12tuiu9j"
+#   iterations: [0, 15, 25, 60]
+# bernoulli:
+#   id: "aidanscannell/mode_constrained_mbrl/1n0aaayn"
+# independent_gating:
+#   id: "aidanscannell/mode_constrained_mbrl/wx5raxbs"
+#   # id: "aidanscannell/mode_constrained_mbrl/27m40fuy" # (Used in initial submission but had bug in code)
+# # conservative:
+# #   id: "aidanscannell/mode_constrained_mbrl/3nxjjau5"
+# #   title: ""
+# # relaxed:
+# #   id: "aidanscannell/mode_constrained_mbrl/1tthyl58"
+# #   title: "Relax"
+# prob-07-beta-20:
+#   id: "aidanscannell/mode_constrained_mbrl/"

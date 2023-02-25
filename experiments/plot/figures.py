@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import math
 from collections import OrderedDict
 from typing import List, Optional
 
@@ -225,10 +226,11 @@ def plot_greedy_and_myopic_comparison_figure(
         )
         return contf
 
-    iteration = 60
-    run_id = saved_runs["greedy-no-constraint"].id.split("/")[-1]
+    # iteration = 60
+    iteration = saved_runs.greedy_no_constraint.iteration
+    run_id = saved_runs.greedy_no_constraint.id.split("/")[-1]
     contf = plot_prob(ax1, run_id=run_id, iteration=iteration)
-    run_id = saved_runs["greedy-with-constraint"].id.split("/")[-1]
+    run_id = saved_runs.greedy_with_constraint.id.split("/")[-1]
     contf = plot_prob(ax2, run_id=run_id, iteration=iteration)
     divider = make_axes_locatable(ax2)
     cax = divider.append_axes("right", size="5%", pad=0.05)
@@ -263,12 +265,13 @@ def plot_greedy_and_myopic_comparison_figure(
         )
         return contf
 
-    iteration = 2
-    run_id = saved_runs.joint_gating.id.split("/")[-1]
+    # iteration = 2
+    iteration = saved_runs.myopic_ablation.iteration
+    run_id = saved_runs.moderl.id.split("/")[-1]
     contf = plot_variance(ax3, run_id=run_id, iteration=iteration)
     # run_id = saved_runs.independent_gating.id.split("/")[-1]
     # run_id = saved_runs.independent_gating_greedy_and_myopic_comparison.id.split("/")[
-    run_id = saved_runs.independent_gating.id.split("/")[-1]
+    run_id = saved_runs.myopic_ablation.id.split("/")[-1]
     contf = plot_variance(ax4, run_id=run_id, iteration=iteration)
     divider = make_axes_locatable(ax4)
     cax = divider.append_axes("right", size="5%", pad=0.05)
@@ -316,7 +319,7 @@ def plot_uncertainty_comparison(
 ):
     """Figure 3"""
     api = wandb.Api()
-    run = api.run(saved_runs.joint_gating.id)
+    run = api.run(saved_runs.moderl.id)
     test_inputs = create_test_inputs(num_test=40000)
     # fig, axs = plt.subplots(ncols=2, figsize=(5.1, 2.2), sharey="row")
     # fig, axs = plt.subplots(ncols=2, figsize=(6, 2.8), sharey="row")
@@ -329,13 +332,14 @@ def plot_uncertainty_comparison(
 
     cmap = palettable.scientific.sequential.Bilbao_15.mpl_colormap
     # cmap = "coolwarm"
-    i = 20
+    # i = 20
+    i = saved_runs.aleatoric_unc_ablation.iteration
     i_prob = 60
     levels = np.linspace(0, 1, 11)
 
     # plot bernoulli entropy
     # run_id = saved_runs.bernoulli.id.split("/")[-1]
-    run_id = saved_runs.joint_gating.id.split("/")[-1]
+    run_id = saved_runs.moderl.id.split("/")[-1]
     explorative_controller = get_ExplorativeController_from_id(
         i=i, id=run_id, wandb_dir=wandb_dir
     )
@@ -395,8 +399,9 @@ def plot_uncertainty_comparison(
             ax=axins, X=explorative_controller.dynamics.dataset[0][:-15, :]
         )
         plot_env(axins, env, test_inputs=test_inputs)
-        axins.set_xlim(-0.7, 1.1)
-        axins.set_ylim(-1.2, 1)
+        # axins.set_xlim(-0.7, 1.1)
+        axins.set_xlim(0.2, 1.8)
+        axins.set_ylim(-1.4, 0.6)
         mark_inset(ax, axins, loc1=1, loc2=3, fc="none", ec="0.2")
         # mark_inset(ax, axins, loc1=1, loc2=3, fc="none", ec="0.5")
         # mark_inset(axs[0], axins, loc1=-2, loc2=2, fc="none", ec="0.5")
@@ -405,8 +410,9 @@ def plot_uncertainty_comparison(
     plot_zoomed_in(axs[1], z=gating_entropy)
 
     # Plot mode prob for Bernoulli experiment
-    i = 60
-    run_id = saved_runs.bernoulli.id.split("/")[-1]
+    # i = 37
+    i = saved_runs.aleatoric_unc_ablation.iteration
+    run_id = saved_runs.aleatoric_unc_ablation.id.split("/")[-1]
     explorative_controller = get_ExplorativeController_from_id(
         i=i, id=run_id, wandb_dir=wandb_dir
     )
@@ -649,9 +655,137 @@ def plot_greedy_results(
     return fig
 
 
+def plot_constraint_levels_figure(api, saved_runs, window_width=5):
+    fig = plt.figure()
+    gs = fig.add_gridspec(1, 1)
+    ax = gs.subplots()
+
+    fig_2 = plt.figure()
+    gs_2 = fig_2.add_gridspec(1, 1)
+    ax_2 = gs_2.subplots()
+
+    returns_schedule, num_episodes_with_violations_schedule = [], []
+    for seed in saved_runs.constraint_schedule.seeds:
+        run = api.run(seed.id)
+        history = run.scan_history(keys=["Num episodes with constraint violations"])
+        num_episodes_with_violations = []
+        for row in history:
+            if not math.isnan(row["Num episodes with constraint violations"]):
+                num_episodes_with_violations.append(
+                    row["Num episodes with constraint violations"]
+                )
+
+        history = run.scan_history(keys=["Extrinsic return"])
+        returns = []
+        for row in history:
+            if not math.isnan(row["Extrinsic return"]):
+                returns.append(row["Extrinsic return"])
+        returns_schedule.append(returns)
+        num_episodes_with_violations_schedule.append(num_episodes_with_violations)
+
+    for level in saved_runs.constraint_levels:
+        returns_all, num_episodes_with_violations_all = [], []
+        print("delta={}".format(level.delta))
+        for seed in level.ids:
+            print("seed: {}".format(seed))
+            run = api.run(seed)
+            history = run.scan_history(keys=["Num episodes with constraint violations"])
+            num_episodes_with_violations = []
+            for row in history:
+                if not math.isnan(row["Num episodes with constraint violations"]):
+                    num_episodes_with_violations.append(
+                        row["Num episodes with constraint violations"]
+                    )
+
+            history = run.scan_history(keys=["Extrinsic return"])
+            returns = []
+            for row in history:
+                if not math.isnan(row["Extrinsic return"]):
+                    returns.append(row["Extrinsic return"])
+
+            num_episodes_with_violations_all.append(num_episodes_with_violations)
+            returns_all.append(returns)
+
+        def plot(ax, values, label=""):
+            min_len = len(values[0])
+            for val in values:
+                cumsum_vec = np.cumsum(np.insert(val, 0, 0))
+                ma_vec = (
+                    cumsum_vec[window_width:] - cumsum_vec[:-window_width]
+                ) / window_width
+                if len(ma_vec) < min_len:
+                    min_len = len(ma_vec)
+
+            values_same_length = []
+            for val in values:
+                cumsum_vec = np.cumsum(np.insert(val, 0, 0))
+                ma_vec = (
+                    cumsum_vec[window_width:] - cumsum_vec[:-window_width]
+                ) / window_width
+                values_same_length.append(ma_vec[0:min_len])
+                # values_same_length.append(val[0:min_len])
+
+            num_episodes = len(values_same_length[0])
+            episodes = np.arange(0, num_episodes)
+
+            values_same_length = np.stack(values_same_length, 0)
+            values_mean = np.mean(values_same_length, 0)
+            values_var = np.var(values_same_length, 0)
+            ax.plot(episodes, values_mean, label=label)
+            ax.fill_between(
+                episodes,
+                values_mean - 1.96 * np.sqrt(values_var),
+                values_mean + 1.96 * np.sqrt(values_var),
+                alpha=0.2,
+            )
+
+        plot(ax=ax, values=returns_all, label="$\delta={}$".format(level.delta))
+        plot(
+            ax=ax_2,
+            values=num_episodes_with_violations_all,
+            label="$\delta={}$".format(level.delta),
+        )
+    plot(
+        ax=ax,
+        values=returns_schedule,
+        label=r"$\delta^{s}_{0}="
+        + str(saved_runs.constraint_schedule.delta_start)
+        + "$",
+    )
+    plot(
+        ax=ax_2,
+        values=num_episodes_with_violations_schedule,
+        label=r"$\delta^{s}_{0}="
+        + str(saved_runs.constraint_schedule.delta_start)
+        + "$",
+    )
+
+    # plt.ticklabel_format(style="sci", axis="x", scilimits=(0, 0), useMathText=False)
+    ax.set_xlabel(r"Episode $i$")
+    ax.set_xlim(0, 150)
+    ax.set_ylim(-3000, 100)
+    ax.set_ylabel(
+        r"Episode return",
+        # r"Episode return $\sum_{t=0}^{t} r(\mathbf{s}_{t}, \mathbf{a}_{t})$"
+    )
+    ax.legend()
+    fig.tight_layout(pad=0.5)
+
+    # fig_2.ticklabel_format(style="sci", axis="x", scilimits=(0, 0), useMathText=False)
+    ax_2.set_xlabel(r"Episode $i$")
+    ax_2.set_xlim(0, 150)
+    ax_2.set_ylim(0, 200)
+    # ax_2.set_xlim(0, 150)
+    ax_2.set_ylabel(r"Accumulated constraint violations $N_{\alpha}$")
+    ax_2.legend()
+    fig_2.tight_layout(pad=0.5)
+
+    return fig, fig_2
+
+
 def custom_labels(ax):
     handles, labels = ax.get_legend_handles_labels()
-    handles.append(mpl.lines.Line2D([1], [1], color="b", alpha=0.5, linestyle="dashed"))
+    handles.append(mpl.lines.Line2D([1], [1], color="r", alpha=1, linestyle="dashed"))
     labels.append("Mode boundary")
     handles.append(mpl.lines.Line2D([1], [1], color="k"))
     labels.append(r"$\delta$-mode constraint")

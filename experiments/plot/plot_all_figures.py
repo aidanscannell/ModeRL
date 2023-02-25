@@ -1,22 +1,17 @@
 #!/usr/bin/env python3
 import argparse
-import os
 
 import hydra
-import matplotlib as mpl
 import matplotlib.pyplot as plt
-import numpy as np
 import tensorflow as tf
 import wandb
 from experiments.plot.figures import (
     plot_constraint_expanding_figure,
+    plot_constraint_levels_figure,
     plot_four_iterations_in_row,
     plot_greedy_and_myopic_comparison_figure,
-    plot_sinlge_run_gating_function_variance,
-    plot_sinlge_run_mode_prob,
     plot_uncertainty_comparison,
 )
-from matplotlib.colors import LinearSegmentedColormap, ListedColormap
 from omegaconf import OmegaConf
 
 
@@ -41,7 +36,7 @@ def plot_all_figures(wandb_dir, saved_runs_yaml, random_seed: int = 42):
     saved_runs = OmegaConf.load(saved_runs_yaml)
     saved_runs_dict = OmegaConf.to_object(saved_runs)
 
-    run = api.run(saved_runs.joint_gating.id)
+    run = api.run(saved_runs.moderl.id)
     cfg = OmegaConf.create(run.config)
     env = hydra.utils.instantiate(cfg.env)
     target_state = hydra.utils.instantiate(cfg.target_state)
@@ -49,23 +44,27 @@ def plot_all_figures(wandb_dir, saved_runs_yaml, random_seed: int = 42):
     # Figure 1
     fig = plot_constraint_expanding_figure(
         env=env,
-        run_id=saved_runs.joint_gating.id.split("/")[-1],
+        run_id=saved_runs.moderl.id.split("/")[-1],
+        # run_id=saved_runs.moderl_schedule.id.split("/")[-1],
         wandb_dir=wandb_dir,
         target_state=target_state,
-        iterations=saved_runs.joint_gating.iterations,
+        iterations=saved_runs.moderl.iterations,
+        # iterations=saved_runs.moderl_schedule.iterations,
     )
-    plt.savefig("./figures/joint_gating_constraint_expanding.pdf")
+    plt.savefig("./figures/moderl_constraint_expanding.pdf")
 
     # Figure 2
     fig = plot_four_iterations_in_row(
         env=env,
-        run_id=saved_runs.joint_gating.id.split("/")[-1],
+        # run_id=saved_runs.moderl.id.split("/")[-1],
+        run_id=saved_runs.moderl_schedule.id.split("/")[-1],
         wandb_dir=wandb_dir,
         target_state=target_state,
-        iterations=saved_runs.joint_gating.iterations,
+        # iterations=saved_runs.moderl.iterations,
+        iterations=saved_runs.moderl_schedule.iterations,
         # title=""
     )
-    plt.savefig("./figures/joint_gating_four_iterations_in_row.pdf")
+    plt.savefig("./figures/moderl_four_iterations_in_row.pdf")
 
     # Figure 3
     fig = plot_greedy_and_myopic_comparison_figure(
@@ -83,9 +82,14 @@ def plot_all_figures(wandb_dir, saved_runs_yaml, random_seed: int = 42):
         saved_runs=saved_runs,
         wandb_dir=wandb_dir,
         target_state=target_state,
-        # iterations=saved_runs.joint_gating.iterations,
+        # iterations=saved_runs.moderl.iterations,
     )
     plt.savefig("./figures/uncertainty_comparison.pdf")
+
+    # Figures 5 & 6
+    fig, fig_2 = plot_constraint_levels_figure(api, saved_runs)
+    fig.savefig("./figures/episode_return_constraint_levels_ablation.pdf")
+    fig_2.savefig("./figures/num_constrint_violations_constraint_levels_ablation.pdf")
 
     # for key in saved_runs_dict.keys():
     #     print("Plotting {}".format(key))
@@ -132,7 +136,7 @@ if __name__ == "__main__":
         "--random_seed",
         type=int,
         help="random seed to fix stochasticity of environment",
-        default=42,
+        default=1,
     )
     args = parser.parse_args()
 
