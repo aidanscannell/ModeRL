@@ -59,8 +59,7 @@ The experiments are as follows:
   </tr>
   <tr>
     <td style="width:10%">
-<img src="https://github.com/aidanscannell/moderl/blob/master/experiments/figuresepisode_return_constraint_levels_ablation.png" alt="<b>Constraint level comparison (ablation)</b>">
-</td>
+<img src="https://github.com/aidanscannell/moderl/blob/master/experiments/figures/episode_return_constraint_levels_ablation.png" alt="<b>Constraint level comparison (ablation)</b>"></td>
     <td style="width:10%">
     `compare_constraint_levels` - Finally, we compare different constraint levels $\delta \in \{0.1, 0.2, 0.3, 0.4, 0.5\}$ to see how it influences training.
      </td>
