@@ -3,7 +3,10 @@
     <img src="https://github.com/aidanscannell/moderl/blob/master/experiments/gifs/initial-submission/moderl-exploration.gif" alt="ModeRL">
 </p>
 
-![ModeRL](https://github.com/aidanscannell/ModeRL/blob/master/experiments/gifs/initial-submission/moderl-exploration.gif "ModeRL")
+<p align="center">
+    <embed src="./experiments/figures/initial_submission/joint_gating_four_iterations_in_row.pdf" alt="ModeRL" />
+    <!-- <embed src="./experiments/figures/initial_submission/joint_gating_four_iterations_in_row.pdf" width="800px" height="2100px" alt="ModeRL" /> -->
+</p>
 
 `ModeRL` is a model-based reinforcement learning method that attempts to constrain learning to a single dynamics.
 It simultaneously learns and enforces the mode constraint by
@@ -16,6 +19,7 @@ of remaining in the desired dynamics mode.
 <p align="center">
 <img align="middle" src="./experiments/figures/initial_submission/joint_gating_four_iterations_in_row.pdf" width="666" />
 </p>
+
 
 
 <!-- ![til](https://raw.githubusercontent.com/hashrocket/hr-til/master/app/assets/images/banner.png) -->
