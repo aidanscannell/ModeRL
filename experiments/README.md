@@ -106,25 +106,26 @@ python train.py  --multirun '+experiment=glob(*)'
 ```
 or
 ``` shell
-python train.py --multirun +experiment=moderl,greedy_no_constraint,greedy_with_constraint,myopic_ablation,aleatoric_unc_ablation
-python train.py --multirun +experiment=constraint_schedule ++constraint_schedule.decay_episodes=10.0,15.0,20.0
+python train.py --multirun +experiment=greedy_no_constraint,greedy_with_constraint,moderl,aleatoric_unc_ablation,myopic_ablation
+python train.py --multirun +experiment=constraint_schedule ++training.random_seed=1,42,69,100,50
+python train.py --multirun +experiment=compare_constraint_levels ++training.random_seed=1,42,69,100,50
 ```
 
 ## Plotting figures
-To create the figures for the paper run:
+Recreate the figures in the paper with:
 ``` shell
 python plot/plot_all_figures.py --wandb_dir=wandb --saved_runs=saved_runs.yaml
 ```
-The experiments used for plotting are stored in [saved_runs.yaml](./saved_runs.yaml) and can be reproduced as follows.
+This uses the experiments stored in [saved_runs.yaml](./saved_runs.yaml), which can be reproduced as follows:
 - Figure 1
     ``` shell
-    python train.py --multirun +experiment=moderl
+    python train.py +experiment=moderl
     ```
 - Figure 2
     ``` shell
-    python train.py --multirun +experiment=constraint_schedule ++controller.mode_satisfaction_prob=0.72
+    python train.py +experiment=constraint_schedule
     ```
-- Figure 3 - greedy  plots (left)
+- Figure 3 - greedy plots (left)
     ``` shell
     python train.py --multirun +experiment=greedy_no_constraint,greedy_with_constraint
     ```
@@ -136,9 +137,10 @@ The experiments used for plotting are stored in [saved_runs.yaml](./saved_runs.y
     ``` shell
     python train.py --multirun +experiment=aleatoric_unc_ablation
     ```
-- Figure 6
+- Figures 6 & 7
     ``` shell
     python train.py --multirun +experiment=compare_constraint_levels ++training.random_seed=1,42,69,100,50
+    python train.py --multirun +experiment=constraint_schedule ++training.random_seed=1,42,69,100,50
     ```
 
 
