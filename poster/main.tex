@@ -749,7 +749,7 @@
 % Title
 % ====================
 
-\title{Mode-constrained Model-based Reinforcement Learning via Gaussian Processes}
+\title{Mode-constrained Model-based Reinforcement Learning via \\ Gaussian Processes}
 
 \author{ Aidan Scannell\inst{1} ~~ Carl Henrik Ek\inst{2} ~~  Arthur Richards\inst{3}}
 % \aistatsaddress{ Aalto University \And  University of Cambridge \And University of Bristol } ]
@@ -778,8 +778,18 @@
 
 \begin{tikzpicture}[remember picture,overlay,scale=1]
 % \node (myfirstpic) at (71.5,6.9) {\includegraphics[width=0.05\columnwidth]{fig/github-qr-code.png}};
-\node (qr) at (71.5,4.8) {\includegraphics[width=0.045\columnwidth]{fig/github-qr-code.png}};
-\node (logo) at (78.5,5) {\includegraphics[height=.05\paperwidth,trim=2.5cm 2.5cm 2.5cm 2cm]{fig/aalto}};
+\node (qr) at (5,4.8) {\includegraphics[width=0.045\columnwidth]{fig/github-qr-code.png}};
+% \node (logo) at (58,5) {\includegraphics[height=.05\paperwidth,trim=2.5cm 2.5cm 2.5cm 2cm]{fig/aalto}};
+\node (logo) at (78,8) {\includegraphics[height=.05\paperwidth,trim=2.5cm 2.5cm 2.5cm 2cm]{fig/aalto}};
+\node (logo) at (67,8) {\includegraphics[height=.08\paperwidth]{fig/fcai-logo-black}};
+\node (logo) at (67,4.2) {\includegraphics[height=.014\paperwidth,trim=2.5cm 2.5cm 2.5cm 2cm]{fig/cambridge-logo.png}};
+\node (logo) at (78,4.2) {\includegraphics[height=.03\paperwidth]{fig/uob-logo.png}};
+% \node (logo) at (80,5) {\includegraphics[height=.03\paperwidth,trim=2.5cm 2.5cm 2.5cm 2cm]{fig/uob-logo-white.png}};
+
+        % {\includegraphics[height=.02\paperwidth]{fig/uob-logo.png}}%
+        % \hskip3ex
+        % {\includegraphics[height=.02\paperwidth]{fig/cambridge-logo.png}}%
+        %
       % \node[path picture={\node at (path picture bounding box.center){
       %     \includegraphics[width=####2,trim=0 0 0 0,clip]{fig/####1}
       %   };}]{};
@@ -811,7 +821,8 @@
      %    \item for example, a quadcopter avoiding a turbulent dynamic mode.
      %  \end{itemize}
      % \item We present \alert{ModeRL}, a model-based RL algorithm which solves the mode-constrained RL problem in Eq. \ref{eq-main-problem} with high probability.
-      \item We present \alert{ModeRL}, a model-based RL algorithm that constrains training to a single dynamic mode.
+      % \item We present \alert{ModeRL}, a model-based RL algorithm that constrains training to a single dynamic mode.
+      \item We present \alert{ModeRL}, a model-based RL algorithm constrained to a single dynamic mode.
       \item This is a difficult problem because the \alert{mode constraint} is a \alert{hidden variable} associated with the environment’s dynamics.
       % \item RL typically considers constraints that are observed from the environment and can be learned with supervised learning.
      % \item We present \alert{ModeRL}, a model-based RL algorithm which constrains training to a single dynamic mode with high probability, see Eq. \ref{eq-main-problem} for mode details.
@@ -912,7 +923,9 @@
       % i.i.d. noise models} $\color{black}{\bm\epsilon_{\modeInd}}$\textcolor{black}{) governs the dynamics at a give state.}
       % \item \textbf{Mode constraint}: \textcolor{black}{The controlled system should remain in the desired mode's $\desiredMode$ state domain $\stateDomain_{\desiredMode} = \{ \state \in \stateDomain \mid \modeVar(\state) = \desiredMode\}$}.
       \item \textcolor{red}{\textbf{PROBLEM}: can't satisfy constraint during training!}
-      \item So relax to being mode-constrained with high probability...
+      \begin{itemize}
+        \item So relax to being mode-constrained with high probability...
+      \end{itemize}
     \end{itemize}
 
 
@@ -997,8 +1010,9 @@
       \item \textbf{Goal} jointly infer mode constraint along with dynamic modes:
       % \item Mixtures of Gaussian process experts with sparse variational G
       \begin{itemize}
+        \item Data set of state-action inputs and state diff outputs $\mathcal{D} =\{\singleInput, \singleOutput\}_{t=1}^{N} = (\allInput, \allOutput)$,
         \item Formulate prior such that \alert{ModeRL} can potentially never violate the constraint,
-        \item Disentangle sources of uncertainty in the mode constraint, so \alert{epistemic uncertainty} can be used to escape local optima.
+        \item Disentangle sources of uncertainty in the mode constraint.%, so \alert{epistemic uncertainty} can be used to escape local optima.
       \end{itemize}
       \item \textbf{Dynamic modes} GP prior over each dynamic mode,
 % Similarly for the outputs we have \(\allOutputK = \{\singleOutput \in \allOutput \mid \modeVar(\state_{\timeInd+1}) = \modeInd\}\).
@@ -1008,18 +1022,22 @@
 % where \(\allModeVar = \{\modeVar_1, \ldots, \modeVar_\NumData \}\) represents a set of assignments for all observations.
 % This distribution factors into the product over modes, where each mode models the joint Gaussian distribution
 % over the observations assigned to it.
-        \begin{align*}
-          \mode{\latentFunc}(\allInputK) \mid \modeVar \sim \mathcal{N}\left( \mode{\mu}(\allInputK), \mode{k}(\allInputK, \allInputK) \right),
-          \qquad
-          \allInputK = \{\singleInput \in \allInput \mid \modeVar(\state_{\timeInd}) = \modeInd\}
-        \end{align*}
-          where $\allInputK$ represents state-action inputs assigned to dynamic mode $\modeInd$.
-      \item Sidestep hard assignment of observations by augmenting each mode with \alert{separate} inducing points and treating variationally,
-        \begin{align*}
-          \mode{\latentFunc}(\expertInducingInput)  \sim \mathcal{N}\left( \mode{\mu}(\expertInducingInput), \mode{k}(\expertInducingInput, \expertInducingInput ) \right)
-          \qquad
-          q(\mode{\latentFunc}(\expertInducingInput)) = \mathcal{N}\left(\mode{\latentFunc}(\expertInducingInput) \mid \mode{\mathbf{m}}, \mode{\mathbf{L}} \mode{\mathbf{L}}^{T} \right)
-        \end{align*}
+        \begin{itemize}
+          \item Each mode should be \alert{assigned} a subset of the state-action inputs $\allInputK \subseteq \allInput$,
+          \begin{align*}
+            \mode{\latentFunc}(\allInputK) \mid \bm\modeVar \sim \mathcal{N}\left( \mode{\mu}(\allInputK), \mode{k}(\allInputK, \allInputK) \right),
+            \qquad
+            \allInputK = \{\singleInput \in \allInput \mid \modeVar(\state_{\timeInd}) = \modeInd\}
+          \end{align*}
+              % where $\hat{\stateDomain} = \stateDomain \times \controlDomain$ represents combined state-action domain
+              % and $\allInputK$ the inputs assigned to dynamic mode $\modeInd$.
+        \item But we sidestep the assignment of observations to modes by augmenting each mode with its own inducing points,
+          \begin{align*}
+            \mode{\latentFunc}(\expertInducingInput)  \sim \mathcal{N}\left( \mode{\mu}(\expertInducingInput), \mode{k}(\expertInducingInput, \expertInducingInput ) \right)
+            \qquad
+            q(\mode{\latentFunc}(\expertInducingInput)) = \mathcal{N}\left(\mode{\latentFunc}(\expertInducingInput) \mid \mode{\mathbf{m}}, \mode{\mathbf{L}} \mode{\mathbf{L}}^{T} \right)
+          \end{align*}
+      \end{itemize}
     \end{itemize}
 
   \end{block}
@@ -1038,7 +1056,7 @@
      % \node[inner sep=1em, minimum width=\textwidth,minimum height=.2\textwidth, rounded corners=6pt] at (0,0) {
      \node at (0,100) {
         \includegraphics[width=0.27\textwidth, trim= 0 30 326.5 5, clip]{../experiments/figures/greedy_and_myopic_comparisons.pdf}
-        \includegraphics[width=0.63\textwidth, trim= 0 30 49 5, clip]{../experiments/figures/moderl_four_iterations_in_row.pdf}
+        \includegraphics[width=0.6\textwidth, trim= 0 30 49 5, clip]{../experiments/figures/moderl_four_iterations_in_row.pdf}
         % \includegraphics[width=0.31\textwidth, trim= 0 30 326.5 5, clip]{../experiments/figures/greedy_and_myopic_comparisons.pdf}
         % \includegraphics[width=0.69\textwidth, trim= 0 30 49 5, clip]{../experiments/figures/moderl_four_iterations_in_row.pdf}
 % left bottom right top
@@ -1089,7 +1107,7 @@
             \node[const] (x) {{\footnotesize$\singleInput$}};
             \node[latent, left=of x, yshift=-1.4cm] (f) {{\footnotesize$\mode{\latentFunc}(\singleInput)$}};
             %\node[latent, right=of x, yshift=-1.7cm] (h) {${h}^{(k)}_n$};
-            \node[latent, right=of x, yshift=-1.4cm, xshift=1.2cm] (h) {{\footnotesize$\mode{\gatingFunc}(\state_{\timeInd})$}};
+            \node[latent, right=of x, yshift=-1.4cm, xshift=2.0cm] (h) {{\footnotesize$\mode{\gatingFunc}(\state_{\timeInd})$}};
 
             \node[latent, left=of f, xshift=0.4cm, yshift=0.6cm] (uk) {{\footnotesize$\expertInducingOutput$}};
             \node[latent, right=of h, xshift=-0.4cm, yshift=0.6cm] (uh) {{\footnotesize$\gatingInducingOutput$}};
@@ -1101,9 +1119,9 @@
 
             \node[const, below=of thetak, yshift=0.4cm] (sigmak) {{\footnotesize$\sigma_{\modeInd}$}};
 
-            \node[obs, right=of sigmak, yshift=0.cm, xshift=1.4cm] (y) {{\footnotesize$\singleOutput$}};
+            \node[obs, right=of sigmak, yshift=0.cm, xshift=2.0cm] (y) {{\footnotesize$\singleOutput$}};
             %\node[latent, right=of y, below=of h] (a) {$\alpha_t$};
-            \node[latent, right=of y, xshift=-0.4cm] (a) {{\footnotesize$\modeVar_{\timeInd}$}};
+            \node[latent, right=of y, xshift=-0.2cm] (a) {{\footnotesize$\modeVar_{\timeInd}$}};
 
             %\node[obs, right=of sigmak] (y) {$\Delta\mathbf{x}_{t}$};
 
@@ -1124,10 +1142,10 @@
             \draw[post] (phik)--(h);
             \draw[post] (sigmak)|-(y);
 
-            \plate {} {(x) (y) (a) (f) (h)} {$\TimeInd$};
+            \plate[fill=cyan!80, opacity=0.3,draw=none] {} {(x) (y) (a) (f) (h)} {$\TimeInd$};
             %\plate {} {(zk) (uk) (f) (sigmak) (thetak) (yk)} {$K$};
-            \plate {} {(zk) (uk) (f) (sigmak) (thetak)} {$\ModeInd$};
-            \plate {} {(uh) (h) (phik)} {$\ModeInd$};
+            \plate[fill=magenta!80, opacity=0.3,draw=none] {} {(zk) (uk) (f) (sigmak) (thetak)} {$\ModeInd$};
+            \plate[fill=magenta!80, opacity=0.3,draw=none] {} {(uh) (h) (phik)} {$\ModeInd$};
         \end{tikzpicture}
         }
     \caption{Dynamic model's augmented joint probability space.}
@@ -1171,7 +1189,9 @@
         %   \Delta \state_{\timeInd+1} \mid \singleInput, \modeVar, \mode{\latentFunc}  \sim \mathcal{N} \left( \mode{\latentFunc}(\singleInputK), \sigma^{2} \mathbf{I} \right)
         % \end{align}
 
-      \item \textbf{Mode constraint} Model as GP classifier, i.e. classification
+      \item \textbf{Mode constraint} Model as GP classifier,
+      \begin{itemize}
+            \item i.e. classification
             likelihood parameterised by $\ModeInd$ functions $\GatingFunc = \{ \mode{\gatingFunc}: \stateDomain \rightarrow \R \}_{\modeInd=1}^{\ModeInd}$ with GP priors:
         \begin{align}
           \modeVar_{t} \mid \state_{t}, \GatingFunc(\state_{t}) \sim \text{softmax}_{\modeInd}(\GatingFunc(\state_{t}))
@@ -1187,7 +1207,8 @@
         %       \qquad
         %       q(\gatingInducingOutput \mid \mode{\hat{\mathbf{m}}}, \mode{\hat{\mathbf{L}}} \mode{\hat{\mathbf{L}}}^{T})
         %   \end{align}
-        \item \textbf{Variational inference} Optimise variational params $\{\mode{\mathbf{m}}, \mode{\hat{\mathbf{m}}}, \mode{\mathbf{L}}, \mode{\hat{\mathbf{L}}} \}_{\modeInd=1}^{\ModeInd}$,
+      \end{itemize}
+      \item \textbf{Variational inference} Optimise variational params $\{\mode{\mathbf{m}}, \mode{\hat{\mathbf{m}}}, \mode{\mathbf{L}}, \mode{\hat{\mathbf{L}}} \}_{\modeInd=1}^{\ModeInd}$,
               % $\{q(\mode{\latentFunc}(\expertInducingInput)), q(\gatingFunc(\gatingInducingInput)) \}_{\modeInd=1}^{\ModeInd}$,
         inducing inputs $\{\expertInducingInput\}_{\modeInd=1}^{\ModeInd}$, $\gatingInducingInput$ and GP hyperparams/noise using ELBO.
         % \begin{align} \label{eq-lower-bound}
@@ -1241,13 +1262,22 @@
   \end{align}
   \end{subequations}
   \begin{itemize}
-  \item Assume always in desired dynamic mode,
+  \item \textbf{Greedy exploitation} Expected objective under dynamic's posterior,
     \begin{itemize}
-      \item So we can approximate multi-step predictions using moment-matching.
+      \item \textbf{Multi-step predictions} Assume always in desired dynamic mode,
+        \begin{itemize}
+          \item So we can approximate multi-step predictions using moment-matching,
+          \item For quadratic reward funcs $\E_{p(\dynamicsFunc_{\desiredMode} \mid \dataset_{0:i})} \left[ J(\pi, \dynamicsFunc_{\desiredMode}) \right]$ has closed form.
+        \end{itemize}
     \end{itemize}
-  \item For quadratic reward funcs $\E_{p(\dynamicsFunc_{\desiredMode} \mid \dataset_{0:i})} \left[ J(\pi, \dynamicsFunc_{\desiredMode}) \right]$ has closed form.
-  \item For two dynamic modes the $\delta\text{-mode-constraint}$ has closed form.
-  \item \textbf{Exploration} Needed to escape local optima induced by constraint.
+  \item \textbf{Exploration} Entropy of mode constraint's GP posterior, %(epistemic uncertainty
+    \begin{itemize}
+      \item Needed to escape local optima induced by constraint.
+    \end{itemize}
+  \item \textbf{$\delta\text{-mode constraint}$} Enforces constraint up to a given probability.
+    \begin{itemize}
+      \item For two dynamic modes the $\delta\text{-mode constraint}$ has closed form.
+    \end{itemize}
   \end{itemize}
 
   % \end{block}
@@ -1262,12 +1292,12 @@
   \begin{figure}[H]
     \begin{tikzpicture}[inner sep=0,outer sep=0]
       \node[rounded corners=6pt] at (0,0) {
-     \includegraphics[width=0.5\columnwidth, trim=0 7 0 15, clip]{../experiments/figures/num_constrint_violations_constraint_levels_ablation.pdf}
-          \includegraphics[width=0.5\columnwidth, trim=0 7 0 15, clip]{../experiments/figures/episode_return_constraint_levels_ablation.pdf}
+     \includegraphics[width=0.48\columnwidth, trim=0 7 0 15, clip]{../experiments/figures/num_constrint_violations_constraint_levels_ablation.pdf}
+          \includegraphics[width=0.48\columnwidth, trim=0 7 0 15, clip]{../experiments/figures/episode_return_constraint_levels_ablation.pdf}
       };
     \end{tikzpicture}
   % {\small \singlespacing \alert{\bf Figure~2:} \textbf{Constraint level ablation} Left shows that tighter constraints (lower $\delta$) results in less constraint violations. However, the training curves (right) show that if the constraint is too tight (i.e. $\delta \leq 0.2$) then \alert{ModeRL} gets stuck in local optima and cannot solve the task. Further to this, looser constraints (high δ) have better sample efficiency.}
-    \caption{\textbf{Constraint level ablation} Left shows that tighter constraints (lower $\delta$) results in less constraint violations. However, training curves (right) show that if the constraint is too tight (i.e. $\delta \leq 0.2$) then \alert{ModeRL} gets stuck in local optima and cannot solve the task.}
+    \caption{\textbf{Constraint level ablation} Left shows that tighter constraints (lower $\delta$) results in fewer constraint violations. However, training curves (right) show that if constraint is too tight (i.e. $\delta \leq 0.2$) then \alert{ModeRL} gets stuck in local optima. $\delta^{s}_{0}=0.4$ (\tikz[baseline=-0.5ex]\draw [line width=1.25mm, brown] (0,0) -- (1,0);) converged in fewer episodes by using exponentially decaying schedule from $\delta=0.4$.}
       %Further to this, looser constraints (high δ) have better sample efficiency.}
 %       The δ0s = 4 experiment used an expo-
 % nential schedule to tighten the constraint during training}
@@ -1283,7 +1313,7 @@
     \item \textbf{Constraint satisfaction during training} - Fig. \ref{fig-training-curve}
     \begin{itemize}
       \item Tightening constraint (lower $\delta$) leads to less constraint violations during training,
-      \item But if too tight (i.e. $\delta \leq 0.2$) it can make the problem infeasible.
+      \item But if too tight (i.e. $\delta \leq 0.2$) it can make the problem infeasible, %i.e. it doesn't solve task.
       \item \textbf{How to set $\delta$?} A schedule works well in practice, see $\delta^{s}_{0}=0.4$ (\tikz[baseline=-0.5ex]\draw [line width=1.25mm, brown] (0,0) -- (1,0);) on Fig. \ref{fig-training-curve}.
     \end{itemize}
     % \item \textbf{How to set $\delta$?} A schedule works well in practice.
