@@ -664,16 +664,29 @@ def plot_constraint_levels_figure(api, saved_runs, window_width=5):
     gs_2 = fig_2.add_gridspec(1, 1)
     ax_2 = gs_2.subplots()
 
+    fig_3 = plt.figure()
+    gs_3 = fig_3.add_gridspec(1, 1)
+    ax_3 = gs_3.subplots()
+
     returns_schedule, num_episodes_with_violations_schedule = [], []
+    num_violations_schedule = []
     for seed in saved_runs.constraint_schedule.seeds:
         run = api.run(seed.id)
         history = run.scan_history(keys=["Num episodes with constraint violations"])
         num_episodes_with_violations = []
+        num_violations = []
         for row in history:
             if not math.isnan(row["Num episodes with constraint violations"]):
                 num_episodes_with_violations.append(
                     row["Num episodes with constraint violations"]
                 )
+                try:
+                    num_violations.append(
+                        num_episodes_with_violations[-1]
+                        - num_episodes_with_violations[-2]
+                    )
+                except:
+                    num_violations.append(num_episodes_with_violations[-1])
 
         history = run.scan_history(keys=["Extrinsic return"])
         returns = []
@@ -682,20 +695,30 @@ def plot_constraint_levels_figure(api, saved_runs, window_width=5):
                 returns.append(row["Extrinsic return"])
         returns_schedule.append(returns)
         num_episodes_with_violations_schedule.append(num_episodes_with_violations)
+        num_violations_schedule.append(num_violations)
 
     for level in saved_runs.constraint_levels:
         returns_all, num_episodes_with_violations_all = [], []
+        num_violations_all = []
         print("delta={}".format(level.delta))
         for seed in level.ids:
             print("seed: {}".format(seed))
             run = api.run(seed)
             history = run.scan_history(keys=["Num episodes with constraint violations"])
             num_episodes_with_violations = []
+            num_violations = []
             for row in history:
                 if not math.isnan(row["Num episodes with constraint violations"]):
                     num_episodes_with_violations.append(
                         row["Num episodes with constraint violations"]
                     )
+                    try:
+                        num_violations.append(
+                            num_episodes_with_violations[-1]
+                            - num_episodes_with_violations[-2]
+                        )
+                    except:
+                        num_violations.append(num_episodes_with_violations[-1])
 
             history = run.scan_history(keys=["Extrinsic return"])
             returns = []
@@ -704,6 +727,7 @@ def plot_constraint_levels_figure(api, saved_runs, window_width=5):
                     returns.append(row["Extrinsic return"])
 
             num_episodes_with_violations_all.append(num_episodes_with_violations)
+            num_violations_all.append(num_violations)
             returns_all.append(returns)
 
         def plot(ax, values, label=""):
@@ -745,6 +769,11 @@ def plot_constraint_levels_figure(api, saved_runs, window_width=5):
             values=num_episodes_with_violations_all,
             label="$\delta={}$".format(level.delta),
         )
+        plot(
+            ax=ax_3,
+            values=num_violations_all,
+            label="$\delta={}$".format(level.delta),
+        )
     plot(
         ax=ax,
         values=returns_schedule,
@@ -755,6 +784,13 @@ def plot_constraint_levels_figure(api, saved_runs, window_width=5):
     plot(
         ax=ax_2,
         values=num_episodes_with_violations_schedule,
+        label=r"$\delta^{s}_{0}="
+        + str(saved_runs.constraint_schedule.delta_start)
+        + "$",
+    )
+    plot(
+        ax=ax_3,
+        values=num_violations_schedule,
         label=r"$\delta^{s}_{0}="
         + str(saved_runs.constraint_schedule.delta_start)
         + "$",
@@ -780,7 +816,15 @@ def plot_constraint_levels_figure(api, saved_runs, window_width=5):
     ax_2.legend()
     fig_2.tight_layout(pad=0.5)
 
-    return fig, fig_2
+    # fig_2.ticklabel_format(style="sci", axis="x", scilimits=(0, 0), useMathText=False)
+    ax_3.set_xlabel(r"Episode $i$")
+    ax_3.set_xlim(0, 150)
+    # ax_3.set_ylim(0, 200)
+    ax_3.set_ylabel(r"Average constraint violations")
+    # ax_3.legend()
+    fig_3.tight_layout(pad=0.5)
+
+    return fig, fig_2, fig_3
 
 
 def custom_labels(ax):
