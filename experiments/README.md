@@ -153,13 +153,14 @@ git clone https://github.com/aidanscannell/ModeRL.git ~/python-projects/moderl
 ```
 Create a virtual environment:
 ``` shell
-module load py-virtualenv
-python -m venv moderl-venv
+ml python/3.8.7
+ml py-virtualenv
+python -m venv .venv
 ```
 Install dependencies with:
 ``` shell
-cd /path/to/ModeRL/
-source moderl-venv/bin/activate
+cd /path/to/project/
+source .venv/bin/activate
 pip install -e ".[experiments]"
 ```
 Run multiple experiments in parallel whilst using hydra's sweep:
