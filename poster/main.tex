@@ -1007,7 +1007,7 @@
 
     \heading{Model Learning}
     \begin{itemize}
-      \item \textbf{Goal} jointly infer mode constraint along with dynamic modes:
+      \item \textbf{Goal} Jointly infer mode constraint alongside dynamic modes:
       % \item Mixtures of Gaussian process experts with sparse variational G
       \begin{itemize}
         \item Data set of state-action inputs and state diff outputs $\mathcal{D} =\{\singleInput, \singleOutput\}_{t=1}^{N} = (\allInput, \allOutput)$,
@@ -1031,7 +1031,7 @@
           \end{align*}
               % where $\hat{\stateDomain} = \stateDomain \times \controlDomain$ represents combined state-action domain
               % and $\allInputK$ the inputs assigned to dynamic mode $\modeInd$.
-        \item But we sidestep the assignment of observations to modes by augmenting each mode with its own inducing points,
+        \item But we sidestep the assignment of observations to modes by augmenting each mode with its own inducing points $\expertInducingInput \in \stateDomain \times \controlDomain$,
           \begin{align*}
             \mode{\latentFunc}(\expertInducingInput)  \sim \mathcal{N}\left( \mode{\mu}(\expertInducingInput), \mode{k}(\expertInducingInput, \expertInducingInput ) \right)
             \qquad
@@ -1297,7 +1297,7 @@
       };
     \end{tikzpicture}
   % {\small \singlespacing \alert{\bf Figure~2:} \textbf{Constraint level ablation} Left shows that tighter constraints (lower $\delta$) results in less constraint violations. However, the training curves (right) show that if the constraint is too tight (i.e. $\delta \leq 0.2$) then \alert{ModeRL} gets stuck in local optima and cannot solve the task. Further to this, looser constraints (high δ) have better sample efficiency.}
-    \caption{\textbf{Constraint level ablation} Left shows that tighter constraints (lower $\delta$) results in fewer constraint violations. However, training curves (right) show that if constraint is too tight (i.e. $\delta \leq 0.2$) then \alert{ModeRL} gets stuck in local optima. $\delta^{s}_{0}=0.4$ (\tikz[baseline=-0.5ex]\draw [line width=1.25mm, brown] (0,0) -- (1,0);) converged in fewer episodes by using exponentially decaying schedule from $\delta=0.4$.}
+    \caption{\textbf{Constraint level ablation} Left shows that tighter constraints (lower $\delta$) results in fewer constraint violations. However, training curves (right) show that if constraint is too tight (i.e. $\delta \leq 0.2$) then \alert{ModeRL} gets stuck in local optima. $\delta^{s}_{0}=0.4$ (\tikz[baseline=-0.5ex]\draw [line width=1.25mm, brown] (0,0) -- (1,0);) converged in fewer episodes by using an exponentially decaying schedule from $\delta=0.4$ at episode $i=0$.}
       %Further to this, looser constraints (high δ) have better sample efficiency.}
 %       The δ0s = 4 experiment used an expo-
 % nential schedule to tighten the constraint during training}
@@ -1306,15 +1306,15 @@
   \begin{itemize}
     \item \textbf{Greedy exploitation (baseline) fails} - Fig. \ref{fig-main} left
     \begin{itemize}
-      \item Without our mode constraint the greedy strategy leaves desired dynamic mode.
-      \item Without our exploration term the greedy strategy gets stuck in a local optimum.
+      \item Without our \alert{mode constraint} the greedy strategy \alert{violates the mode constraint}.
+      \item Without our \alert{exploration term} the greedy strategy gets stuck in a \alert{local optimum}.
     \end{itemize}
     \item \textbf{ModeRL works!} - Fig. \ref{fig-main} right
-    \item \textbf{Constraint satisfaction during training} - Fig. \ref{fig-training-curve}
+    \item \textbf{ModeRL has constraint satisfaction during training} - Fig. \ref{fig-training-curve}
     \begin{itemize}
       \item Tightening constraint (lower $\delta$) leads to less constraint violations during training,
       \item But if too tight (i.e. $\delta \leq 0.2$) it can make the problem infeasible, %i.e. it doesn't solve task.
-      \item \textbf{How to set $\delta$?} A schedule works well in practice, see $\delta^{s}_{0}=0.4$ (\tikz[baseline=-0.5ex]\draw [line width=1.25mm, brown] (0,0) -- (1,0);) on Fig. \ref{fig-training-curve}.
+      \item \textbf{How to set $\delta$?} A \alert{schedule} works well in practice, see $\delta^{s}_{0}=0.4$ (\tikz[baseline=-0.5ex]\draw [line width=1.25mm, brown] (0,0) -- (1,0);) in Fig. \ref{fig-training-curve}.
     \end{itemize}
     % \item \textbf{How to set $\delta$?} A schedule works well in practice.
     % \item Well-calibrated uncertainty makes mode constraint probabilities tend to uniform distribution away from data.
