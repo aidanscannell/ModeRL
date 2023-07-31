@@ -1,8 +1,10 @@
-paper/aistats2023.sty linguist-vendored
-paper/fancyhdr.sty linguist-vendored
-paper/main.tex linguist-vendored
-poster/beamercolorthemeaalto.sty linguist-vendored
-poster/beamerthemeaalto.sty linguist-vendored
-poster/main.tex linguist-vendored
+# paper/aistats2023.sty linguist-vendored
+# paper/fancyhdr.sty linguist-vendored
+# paper/main.tex linguist-vendored
+# poster/beamercolorthemeaalto.sty linguist-vendored
+# poster/beamerthemeaalto.sty linguist-vendored
+# poster/main.tex linguist-vendored
 poster/** linguist-vendored
 paper/** linguist-vendored
+poster/main.tex -linguist-vendored
+paper/main.tex -linguist-vendored
