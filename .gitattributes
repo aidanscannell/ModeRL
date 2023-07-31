@@ -4,3 +4,5 @@ paper/main.tex linguist-vendored
 poster/beamercolorthemeaalto.sty linguist-vendored
 poster/beamerthemeaalto.sty linguist-vendored
 poster/main.tex linguist-vendored
+poster/** linguist-vendored
+paper/** linguist-vendored
