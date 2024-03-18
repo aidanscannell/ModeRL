@@ -121,7 +121,7 @@ def plot_gif(
         fig=fig,
         func=update_custom,
         frames=num_episodes,
-        interval=250
+        interval=250,
         # interval=150
     )
     pathlib.Path(save_name).parents[0].mkdir(parents=True, exist_ok=True)
