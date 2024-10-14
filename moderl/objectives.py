@@ -117,7 +117,7 @@ def bernoulli_entropy(
     mode_probs = dynamics.mosvgpe.gating_network.gp.likelihood.predict_mean_and_var(
         input_dists.mean(),
         Fmu=h_means,
-        Fvar=h_covs
+        Fvar=h_covs,
         # input_means, Fmu=h_means, Fvar=h_vars
     )[0]
     print("mode_probs.shape")
@@ -224,7 +224,7 @@ def bald_objective(
         h_samples = dynamics.mosvgpe.gating_network.gp.predict_f_samples(
             input_dists.mean(),
             num_samples=10,
-            full_cov=False
+            full_cov=False,
             # input_dists.mean(), num_samples=10, full_cov=True
         )
         print("h_samples")
@@ -339,7 +339,7 @@ def bald_objective(
     def bald_objective_closed_form():
         h_means, h_vars = dynamics.mosvgpe.gating_network.gp.predict_f(
             input_dists.mean(),
-            full_cov=True
+            full_cov=True,
             # full_cov=False
             # input_dists.mean(), full_cov=True
         )

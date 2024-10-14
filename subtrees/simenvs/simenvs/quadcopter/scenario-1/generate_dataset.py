@@ -16,7 +16,10 @@ num_actions = 4  # number of actions to randomly generate
 # configure environment from toml config file
 env = parse_toml_config_to_VelocityControlledQuadcopter2DEnv(toml_env_config_file)
 
-(state_action_inputs, delta_state_outputs,) = generate_transitions_dataset(
+(
+    state_action_inputs,
+    delta_state_outputs,
+) = generate_transitions_dataset(
     num_states=num_states,
     num_actions=num_actions,
     env=env,

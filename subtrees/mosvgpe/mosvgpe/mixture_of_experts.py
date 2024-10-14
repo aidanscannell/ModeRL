@@ -22,6 +22,7 @@ tfd = tfp.distributions
 
 logger = logging.getLogger(__name__)
 
+
 # class MixtureOfExpertsBase(gpf.models.BayesianModel, abc.ABC):
 # class MixtureOfExpertsBase(tf.keras.Model, abc.ABC):
 class MixtureOfExpertsBase(tf.keras.Model, BayesianModel, abc.ABC):
