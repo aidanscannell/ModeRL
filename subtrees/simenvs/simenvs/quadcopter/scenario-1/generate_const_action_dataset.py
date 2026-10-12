@@ -21,7 +21,10 @@ action = np.array([0.05, -0.2])
 # configure environment from toml config file
 env = parse_toml_config_to_VelocityControlledQuadcopter2DEnv(toml_env_config_file)
 
-(state_action_inputs, delta_state_outputs,) = generate_transitions_dataset_const_action(
+(
+    state_action_inputs,
+    delta_state_outputs,
+) = generate_transitions_dataset_const_action(
     action, num_states=num_states, env=env, omit_data_mask=omit_data_mask
 )
 
