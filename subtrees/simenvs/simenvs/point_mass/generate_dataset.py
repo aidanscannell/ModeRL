@@ -49,7 +49,10 @@ def generate_point_mass_dataset(
         toml_env_config_file, gating_bitmap_filename=gating_bitmap_file
     )
 
-    (state_action_inputs, delta_state_outputs,) = generate_transitions_dataset(
+    (
+        state_action_inputs,
+        delta_state_outputs,
+    ) = generate_transitions_dataset(
         num_states=num_states,
         num_actions=num_actions,
         env=env,
