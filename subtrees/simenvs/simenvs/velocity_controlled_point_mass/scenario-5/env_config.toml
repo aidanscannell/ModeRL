@@ -3,7 +3,7 @@ gating_bitmap = "./bitmaps/gating_mask.bmp"  # filename for gating bitmap
 # gating_bitmap = "../scenario-1/gating_mask.bmp"  # filename for gating bitmap
 
 # lists are converted to 1D np.arrays and floats/ints are broadcast
-# e.g min_state = [-3.0, -2.0] is converted with np.array(min_state) 
+# e.g min_state = [-3.0, -2.0] is converted with np.array(min_state)
 # state constraints
 min_state = [-3.1, -3.0]
 # min_state = [-3.0, -3.0]
