@@ -34,9 +34,7 @@ class ControllerInterface(tf.Module, abc.ABC):
 class TrajectoryOptimisationController(ControllerInterface):
     trajectory_optimiser: TrajectoryOptimiser
 
-    def __call__(
-        self, timestep: Optional[int] = None, dist: bool = False
-    ) -> Union[
+    def __call__(self, timestep: Optional[int] = None, dist: bool = False) -> Union[
         tfd.Distribution,
         Union[ttf.Tensor1[ControlDim], ttf.Tensor2[Horizon, ControlDim]],
     ]:
